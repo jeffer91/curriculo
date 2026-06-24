@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Currículo · Control</title>
+  <link rel="stylesheet" href="./ctl.styles.css">
+</head>
+<body>
+  <main class="ctl-app">
+    <section class="ctl-card ctl-head">
+      <div>
+        <p class="ctl-eyebrow">UTET · Currículo</p>
+        <h1>Control general</h1>
+        <p class="ctl-subtitle">Revisa el estado local del sistema.</p>
+      </div>
+    </section>
+    <section class="ctl-grid">
+      <article class="ctl-card"><span>Carreras</span><strong id="ctlCountCarreras">0</strong></article>
+      <article class="ctl-card"><span>Fichas</span><strong id="ctlCountFichas">0</strong></article>
+      <article class="ctl-card"><span>Actas</span><strong id="ctlCountActas">0</strong></article>
+      <article class="ctl-card"><span>Pendientes</span><strong id="ctlCountPending">0</strong></article>
+    </section>
+    <section class="ctl-card">
+      <h2>Estado</h2>
+      <div id="ctlStatus" class="ctl-status">Cargando...</div>
+    </section>
+  </main>
+  <script src="./ctl.main.js"></script>
+</body>
+</html>
