@@ -3,7 +3,7 @@ Nombre completo: menu.config.js
 Ruta o ubicación: /menu/menu.config.js
 Función o funciones:
 - Definir la configuración central del menú Currículo
-- Registrar las opciones Carreras, Materias, PEA, Fichas, Actas y Control
+- Registrar las opciones Carreras, Materias, CCC, Fichas, Actas y Control
 - Marcar la ruta por defecto del módulo
 - Centralizar ids, títulos, hints y rutas del menú
 ========================================================= */
@@ -25,8 +25,8 @@ Función o funciones:
     },
     {
       id: "pea",
-      title: "PEA",
-      hint: "Gestión de PEA y versiones",
+      title: "CCC",
+      hint: "Validación y gestión del Componente Curricular de Carrera",
       routeFromMenu: "../pea_documentos/pea.index.html"
     },
     {
@@ -44,7 +44,7 @@ Función o funciones:
     {
       id: "control",
       title: "Control",
-      hint: "Control global de PEA, fichas y actas",
+      hint: "Control global de CCC, fichas y actas",
       routeFromMenu: "../control/ctl.index.html"
     }
   ];
