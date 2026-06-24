@@ -8,6 +8,10 @@
     return (section && Array.isArray(section.sheets)) ? section.sheets : [];
   }
 
+  function safeRows(sheet) {
+    return (sheet && Array.isArray(sheet.rows)) ? sheet.rows : [];
+  }
+
   function normalizeCell(value) {
     return String(value == null ? "" : value).replace(/\s+/g, " ").trim();
   }
@@ -16,10 +20,6 @@
     return safeRows(sheet).map(function (row) {
       return (Array.isArray(row) ? row : []).map(normalizeCell).join(" | ");
     }).join("\n");
-  }
-
-  function safeRows(sheet) {
-    return (sheet && Array.isArray(sheet.rows)) ? sheet.rows : [];
   }
 
   function buildSheetMap(section) {
@@ -34,6 +34,12 @@
     return map;
   }
 
+  function pct(value, base) {
+    var b = Number(base || 0);
+    if (!b) return 0;
+    return Math.round((Number(value || 0) / b) * 10000) / 100;
+  }
+
   function compareSection(sectionName, sectionA, sectionB) {
     var mapA = buildSheetMap(sectionA);
     var mapB = buildSheetMap(sectionB);
@@ -45,44 +51,35 @@
     var removed = [];
     var changed = [];
     var unchanged = [];
+    var totalRowsBefore = 0;
+    var totalRowsAfter = 0;
 
     names.forEach(function (name) {
       var a = mapA[name];
       var b = mapB[name];
+      totalRowsBefore += Number(a && a.rowCount || 0);
+      totalRowsAfter += Number(b && b.rowCount || 0);
 
       if (!a && b) {
-        added.push({
-          sheet: name,
-          rowsBefore: 0,
-          rowsAfter: b.rowCount
-        });
+        added.push({ sheet: name, rowsBefore: 0, rowsAfter: b.rowCount, tipo: "nuevo" });
         return;
       }
 
       if (a && !b) {
-        removed.push({
-          sheet: name,
-          rowsBefore: a.rowCount,
-          rowsAfter: 0
-        });
+        removed.push({ sheet: name, rowsBefore: a.rowCount, rowsAfter: 0, tipo: "antiguo_eliminado" });
         return;
       }
 
       if (a && b && a.text !== b.text) {
-        changed.push({
-          sheet: name,
-          rowsBefore: a.rowCount,
-          rowsAfter: b.rowCount
-        });
+        changed.push({ sheet: name, rowsBefore: a.rowCount, rowsAfter: b.rowCount, tipo: "modificado" });
         return;
       }
 
-      unchanged.push({
-        sheet: name,
-        rowsBefore: a ? a.rowCount : 0,
-        rowsAfter: b ? b.rowCount : 0
-      });
+      unchanged.push({ sheet: name, rowsBefore: a ? a.rowCount : 0, rowsAfter: b ? b.rowCount : 0, tipo: "sin_cambios" });
     });
+
+    var totalChanges = added.length + removed.length + changed.length;
+    var totalComparable = names.length || 0;
 
     return {
       sectionName: sectionName,
@@ -90,7 +87,11 @@
       removed: removed,
       changed: changed,
       unchanged: unchanged,
-      totalChanges: added.length + removed.length + changed.length
+      totalChanges: totalChanges,
+      totalComparable: totalComparable,
+      totalRowsBefore: totalRowsBefore,
+      totalRowsAfter: totalRowsAfter,
+      porcentajeCambio: pct(totalChanges, totalComparable)
     };
   }
 
@@ -106,17 +107,23 @@
       var base = compareSection("Base", contentA.base, contentB.base);
       var unidades = compareSection("Unidades", contentA.unidades, contentB.unidades);
       var actividades = compareSection("Actividades", contentA.actividades, contentB.actividades);
+      var sections = [base, unidades, actividades];
+      var totalCambios = sections.reduce(function (acc, section) {
+        return acc + Number(section.totalChanges || 0);
+      }, 0);
+      var totalComparables = sections.reduce(function (acc, section) {
+        return acc + Number(section.totalComparable || 0);
+      }, 0);
 
       return {
         materiaId: versionA.meta.materiaId || versionB.meta.materiaId || "",
         materiaNombre: versionA.meta.materiaNombre || versionB.meta.materiaNombre || "",
         versionA: versionA.meta,
         versionB: versionB.meta,
-        sections: [base, unidades, actividades],
-        totalCambios:
-          Number(base.totalChanges || 0) +
-          Number(unidades.totalChanges || 0) +
-          Number(actividades.totalChanges || 0)
+        sections: sections,
+        totalCambios: totalCambios,
+        totalComparables: totalComparables,
+        porcentajeCambio: pct(totalCambios, totalComparables)
       };
     }
   };
