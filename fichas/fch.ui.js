@@ -3,11 +3,17 @@ Nombre completo: fch.ui.js
 Ruta o ubicación: /fichas/fch.ui.js
 Función o funciones:
 - Manejar la interfaz del módulo
-- Llenar selectores y formulario
+- Llenar selectores con filtro por carrera y nivel
 - Leer la selección y el formulario
 - Mostrar estado, resumen base y vista previa
 - Limpiar toda la pantalla
 */
+
+let fchCatalogosCache = {
+  carreras: [],
+  niveles: [],
+  materias: []
+};
 
 function fchSafeText(value) {
   return String(value ?? "").trim();
@@ -31,10 +37,55 @@ function fchFillSelect(selectId, items, placeholder) {
   });
 }
 
+function fchGetCurrentCarreraId() {
+  return fchSafeText(document.getElementById("fchCarrera")?.value);
+}
+
+function fchGetCurrentNivelId() {
+  return fchSafeText(document.getElementById("fchNivel")?.value);
+}
+
+function fchFilterMaterias(carreraId, nivelId) {
+  return (fchCatalogosCache.materias || []).filter((item) => {
+    const sameCarrera = !carreraId || fchSafeText(item.carreraId) === carreraId;
+    const sameNivel = !nivelId || fchSafeText(item.nivelId) === nivelId;
+    return sameCarrera && sameNivel;
+  });
+}
+
+function fchRefreshMateriasSelect() {
+  const carreraId = fchGetCurrentCarreraId();
+  const nivelId = fchGetCurrentNivelId();
+  const materias = fchFilterMaterias(carreraId, nivelId);
+  fchFillSelect("fchMateria", materias, materias.length ? "Seleccione" : "Sin materias para esta selección");
+}
+
+function fchBindSelectorFilters() {
+  const carrera = document.getElementById("fchCarrera");
+  const nivel = document.getElementById("fchNivel");
+
+  if (carrera && !carrera.__fchFilterBound) {
+    carrera.addEventListener("change", fchRefreshMateriasSelect);
+    carrera.__fchFilterBound = true;
+  }
+
+  if (nivel && !nivel.__fchFilterBound) {
+    nivel.addEventListener("change", fchRefreshMateriasSelect);
+    nivel.__fchFilterBound = true;
+  }
+}
+
 function fchUiBindCatalogos(catalogos) {
-  fchFillSelect("fchCarrera", catalogos?.carreras || [], "Seleccione");
-  fchFillSelect("fchNivel", catalogos?.niveles || [], "Seleccione");
-  fchFillSelect("fchMateria", catalogos?.materias || [], "Seleccione");
+  fchCatalogosCache = {
+    carreras: Array.isArray(catalogos?.carreras) ? catalogos.carreras : [],
+    niveles: Array.isArray(catalogos?.niveles) ? catalogos.niveles : [],
+    materias: Array.isArray(catalogos?.materias) ? catalogos.materias : []
+  };
+
+  fchFillSelect("fchCarrera", fchCatalogosCache.carreras, "Seleccione");
+  fchFillSelect("fchNivel", fchCatalogosCache.niveles, "Seleccione");
+  fchRefreshMateriasSelect();
+  fchBindSelectorFilters();
 }
 
 function fchUiReadSeleccion() {
@@ -149,6 +200,8 @@ function fchUiResetAll() {
       node.value = "";
     }
   });
+
+  fchRefreshMateriasSelect();
 }
 
 export {
