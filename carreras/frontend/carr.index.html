@@ -3,9 +3,11 @@ Nombre del archivo: carr.index.html
 Ubicación: carreras/frontend/carr.index.html
 Función:
 - Mostrar la interfaz principal para crear carreras
+- Guardar primero en local
 - Registrar solo datos básicos de la carrera
 - Mostrar una tabla editable con búsqueda y orden
 - Incluir un botón flotante para guardar cambios de tabla
+- Activar sincronización diaria con Firebase solo si hay cambios pendientes
 -->
 
 <!DOCTYPE html>
@@ -27,7 +29,10 @@ Función:
           <p class="carr-eyebrow">UTET · Carreras</p>
           <h1 class="carr-title">Crear y editar carreras</h1>
           <p class="carr-subtitle">
-            Esta pantalla registra solo la carrera. La tabla inferior permite buscar, ordenar y editar nombre, tipo y estado.
+            Esta pantalla registra primero en local. Si hay cambios pendientes, la app los sube a Firebase una vez al día mientras esté abierta.
+          </p>
+          <p data-curriculo-sync-status class="carr-subtitle" style="margin-top:6px;font-weight:700;">
+            Preparando guardado local...
           </p>
         </div>
       </header>
@@ -144,6 +149,10 @@ Función:
     <span id="carrCambiosBadge" class="carr-fab-badge">0</span>
   </button>
 
+  <script src="../../shared/local/curriculo.local-db.js"></script>
+  <script src="../../shared/local/curriculo.sync-queue.js"></script>
+  <script src="../../shared/local/curriculo.sync-engine.js"></script>
+  <script src="../../shared/local/curriculo.sync-status.js"></script>
   <script type="module" src="./carr.main.js"></script>
 </body>
 </html>
