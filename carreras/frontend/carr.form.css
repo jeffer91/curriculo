@@ -1,0 +1,96 @@
+/*
+Nombre del archivo: carr.form.css
+Ubicación: carreras/frontend/carr.form.css
+Función:
+- Ajustes finos del formulario en tema claro
+- Hacer la interfaz más compacta
+- Mejorar campos, tarjetas y acciones
+- Evitar mezclar estilos de tabla
+*/
+
+.carr-form {
+  gap: 16px;
+}
+
+.carr-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.carr-card::before {
+  content: "";
+  display: block;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(37, 99, 235, 0.16), rgba(37, 99, 235, 0));
+  margin-bottom: 12px;
+}
+
+.carr-card-title {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.carr-field input,
+.carr-field select,
+.carr-field textarea {
+  border-width: 1px;
+  background: #ffffff;
+}
+
+.carr-field input:hover,
+.carr-field select:hover,
+.carr-field textarea:hover {
+  border-color: #94a3b8;
+  background: #fcfdff;
+}
+
+.carr-field input:focus,
+.carr-field select:focus,
+.carr-field textarea:focus {
+  transform: translateY(-1px);
+}
+
+.carr-actions {
+  justify-content: flex-start;
+  align-items: center;
+  padding-top: 2px;
+}
+
+.carr-btn {
+  min-width: 132px;
+}
+
+.carr-status {
+  font-size: 13px;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.carr-status:empty::before {
+  content: "Sin mensajes todavía.";
+  color: #94a3b8;
+}
+
+.carr-list-card::before {
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.16), rgba(59, 130, 246, 0));
+}
+
+.carr-list-head {
+  margin-bottom: 0;
+}
+
+.carr-list-tools .carr-btn {
+  min-width: auto;
+}
+
+@media (max-width: 900px) {
+  .carr-btn {
+    width: 100%;
+  }
+
+  .carr-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

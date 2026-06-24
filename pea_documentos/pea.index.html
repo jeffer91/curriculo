@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PEA</title>
+  <link rel="stylesheet" href="./pea.styles.css" />
+</head>
+<body>
+  <main class="pea-app">
+    <section class="pea-panel">
+
+      <section class="pea-card">
+        <h2 class="pea-card-title">Carrera, materia y versión</h2>
+
+        <div class="pea-grid pea-grid-2">
+          <div class="pea-field">
+            <label for="peaCarreraSelect">Carrera</label>
+            <select id="peaCarreraSelect">
+              <option value="">Selecciona una carrera</option>
+            </select>
+          </div>
+
+          <div class="pea-field">
+            <label for="peaMateriaSelect">Materia</label>
+            <select id="peaMateriaSelect">
+              <option value="">Selecciona una materia</option>
+            </select>
+          </div>
+
+          <div class="pea-field">
+            <label for="peaMateriaTipo">Tipo</label>
+            <input
+              id="peaMateriaTipo"
+              type="text"
+              readonly
+              placeholder="Se completa automáticamente"
+            />
+          </div>
+
+          <div class="pea-field">
+            <label for="peaVersionNota">Nota de versión</label>
+            <input
+              id="peaVersionNota"
+              type="text"
+              placeholder="Ejemplo: Ajuste unidad 3"
+            />
+          </div>
+        </div>
+      </section>
+
+      <section class="pea-card">
+        <h2 class="pea-card-title">Tipo de carga</h2>
+
+        <div class="pea-radio-row">
+          <label class="pea-radio">
+            <input type="radio" name="peaModoCarga" value="triple" checked />
+            <span>3 archivos</span>
+          </label>
+
+          <label class="pea-radio">
+            <input type="radio" name="peaModoCarga" value="consolidado" />
+            <span>1 archivo consolidado</span>
+          </label>
+        </div>
+
+        <div id="peaCargaTriple" class="pea-upload-group">
+          <div class="pea-grid pea-grid-3">
+            <div class="pea-field">
+              <label for="peaFileBase">PEA Base</label>
+              <input id="peaFileBase" type="file" accept=".xlsx,.xls" />
+            </div>
+
+            <div class="pea-field">
+              <label for="peaFileUnidades">PEA Unidades</label>
+              <input id="peaFileUnidades" type="file" accept=".xlsx,.xls" />
+            </div>
+
+            <div class="pea-field">
+              <label for="peaFileActividades">PEA Actividades</label>
+              <input id="peaFileActividades" type="file" accept=".xlsx,.xls" />
+            </div>
+          </div>
+        </div>
+
+        <div id="peaCargaConsolidado" class="pea-upload-group pea-hidden">
+          <div class="pea-field">
+            <label for="peaFileConsolidado">Archivo consolidado</label>
+            <input id="peaFileConsolidado" type="file" accept=".xlsx,.xls" />
+          </div>
+        </div>
+
+        <div class="pea-actions">
+          <button id="peaBtnGuardar" class="pea-btn pea-btn-primary" type="button">
+            Guardar en local
+          </button>
+
+          <button id="peaBtnHistorial" class="pea-btn pea-btn-secondary" type="button">
+            Cargar historial
+          </button>
+
+          <button id="peaBtnSync" class="pea-btn pea-btn-secondary" type="button">
+            Sincronizar ahora
+          </button>
+
+          <button id="peaBtnLimpiar" class="pea-btn pea-btn-secondary" type="button">
+            Limpiar
+          </button>
+        </div>
+
+        <div id="peaStatus" class="pea-status" aria-live="polite">
+          Pantalla lista.
+        </div>
+      </section>
+
+      <section class="pea-grid pea-grid-2 pea-grid-gap">
+        <section class="pea-card">
+          <h2 class="pea-card-title">Historial de versiones</h2>
+          <div id="peaHistorial" class="pea-list-empty">
+            Aún no se ha cargado el historial de esta materia.
+          </div>
+        </section>
+
+        <section class="pea-card">
+          <h2 class="pea-card-title">Vista previa</h2>
+          <div id="peaPreview" class="pea-list-empty">
+            Selecciona una versión para verla aquí.
+          </div>
+        </section>
+      </section>
+
+      <section class="pea-grid pea-grid-2 pea-grid-gap">
+        <section class="pea-card">
+          <h2 class="pea-card-title">Exportación</h2>
+
+          <div class="pea-actions pea-actions-vertical">
+            <button id="peaBtnPdf" class="pea-btn pea-btn-primary" type="button">
+              Generar PDF de la versión actual
+            </button>
+
+            <button id="peaBtnExcel" class="pea-btn pea-btn-secondary" type="button">
+              Descargar los 3 Excel
+            </button>
+          </div>
+        </section>
+
+        <section class="pea-card">
+          <h2 class="pea-card-title">Comparación</h2>
+
+          <div class="pea-grid pea-grid-2">
+            <div class="pea-field">
+              <label for="peaCompareA">Versión A</label>
+              <select id="peaCompareA"></select>
+            </div>
+
+            <div class="pea-field">
+              <label for="peaCompareB">Versión B</label>
+              <select id="peaCompareB"></select>
+            </div>
+          </div>
+
+          <div class="pea-actions">
+            <button id="peaBtnComparar" class="pea-btn pea-btn-primary" type="button">
+              Comparar versiones
+            </button>
+
+            <button id="peaBtnPdfComparativo" class="pea-btn pea-btn-secondary" type="button">
+              PDF comparativo
+            </button>
+          </div>
+
+          <div id="peaComparePreview" class="pea-list-empty">
+            Aquí aparecerá el resumen comparativo.
+          </div>
+        </section>
+      </section>
+    </section>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
+  <script src="./pea.firebase.js"></script>
+  <script src="./pea.parser.js"></script>
+  <script src="./pea.store.js"></script>
+  <script src="./pea.compare.js"></script>
+  <script src="./pea.export.js"></script>
+  <script src="./pea.app.js"></script>
+</body>
+</html>

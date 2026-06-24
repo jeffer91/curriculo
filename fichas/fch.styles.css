@@ -1,0 +1,316 @@
+/*
+Nombre completo: fch.styles.css
+Ruta o ubicación: /fichas/fch.styles.css
+Función o funciones:
+- Definir la apariencia del módulo de fichas
+- Estilizar formulario, tarjetas, resumen, estado y vista previa
+- Hacer la pantalla clara, ordenada y responsiva
+*/
+
+:root {
+  --fch-bg: #f4f7fb;
+  --fch-panel: #ffffff;
+  --fch-card: #ffffff;
+  --fch-border: #dfe7f2;
+  --fch-border-strong: #cbd5e1;
+  --fch-text: #0f172a;
+  --fch-muted: #64748b;
+  --fch-primary: #2563eb;
+  --fch-primary-hover: #1d4ed8;
+  --fch-success-bg: rgba(16, 185, 129, 0.10);
+  --fch-success-text: #065f46;
+  --fch-success-border: rgba(16, 185, 129, 0.28);
+  --fch-error-bg: rgba(239, 68, 68, 0.08);
+  --fch-error-text: #991b1b;
+  --fch-error-border: rgba(239, 68, 68, 0.22);
+  --fch-radius: 14px;
+  --fch-radius-sm: 10px;
+  --fch-shadow: 0 14px 30px rgba(15, 23, 42, 0.07);
+  --fch-font: "Segoe UI", Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(180deg, #f8fbff 0%, #f1f5f9 100%);
+  color: var(--fch-text);
+  font-family: var(--fch-font);
+}
+
+body {
+  min-height: 100vh;
+}
+
+input,
+select,
+textarea,
+button {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+.fch-app {
+  width: 100%;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.fch-panel {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  background: var(--fch-panel);
+  border: 1px solid var(--fch-border);
+  border-radius: 18px;
+  box-shadow: var(--fch-shadow);
+  padding: 18px;
+}
+
+.fch-header {
+  margin-bottom: 16px;
+}
+
+.fch-eyebrow {
+  margin: 0 0 6px;
+  color: var(--fch-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.fch-title {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.15;
+}
+
+.fch-subtitle {
+  margin: 6px 0 0;
+  color: var(--fch-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.fch-card {
+  background: var(--fch-card);
+  border: 1px solid var(--fch-border);
+  border-radius: var(--fch-radius);
+  padding: 14px;
+  margin-bottom: 16px;
+}
+
+.fch-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.fch-card-title {
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+
+.fch-card-text {
+  margin: 0;
+  color: var(--fch-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.fch-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.fch-grid-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.fch-grid-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.fch-field {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.fch-field label {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.fch-field input,
+.fch-field select,
+.fch-field textarea {
+  width: 100%;
+  border: 1px solid var(--fch-border-strong);
+  border-radius: var(--fch-radius-sm);
+  padding: 10px 12px;
+  background: #ffffff;
+  color: var(--fch-text);
+  outline: none;
+  font-size: 13px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fch-field input:focus,
+.fch-field select:focus,
+.fch-field textarea:focus {
+  border-color: var(--fch-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.10);
+}
+
+.fch-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.fch-btn {
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.fch-btn-primary {
+  background: var(--fch-primary);
+  color: #ffffff;
+  border-color: var(--fch-primary);
+}
+
+.fch-btn-primary:hover {
+  background: var(--fch-primary-hover);
+  border-color: var(--fch-primary-hover);
+}
+
+.fch-btn-secondary {
+  background: #ffffff;
+  color: var(--fch-text);
+  border-color: var(--fch-border-strong);
+}
+
+.fch-summary {
+  border: 1px dashed var(--fch-border-strong);
+  border-radius: 10px;
+  background: #f8fafc;
+  padding: 12px;
+  font-size: 13px;
+  color: var(--fch-muted);
+}
+
+.fch-summary-line {
+  margin: 0 0 8px;
+}
+
+.fch-summary-line:last-child {
+  margin-bottom: 0;
+}
+
+.fch-preview {
+  border: 1px solid var(--fch-border);
+  border-radius: 12px;
+  background: #fbfdff;
+  padding: 16px;
+  min-height: 180px;
+}
+
+.fch-preview-doc {
+  display: grid;
+  gap: 14px;
+}
+
+.fch-preview-head h2 {
+  margin: 0 0 6px;
+  font-size: 18px;
+}
+
+.fch-preview-head p {
+  margin: 0;
+  color: var(--fch-muted);
+  font-size: 12px;
+}
+
+.fch-preview-block h3 {
+  margin: 0 0 6px;
+  font-size: 14px;
+}
+
+.fch-preview-block p {
+  margin: 0;
+  color: var(--fch-text);
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.fch-preview-list {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.fch-status {
+  min-height: 42px;
+  border-radius: 10px;
+  padding: 10px 12px;
+  border: 1px dashed var(--fch-border-strong);
+  background: #f8fafc;
+  color: var(--fch-muted);
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+}
+
+.fch-status-ok {
+  background: var(--fch-success-bg);
+  border-color: var(--fch-success-border);
+  color: var(--fch-success-text);
+}
+
+.fch-status-error {
+  background: var(--fch-error-bg);
+  border-color: var(--fch-error-border);
+  color: var(--fch-error-text);
+}
+
+@media (max-width: 900px) {
+  .fch-grid-2,
+  .fch-grid-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .fch-app {
+    padding: 12px;
+  }
+
+  .fch-panel {
+    padding: 14px;
+  }
+
+  .fch-title {
+    font-size: 21px;
+  }
+
+  .fch-actions,
+  .fch-card-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

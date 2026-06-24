@@ -1,0 +1,82 @@
+<!-- =========================================================
+Nombre completo: menu.index.html
+Ruta o ubicación: /menu/menu.index.html
+Función o funciones:
+- Mostrar la pantalla principal del menú del módulo Currículo
+- Renderizar marca, navegación superior y frame principal
+- Permitir navegar entre Carreras, Materias, PEA, Fichas, Actas y Control
+- Incluir botón para refrescar la vista actual
+- Mantener un iframe principal para cargar los módulos
+========================================================= -->
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Currículo · Menú</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="./menu.styles.css" />
+</head>
+<body>
+  <div class="menu-shell">
+    <header class="topbar" role="banner">
+      <div class="topbar-left">
+        <button
+          id="menuBrandBtn"
+          class="brand"
+          type="button"
+          title="Ir al inicio de Currículo"
+          aria-label="Ir al inicio de Currículo"
+        >
+          <span class="brand-badge" aria-hidden="true">C</span>
+          <span class="brand-text">
+            <span class="brand-title">Currículo</span>
+            <span class="brand-sub">Menú principal</span>
+          </span>
+        </button>
+      </div>
+
+      <div class="topbar-center">
+        <nav
+          id="menuNav"
+          class="nav"
+          aria-label="Navegación principal de Currículo"
+        ></nav>
+      </div>
+
+      <div class="topbar-right">
+        <button
+          id="menuRefresh"
+          class="btn btn-primary"
+          type="button"
+          title="Refrescar vista actual"
+          aria-label="Refrescar vista actual"
+        >
+          ⟳ Refrescar
+        </button>
+
+        <div id="menuHint" class="hint" aria-live="polite">
+          Listo.
+        </div>
+      </div>
+    </header>
+
+    <main class="main" role="main">
+      <div class="frame-wrap">
+        <iframe
+          id="menuFrame"
+          class="frame"
+          title="Contenido de Currículo"
+          referrerpolicy="no-referrer"
+          loading="eager"
+        ></iframe>
+      </div>
+    </main>
+  </div>
+
+  <script src="./menu.config.js"></script>
+  <script src="./menu.router.js"></script>
+  <script src="./menu.render.js"></script>
+  <script src="./menu.boot.js"></script>
+</body>
+</html>

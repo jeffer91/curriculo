@@ -1,0 +1,316 @@
+/*
+Nombre completo: act.styles.css
+Ruta o ubicación: /actas/act.styles.css
+Función o funciones:
+- Definir la apariencia del módulo de actas
+- Estilizar formulario, tarjetas, resumen, vista previa y mensajes
+- Hacer la pantalla clara y responsiva
+*/
+
+:root {
+  --act-bg: #f4f7fb;
+  --act-panel: #ffffff;
+  --act-card: #ffffff;
+  --act-border: #dfe7f2;
+  --act-border-strong: #cbd5e1;
+  --act-text: #0f172a;
+  --act-muted: #64748b;
+  --act-primary: #2563eb;
+  --act-primary-hover: #1d4ed8;
+  --act-success-bg: rgba(16, 185, 129, 0.10);
+  --act-success-text: #065f46;
+  --act-success-border: rgba(16, 185, 129, 0.28);
+  --act-error-bg: rgba(239, 68, 68, 0.08);
+  --act-error-text: #991b1b;
+  --act-error-border: rgba(239, 68, 68, 0.22);
+  --act-radius: 14px;
+  --act-radius-sm: 10px;
+  --act-shadow: 0 14px 30px rgba(15, 23, 42, 0.07);
+  --act-font: "Segoe UI", Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(180deg, #f8fbff 0%, #f1f5f9 100%);
+  color: var(--act-text);
+  font-family: var(--act-font);
+}
+
+body {
+  min-height: 100vh;
+}
+
+input,
+select,
+textarea,
+button {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 110px;
+}
+
+.act-app {
+  width: 100%;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.act-panel {
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  background: var(--act-panel);
+  border: 1px solid var(--act-border);
+  border-radius: 18px;
+  box-shadow: var(--act-shadow);
+  padding: 18px;
+}
+
+.act-header {
+  margin-bottom: 16px;
+}
+
+.act-eyebrow {
+  margin: 0 0 6px;
+  color: var(--act-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.act-title {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.15;
+}
+
+.act-subtitle {
+  margin: 6px 0 0;
+  color: var(--act-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.act-card {
+  background: var(--act-card);
+  border: 1px solid var(--act-border);
+  border-radius: var(--act-radius);
+  padding: 14px;
+  margin-bottom: 16px;
+}
+
+.act-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.act-card-title {
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+
+.act-card-text {
+  margin: 0;
+  color: var(--act-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.act-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.act-grid-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.act-grid-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.act-field {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.act-field label {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.act-field input,
+.act-field select,
+.act-field textarea {
+  width: 100%;
+  border: 1px solid var(--act-border-strong);
+  border-radius: var(--act-radius-sm);
+  padding: 10px 12px;
+  background: #ffffff;
+  color: var(--act-text);
+  outline: none;
+  font-size: 13px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.act-field input:focus,
+.act-field select:focus,
+.act-field textarea:focus {
+  border-color: var(--act-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.10);
+}
+
+.act-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.act-btn {
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.act-btn-primary {
+  background: var(--act-primary);
+  color: #ffffff;
+  border-color: var(--act-primary);
+}
+
+.act-btn-primary:hover {
+  background: var(--act-primary-hover);
+  border-color: var(--act-primary-hover);
+}
+
+.act-btn-secondary {
+  background: #ffffff;
+  color: var(--act-text);
+  border-color: var(--act-border-strong);
+}
+
+.act-summary {
+  border: 1px dashed var(--act-border-strong);
+  border-radius: 10px;
+  background: #f8fafc;
+  padding: 12px;
+  font-size: 13px;
+  color: var(--act-muted);
+}
+
+.act-summary-line {
+  margin: 0 0 8px;
+}
+
+.act-summary-line:last-child {
+  margin-bottom: 0;
+}
+
+.act-preview {
+  border: 1px solid var(--act-border);
+  border-radius: 12px;
+  background: #fbfdff;
+  padding: 16px;
+  min-height: 200px;
+}
+
+.act-preview-doc {
+  display: grid;
+  gap: 14px;
+}
+
+.act-preview-head h2 {
+  margin: 0 0 6px;
+  font-size: 18px;
+}
+
+.act-preview-head p {
+  margin: 0;
+  color: var(--act-muted);
+  font-size: 12px;
+}
+
+.act-preview-block h3 {
+  margin: 0 0 6px;
+  font-size: 14px;
+}
+
+.act-preview-block p {
+  margin: 0;
+  color: var(--act-text);
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.act-preview-list {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.act-status {
+  min-height: 42px;
+  border-radius: 10px;
+  padding: 10px 12px;
+  border: 1px dashed var(--act-border-strong);
+  background: #f8fafc;
+  color: var(--act-muted);
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+}
+
+.act-status-ok {
+  background: var(--act-success-bg);
+  border-color: var(--act-success-border);
+  color: var(--act-success-text);
+}
+
+.act-status-error {
+  background: var(--act-error-bg);
+  border-color: var(--act-error-border);
+  color: var(--act-error-text);
+}
+
+@media (max-width: 980px) {
+  .act-grid-2,
+  .act-grid-4 {
+    grid-template-columns: 1fr;
+  }
+
+  .act-app {
+    padding: 12px;
+  }
+
+  .act-panel {
+    padding: 14px;
+  }
+
+  .act-title {
+    font-size: 21px;
+  }
+
+  .act-actions,
+  .act-card-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

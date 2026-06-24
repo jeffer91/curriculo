@@ -1,0 +1,707 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Materias | Carga modular</title>
+
+<style>
+:root{
+  --mat-bg:#f4f6fb;
+  --mat-surface:#ffffff;
+  --mat-border:#d7ddea;
+  --mat-border-soft:#e9edf5;
+  --mat-text:#1e293b;
+  --mat-muted:#64748b;
+  --mat-primary:#2563eb;
+  --mat-primary-soft:#dbeafe;
+  --mat-success:#16a34a;
+  --mat-danger:#dc2626;
+  --mat-radius:14px;
+  --mat-shadow:0 10px 30px rgba(15,23,42,.08);
+}
+
+*{ box-sizing:border-box; }
+
+body{
+  margin:0;
+  font-family:Arial, Helvetica, sans-serif;
+  background:var(--mat-bg);
+  color:var(--mat-text);
+}
+
+.mat-app{
+  width:min(1200px, calc(100% - 24px));
+  margin:16px auto;
+  display:grid;
+  gap:14px;
+}
+
+.mat-card{
+  background:var(--mat-surface);
+  border:1px solid var(--mat-border);
+  border-radius:var(--mat-radius);
+  box-shadow:var(--mat-shadow);
+  padding:14px;
+}
+
+.mat-head{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:12px;
+  align-items:center;
+}
+
+.mat-title{
+  margin:0;
+  font-size:22px;
+  line-height:1.2;
+}
+
+.mat-subtitle{
+  margin:4px 0 0;
+  color:var(--mat-muted);
+  font-size:13px;
+}
+
+.mat-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+
+.mat-btn{
+  border:1px solid var(--mat-border);
+  background:#fff;
+  color:var(--mat-text);
+  border-radius:10px;
+  padding:10px 14px;
+  font-size:13px;
+  font-weight:700;
+  cursor:pointer;
+}
+
+.mat-btn:hover{
+  border-color:#b9c4da;
+}
+
+.mat-btn.primary{
+  background:var(--mat-primary);
+  border-color:var(--mat-primary);
+  color:#fff;
+}
+
+.mat-btn.primary:disabled{
+  opacity:.6;
+  cursor:not-allowed;
+}
+
+.mat-fields{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  align-items:start;
+}
+
+.mat-field{
+  display:grid;
+  gap:6px;
+}
+
+.mat-label{
+  font-size:12px;
+  font-weight:700;
+  color:var(--mat-muted);
+  text-transform:uppercase;
+  letter-spacing:.02em;
+}
+
+.mat-input,
+.mat-select,
+.mat-textarea{
+  width:100%;
+  border:1px solid var(--mat-border);
+  border-radius:10px;
+  padding:10px 12px;
+  font:inherit;
+  color:var(--mat-text);
+  background:#fff;
+}
+
+.mat-input[readonly]{
+  background:#f8fafc;
+  color:var(--mat-text);
+}
+
+.mat-textarea{
+  min-height:260px;
+  resize:vertical;
+  line-height:1.45;
+}
+
+.mat-status{
+  border:1px dashed var(--mat-border);
+  background:#fbfcff;
+  color:var(--mat-muted);
+  border-radius:12px;
+  padding:10px 12px;
+  font-size:13px;
+}
+
+.mat-status.ok{
+  border-color:#bbf7d0;
+  background:#f0fdf4;
+  color:#166534;
+}
+
+.mat-status.warn{
+  border-color:#fde68a;
+  background:#fffbeb;
+  color:#92400e;
+}
+
+.mat-status.error{
+  border-color:#fecaca;
+  background:#fef2f2;
+  color:#991b1b;
+}
+
+.mat-preview{
+  min-height:260px;
+  border:1px solid var(--mat-border-soft);
+  border-radius:12px;
+  background:#fcfdff;
+  padding:12px;
+  overflow:auto;
+}
+
+.mat-preview h3{
+  margin:0 0 8px;
+  font-size:14px;
+}
+
+.mat-preview ul{
+  margin:8px 0 0 18px;
+  padding:0;
+}
+
+.mat-preview li{
+  margin:4px 0;
+  font-size:13px;
+}
+
+.mat-hint{
+  margin-top:8px;
+  font-size:12px;
+  color:var(--mat-muted);
+  line-height:1.45;
+}
+
+.mat-editor{
+  display:grid;
+  gap:12px;
+  min-height:120px;
+  border:1px dashed var(--mat-border);
+  border-radius:12px;
+  padding:12px;
+  background:linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+}
+
+.mat-editor strong{
+  font-size:13px;
+}
+
+.mat-editor p{
+  margin:0;
+  color:var(--mat-muted);
+  font-size:13px;
+  line-height:1.45;
+}
+
+.mat-editor-intro{
+  margin-top:-2px;
+  color:var(--mat-muted);
+}
+
+.mat-editor-accordion{
+  border:1px solid var(--mat-border-soft);
+  border-radius:12px;
+  background:#fff;
+  overflow:hidden;
+}
+
+.mat-editor-accordion[open]{
+  border-color:#c7d2fe;
+  box-shadow:0 8px 20px rgba(37,99,235,.06);
+}
+
+.mat-editor-summary{
+  list-style:none;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:12px 14px;
+  background:#f8fafc;
+  user-select:none;
+}
+
+.mat-editor-summary::-webkit-details-marker{
+  display:none;
+}
+
+.mat-editor-summary::after{
+  content:"▾";
+  margin-left:8px;
+  color:var(--mat-muted);
+  font-size:12px;
+  transition:transform .18s ease;
+}
+
+.mat-editor-accordion[open] > .mat-editor-summary::after{
+  transform:rotate(180deg);
+}
+
+.mat-editor-summary-main{
+  font-size:13px;
+  font-weight:700;
+  color:var(--mat-text);
+}
+
+.mat-editor-summary-count{
+  margin-left:auto;
+  padding:4px 8px;
+  border-radius:999px;
+  background:#e8f0ff;
+  color:#1d4ed8;
+  font-size:11px;
+  font-weight:700;
+  line-height:1;
+  white-space:nowrap;
+}
+
+.mat-editor-panel{
+  display:grid;
+  gap:10px;
+  padding:12px;
+  border-top:1px solid var(--mat-border-soft);
+  background:#fff;
+}
+
+.mat-editor-helper{
+  font-size:12px;
+  color:var(--mat-muted);
+  line-height:1.4;
+}
+
+.mat-editor-list{
+  display:grid;
+  gap:8px;
+}
+
+.mat-editor-item{
+  display:grid;
+  grid-template-columns:38px minmax(0, 1fr) auto;
+  gap:8px;
+  align-items:center;
+}
+
+.mat-editor-item-index{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:38px;
+  height:38px;
+  border-radius:10px;
+  border:1px solid var(--mat-border-soft);
+  background:#f8fafc;
+  color:var(--mat-muted);
+  font-size:12px;
+  font-weight:700;
+}
+
+.mat-editor-item-input{
+  width:100%;
+  min-width:0;
+  border:1px solid var(--mat-border);
+  border-radius:10px;
+  padding:10px 12px;
+  font:inherit;
+  color:var(--mat-text);
+  background:#fff;
+}
+
+.mat-editor-item-input:focus{
+  outline:none;
+  border-color:#93c5fd;
+  box-shadow:0 0 0 3px rgba(37,99,235,.12);
+}
+
+.mat-editor-item-remove{
+  border:1px solid #fecaca;
+  background:#fff5f5;
+  color:#b91c1c;
+  border-radius:10px;
+  padding:9px 12px;
+  font-size:12px;
+  font-weight:700;
+  cursor:pointer;
+  white-space:nowrap;
+}
+
+.mat-editor-item-remove:hover{
+  background:#fef2f2;
+}
+
+.mat-editor-inline-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:2px;
+}
+
+.mat-editor-add{
+  border:1px dashed #bfdbfe;
+  background:#eff6ff;
+  color:#1d4ed8;
+  border-radius:10px;
+  padding:9px 12px;
+  font-size:12px;
+  font-weight:700;
+  cursor:pointer;
+}
+
+.mat-editor-add:hover{
+  background:#dbeafe;
+}
+
+.mat-summary{
+  min-height:70px;
+  border:1px solid var(--mat-border-soft);
+  border-radius:12px;
+  background:#fcfdff;
+  padding:12px;
+  font-size:13px;
+  line-height:1.45;
+}
+
+.mat-quick-summary{
+  margin-top:10px;
+  border:1px solid var(--mat-border-soft);
+  border-radius:10px;
+  background:#f8fafc;
+  padding:8px 10px;
+  display:grid;
+  gap:4px;
+  font-size:12px;
+  line-height:1.35;
+}
+
+.mat-quick-summary-title{
+  font-size:11px;
+  font-weight:700;
+  color:var(--mat-muted);
+  text-transform:uppercase;
+  letter-spacing:.02em;
+}
+
+.mat-quick-summary-line{
+  display:flex;
+  gap:6px;
+  align-items:flex-start;
+  flex-wrap:wrap;
+}
+
+.mat-quick-summary-label{
+  font-weight:700;
+  color:var(--mat-text);
+  flex:0 0 auto;
+}
+
+.mat-quick-summary-text{
+  color:var(--mat-muted);
+  flex:1 1 auto;
+  min-width:0;
+}
+
+.mat-modal{
+  position:fixed;
+  inset:0;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  background:rgba(15, 23, 42, .48);
+  z-index:9999;
+}
+
+.mat-modal.is-open{
+  display:flex;
+}
+
+.mat-modal-panel{
+  width:min(1100px, 100%);
+  max-height:calc(100vh - 40px);
+  overflow:auto;
+  background:var(--mat-surface);
+  border:1px solid var(--mat-border);
+  border-radius:18px;
+  box-shadow:0 24px 60px rgba(15,23,42,.22);
+  padding:16px;
+  display:grid;
+  gap:14px;
+}
+
+.mat-modal-head{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:12px;
+  align-items:center;
+}
+
+.mat-modal-title{
+  margin:0;
+  font-size:18px;
+  line-height:1.2;
+}
+
+.mat-modal-grid{
+  display:grid;
+  grid-template-columns:1.1fr .9fr;
+  gap:14px;
+}
+
+.mat-modal-close{
+  border:1px solid var(--mat-border);
+  background:#fff;
+  color:var(--mat-text);
+  border-radius:10px;
+  padding:8px 12px;
+  font-size:13px;
+  font-weight:700;
+  cursor:pointer;
+}
+
+@media (max-width:900px){
+  .mat-fields{ grid-template-columns:1fr; }
+  .mat-head{ grid-template-columns:1fr; }
+  .mat-modal-grid{ grid-template-columns:1fr; }
+}
+
+@media (max-width:720px){
+  .mat-editor-item{
+    grid-template-columns:1fr;
+  }
+  .mat-editor-item-index{
+    width:34px;
+    height:34px;
+  }
+  .mat-editor-item-remove{
+    justify-self:flex-start;
+  }
+}
+</style>
+</head>
+
+<body>
+<main class="mat-app">
+
+  <section class="mat-card">
+    <div class="mat-head">
+      <div>
+        <h1 class="mat-title">Materias</h1>
+        <p class="mat-subtitle">
+          Pantalla independiente para cargar materias, transversales, núcleos y ejes
+          usando la misma Firebase de carreras.
+        </p>
+      </div>
+
+      <div class="mat-actions">
+        <button id="mat-refresh-btn" class="mat-btn" type="button">Recargar carreras</button>
+        <button id="mat-save-btn" class="mat-btn primary" type="button" disabled>Guardar</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="mat-card">
+    <div class="mat-fields">
+
+      <div class="mat-field">
+        <label class="mat-label" for="mat-career-select">Carrera</label>
+        <select id="mat-career-select" class="mat-select">
+          <option value="">Cargando carreras...</option>
+        </select>
+
+        <div class="mat-field" style="margin-top:10px;">
+          <label class="mat-label" for="mat-career-type-display">Tipo de carrera</label>
+          <input
+            id="mat-career-type-display"
+            class="mat-input"
+            type="text"
+            value="Sin seleccionar"
+            readonly
+          >
+        </div>
+
+        <div id="mat-career-quick-summary" class="mat-quick-summary" aria-live="polite">
+          <div class="mat-quick-summary-title">Resumen de carga</div>
+          <div class="mat-quick-summary-line">
+            <span class="mat-quick-summary-label">Estado:</span>
+            <span class="mat-quick-summary-text">Selecciona una carrera para ver qué está cargado.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="mat-field">
+        <label class="mat-label" for="mat-load-type-select">Qué vas a subir</label>
+        <select id="mat-load-type-select" class="mat-select">
+          <option value="">Selecciona un tipo de carga</option>
+        </select>
+
+        <div class="mat-actions" style="margin-top:10px;">
+          <button id="mat-open-massive-btn" class="mat-btn" type="button">Abrir carga masiva</button>
+        </div>
+
+        <div class="mat-hint" id="mat-editor-hint">
+          Primero elige una carrera y luego el tipo de carga. Después usa el botón Abrir carga masiva.
+        </div>
+      </div>
+
+    </div>
+
+    <div id="mat-status" class="mat-status" style="margin-top:12px;">
+      Preparando módulo...
+    </div>
+  </section>
+
+  <section class="mat-card">
+    <div id="mat-editor" class="mat-editor">
+      <strong>Editor dinámico</strong>
+      <p>
+        Aquí se mostrará el formulario editable según el tipo de carga que elijas.
+      </p>
+    </div>
+  </section>
+
+  <section class="mat-card">
+    <div id="mat-save-summary" class="mat-summary">
+      <p style="margin:0;color:#64748b;">Aún no has guardado cambios.</p>
+    </div>
+  </section>
+
+</main>
+
+<div id="mat-massive-modal" class="mat-modal" aria-hidden="true">
+  <div
+    id="mat-massive-modal-panel"
+    class="mat-modal-panel"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="mat-massive-modal-title"
+  >
+    <div class="mat-modal-head">
+      <div>
+        <h2 id="mat-massive-modal-title" class="mat-modal-title">Carga masiva inteligente</h2>
+        <div style="margin-top:4px;color:#64748b;font-size:12px;">
+          Pega el contenido, procésalo y luego aplícalo al editor principal.
+        </div>
+      </div>
+
+      <button id="mat-modal-close-btn" class="mat-modal-close" type="button">Cerrar</button>
+    </div>
+
+    <div id="mat-modal-status" class="mat-status">
+      Pega el contenido y presiona Procesar.
+    </div>
+
+    <div class="mat-modal-grid">
+
+      <section class="mat-card" style="padding:12px;">
+        <div class="mat-field">
+          <label class="mat-label" for="mat-modal-massive-input">Texto a importar</label>
+          <textarea
+            id="mat-modal-massive-input"
+            class="mat-textarea"
+            placeholder="Pega aquí tu contenido. Puedes usar bloques como:
+
+Administración
+Malla Curricular
+Institución: ITSQMET
+
+1 Nivel
+1 Administración I
+2 Ofimática
+3 Comunicación Oral y Escrita
+
+2 Nivel
+1 Administración II
+2 Contabilidad de Costos
+3 Investigación de Mercados"
+          ></textarea>
+        </div>
+
+        <div class="mat-actions" style="margin-top:12px;">
+          <button id="mat-modal-process-btn" class="mat-btn" type="button">Procesar</button>
+          <button id="mat-modal-clear-btn" class="mat-btn" type="button">Limpiar</button>
+          <button id="mat-modal-apply-btn" class="mat-btn primary" type="button" disabled>Aplicar al editor</button>
+        </div>
+      </section>
+
+      <section class="mat-card" style="padding:12px;">
+        <div id="mat-modal-preview" class="mat-preview" style="min-height:100%;">
+          <h3>Vista previa de importación</h3>
+          <div id="mat-modal-preview-body">Aún no hay datos procesados en esta importación.</div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+
+<script src="frontend/core/mat.config.js"></script>
+<script src="frontend/core/mat.state.js"></script>
+
+<script src="frontend/ui/mat.ui.js"></script>
+<script src="frontend/ui/mat.ui.carrera-summary.js"></script>
+<script src="frontend/ui/mat.ui.modal.js"></script>
+<script src="frontend/ui/mat.ui.resumen.js"></script>
+
+<script src="frontend/selectores/mat.selector.carreras.js"></script>
+<script src="frontend/selectores/mat.selector.tipo-carga.js"></script>
+
+<script src="frontend/editores/mat.editor.base.js"></script>
+
+<script src="backend/firebase/mat.firebase.js"></script>
+<script src="backend/firebase/mat.refs.js"></script>
+
+<script src="backend/carreras/mat.carreras.leer.js"></script>
+<script src="backend/carreras/mat.carreras.leer-una.js"></script>
+<script src="backend/carreras/mat.carreras.tipo.js"></script>
+<script src="backend/carreras/mat.carreras.cargar-bloque.js"></script>
+
+<script src="backend/validacion/mat.validar.general.js"></script>
+
+<script src="backend/carga/mat.merge.js"></script>
+<script src="backend/carga/mat.snapshot.js"></script>
+<script src="backend/carga/mat.actualizar.js"></script>
+<script src="backend/carga/mat.guardar.js"></script>
+
+<script src="frontend/tabla/mat.tabla.js"></script>
+<script src="frontend/tabla/mat.tabla.render.js"></script>
+<script src="frontend/tabla/mat.tabla.acciones.js"></script>
+<script src="frontend/tabla/mat.tabla.edicion.js"></script>
+
+<script src="frontend/editores/mat.editor.cargar-desde-db.js"></script>
+
+<script src="frontend/carga-masiva/mat.masiva.modal.js"></script>
+<script src="frontend/carga-masiva/mat.masiva.parser.js"></script>
+<script src="frontend/carga-masiva/mat.masiva.procesar.js"></script>
+<script src="frontend/carga-masiva/mat.masiva.aplicar.js"></script>
+
+<script src="frontend/core/mat.main.js"></script>
+<script src="frontend/core/mat.load-current.js"></script>
+</body>
+</html>

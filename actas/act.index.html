@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Actas CCC</title>
+  <link rel="stylesheet" href="./act.styles.css">
+</head>
+<body>
+  <main class="act-app">
+    <section class="act-panel">
+      <header class="act-header">
+        <div>
+          <p class="act-eyebrow">UTET · Actas</p>
+          <h1 class="act-title">Gestión de actas por asignatura</h1>
+          <p class="act-subtitle">
+            Esta pantalla permite construir, revisar, guardar y exportar el acta
+            asociada al análisis curricular de una asignatura.
+          </p>
+        </div>
+      </header>
+
+      <section class="act-card">
+        <div class="act-card-head">
+          <div>
+            <h2 class="act-card-title">Selección base</h2>
+            <p class="act-card-text">
+              Seleccione carrera, nivel y asignatura para cargar la ficha y preparar el acta.
+            </p>
+          </div>
+        </div>
+
+        <div class="act-grid act-grid-4">
+          <div class="act-field">
+            <label for="actCarrera">Carrera</label>
+            <select id="actCarrera">
+              <option value="">Seleccione</option>
+            </select>
+          </div>
+
+          <div class="act-field">
+            <label for="actNivel">Nivel</label>
+            <select id="actNivel">
+              <option value="">Seleccione</option>
+            </select>
+          </div>
+
+          <div class="act-field">
+            <label for="actMateria">Materia</label>
+            <select id="actMateria">
+              <option value="">Seleccione</option>
+            </select>
+          </div>
+
+          <div class="act-field">
+            <label for="actFichaRelacionada">Ficha relacionada</label>
+            <input id="actFichaRelacionada" type="text" readonly placeholder="Se llena al cargar">
+          </div>
+        </div>
+
+        <div class="act-actions">
+          <button id="actBtnCargar" type="button" class="act-btn act-btn-primary">
+            Cargar datos base
+          </button>
+          <button id="actBtnLimpiar" type="button" class="act-btn act-btn-secondary">
+            Limpiar
+          </button>
+        </div>
+      </section>
+
+      <section class="act-card">
+        <div class="act-card-head">
+          <div>
+            <h2 class="act-card-title">Resumen base</h2>
+            <p class="act-card-text">
+              Información de referencia obtenida desde ficha y PEA.
+            </p>
+          </div>
+        </div>
+
+        <div id="actResumenBase" class="act-summary">
+          No hay datos cargados todavía.
+        </div>
+      </section>
+
+      <section class="act-card">
+        <div class="act-card-head">
+          <div>
+            <h2 class="act-card-title">Acta editable</h2>
+            <p class="act-card-text">
+              Complete los campos del acta antes de guardar o exportar.
+            </p>
+          </div>
+        </div>
+
+        <form id="actForm" class="act-form" novalidate autocomplete="off">
+          <div class="act-grid act-grid-2">
+            <div class="act-field">
+              <label for="actCarreraNombre">Carrera</label>
+              <input id="actCarreraNombre" type="text" readonly>
+            </div>
+
+            <div class="act-field">
+              <label for="actNivelNombre">Nivel</label>
+              <input id="actNivelNombre" type="text" readonly>
+            </div>
+          </div>
+
+          <div class="act-grid act-grid-2">
+            <div class="act-field">
+              <label for="actMateriaNombre">Asignatura</label>
+              <input id="actMateriaNombre" type="text" readonly>
+            </div>
+
+            <div class="act-field">
+              <label for="actFechaAnalisis">Fecha del análisis</label>
+              <input id="actFechaAnalisis" type="date">
+            </div>
+          </div>
+
+          <div class="act-grid act-grid-2">
+            <div class="act-field">
+              <label for="actHoraInicio">Hora de inicio</label>
+              <input id="actHoraInicio" type="time">
+            </div>
+
+            <div class="act-field">
+              <label for="actHoraCierre">Hora de cierre</label>
+              <input id="actHoraCierre" type="time">
+            </div>
+          </div>
+
+          <div class="act-field">
+            <label for="actLugar">Lugar o plataforma</label>
+            <input id="actLugar" type="text" placeholder="Lugar o plataforma">
+          </div>
+
+          <div class="act-field">
+            <label for="actParticipantes">Participantes</label>
+            <textarea id="actParticipantes" placeholder="Participantes del acta, uno por línea"></textarea>
+          </div>
+
+          <div class="act-field">
+            <label for="actObjeto">Objeto del acta</label>
+            <textarea id="actObjeto" placeholder="Objeto del acta"></textarea>
+          </div>
+
+          <div class="act-field">
+            <label for="actFinalidad">Finalidad</label>
+            <textarea id="actFinalidad" placeholder="Finalidad del acta"></textarea>
+          </div>
+
+          <div class="act-field">
+            <label for="actAlcance">Alcance del análisis</label>
+            <textarea id="actAlcance" placeholder="Alcance del análisis curricular"></textarea>
+          </div>
+
+          <div class="act-field">
+            <label for="actObservaciones">Observaciones</label>
+            <textarea id="actObservaciones" placeholder="Observaciones relevantes"></textarea>
+          </div>
+
+          <div class="act-field">
+            <label for="actDecisiones">Decisiones adoptadas</label>
+            <textarea id="actDecisiones" placeholder="Decisiones adoptadas"></textarea>
+          </div>
+
+          <div class="act-field">
+            <label for="actResponsables">Responsables</label>
+            <textarea id="actResponsables" placeholder="Responsables o encargados"></textarea>
+          </div>
+
+          <div class="act-actions">
+            <button id="actBtnGuardar" type="submit" class="act-btn act-btn-primary">
+              Guardar acta
+            </button>
+            <button id="actBtnExportarJson" type="button" class="act-btn act-btn-secondary">
+              Exportar JSON
+            </button>
+            <button id="actBtnExportarTxt" type="button" class="act-btn act-btn-secondary">
+              Exportar TXT
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section class="act-card">
+        <div class="act-card-head">
+          <div>
+            <h2 class="act-card-title">Vista previa</h2>
+            <p class="act-card-text">
+              Documento preliminar del acta generado con los datos actuales.
+            </p>
+          </div>
+        </div>
+
+        <article id="actPreview" class="act-preview">
+          La vista previa aparecerá aquí.
+        </article>
+      </section>
+
+      <section id="actEstado" class="act-status" aria-live="polite">
+        Pantalla lista para trabajar.
+      </section>
+    </section>
+  </main>
+
+  <script type="module" src="./act.main.js"></script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+{
+  "coleccion": "carreras",
+  "descripcion": "Esquema base para la pantalla de alta basica de carreras. Esta vista solo registra nombre, tipo y estado.",
+  "campos": {
+    "nombre": {
+      "tipo": "string",
+      "requerido": true,
+      "minimoCaracteres": 2,
+      "maximoCaracteres": 120
+    },
+    "tipo": {
+      "tipo": "string",
+      "requerido": true,
+      "valoresPermitidos": [
+        "Tecnologia Superior",
+        "Tecnologia Universitaria",
+        "Tecnica Superior"
+      ]
+    },
+    "estado": {
+      "tipo": "string",
+      "requerido": true,
+      "valorPorDefecto": "activa",
+      "valoresPermitidos": [
+        "activa",
+        "inactiva"
+      ]
+    },
+    "createdAt": {
+      "tipo": "timestamp",
+      "requerido": true,
+      "modo": "serverTimestamp"
+    },
+    "updatedAt": {
+      "tipo": "timestamp",
+      "requerido": true,
+      "modo": "serverTimestamp"
+    }
+  }
+}

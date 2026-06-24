@@ -1,0 +1,206 @@
+/*
+Nombre del archivo: carr.tabla.css
+Ubicación: carreras/frontend/carr.tabla.css
+Función:
+- Estilizar exclusivamente la tabla de carreras
+- Dar soporte visual a encabezados ordenables
+- Mostrar inputs y selects dentro de la tabla
+- Resaltar filas modificadas
+- Mantener la tabla compacta y clara
+*/
+
+.carr-tabla-wrap {
+  width: 100%;
+  margin-top: 10px;
+  border: 1px solid #dfe7f2;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.carr-tabla-scroll {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.carr-tabla-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.carr-tabla-scroll::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.carr-tabla-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+.carr-tabla-scroll::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.carr-tabla {
+  width: 100%;
+  min-width: 780px;
+  border-collapse: collapse;
+  table-layout: auto;
+}
+
+.carr-tabla thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #eff6ff;
+  padding: 0;
+  border-bottom: 1px solid #dbeafe;
+  white-space: nowrap;
+}
+
+.carr-sort-btn {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: #1e3a8a;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: left;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.carr-sort-btn:hover {
+  background: #dbeafe;
+}
+
+.carr-sort-btn.is-active {
+  background: #dbeafe;
+}
+
+.carr-sort-indicator {
+  font-size: 11px;
+  line-height: 1;
+  opacity: 0.9;
+}
+
+.carr-tabla tbody td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 13px;
+  vertical-align: middle;
+  line-height: 1.35;
+  color: #0f172a;
+  background: #ffffff;
+}
+
+.carr-tabla tbody tr {
+  transition: background 0.2s ease;
+}
+
+.carr-tabla tbody tr:nth-child(even) td {
+  background: #f8fafc;
+}
+
+.carr-tabla tbody tr:hover td {
+  background: #f8fbff;
+}
+
+.carr-tabla tbody tr.carr-row-dirty td {
+  background: #fffbea;
+}
+
+.carr-tabla tbody tr.carr-row-dirty:nth-child(even) td {
+  background: #fff8d8;
+}
+
+.carr-tabla tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.carr-cell-id {
+  color: #2563eb;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 11px;
+  word-break: break-word;
+}
+
+.carr-cell-readonly {
+  color: #64748b;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.carr-table-control {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #d5deea;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #0f172a;
+  outline: none;
+  font-size: 12px;
+  line-height: 1.2;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.carr-table-control:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.10);
+}
+
+.carr-table-input {
+  padding: 8px 9px;
+}
+
+.carr-table-select {
+  padding: 7px 8px;
+}
+
+.carr-tabla-empty {
+  padding: 16px 14px;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.45;
+  text-align: center;
+  background: #ffffff;
+}
+
+.carr-tabla-empty.carr-tabla-empty-error {
+  color: #991b1b;
+  background: #fef2f2;
+}
+
+@media (max-width: 900px) {
+  .carr-tabla {
+    min-width: 700px;
+  }
+
+  .carr-sort-btn {
+    padding: 9px 10px;
+    font-size: 10px;
+  }
+
+  .carr-tabla tbody td {
+    padding: 7px 8px;
+    font-size: 12px;
+  }
+
+  .carr-cell-id,
+  .carr-cell-readonly,
+  .carr-table-control {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 640px) {
+  .carr-tabla {
+    min-width: 640px;
+  }
+}

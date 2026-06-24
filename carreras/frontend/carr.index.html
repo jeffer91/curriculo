@@ -1,0 +1,149 @@
+<!--
+Nombre del archivo: carr.index.html
+Ubicación: carreras/frontend/carr.index.html
+Función:
+- Mostrar la interfaz principal para crear carreras
+- Registrar solo datos básicos de la carrera
+- Mostrar una tabla editable con búsqueda y orden
+- Incluir un botón flotante para guardar cambios de tabla
+-->
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Formulario de Carreras</title>
+
+  <link rel="stylesheet" href="./carr.layout.css">
+  <link rel="stylesheet" href="./carr.form.css">
+  <link rel="stylesheet" href="./carr.tabla.css">
+</head>
+<body>
+  <main class="carr-app">
+    <section class="carr-panel">
+      <header class="carr-header">
+        <div>
+          <p class="carr-eyebrow">UTET · Carreras</p>
+          <h1 class="carr-title">Crear y editar carreras</h1>
+          <p class="carr-subtitle">
+            Esta pantalla registra solo la carrera. La tabla inferior permite buscar, ordenar y editar nombre, tipo y estado.
+          </p>
+        </div>
+      </header>
+
+      <form id="carrForm" class="carr-form" novalidate autocomplete="off">
+        <section class="carr-card">
+          <div class="carr-card-head">
+            <div>
+              <h2 class="carr-card-title">Datos generales</h2>
+              <p class="carr-card-text">
+                Ingrese solo la información base necesaria para crear el registro de la carrera.
+              </p>
+            </div>
+          </div>
+
+          <div class="carr-grid carr-grid-3">
+            <div class="carr-field">
+              <label for="carrNombre">Nombre</label>
+              <input
+                id="carrNombre"
+                name="nombre"
+                type="text"
+                placeholder="Ejemplo: Administración"
+                required
+              >
+            </div>
+
+            <div class="carr-field">
+              <label for="carrTipo">Tipo</label>
+              <select id="carrTipo" name="tipo" required>
+                <option value="">Seleccione</option>
+                <option value="Tecnologia Superior">Tecnología Superior</option>
+                <option value="Tecnologia Universitaria">Tecnología Universitaria</option>
+                <option value="Tecnica Superior">Técnica Superior</option>
+              </select>
+            </div>
+
+            <div class="carr-field">
+              <label for="carrEstado">Estado</label>
+              <select id="carrEstado" name="estado">
+                <option value="activa" selected>Activa</option>
+                <option value="inactiva">Inactiva</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <section class="carr-actions">
+          <button id="carrBtnGuardar" type="submit" class="carr-btn carr-btn-primary">
+            Guardar carrera
+          </button>
+
+          <button id="carrBtnLimpiar" type="reset" class="carr-btn carr-btn-secondary">
+            Limpiar
+          </button>
+        </section>
+
+        <section id="carrEstadoGuardado" class="carr-status" aria-live="polite"></section>
+      </form>
+
+      <section class="carr-card carr-list-card">
+        <div class="carr-list-head">
+          <div>
+            <h2 class="carr-card-title">Carreras registradas</h2>
+            <p class="carr-card-text">
+              Edite directamente en la tabla. Haga clic en los encabezados para ordenar.
+            </p>
+          </div>
+
+          <div class="carr-list-tools">
+            <span id="carrTablaResumen" class="carr-list-count">Cargando...</span>
+
+            <button id="carrBtnRecargarTabla" type="button" class="carr-btn carr-btn-secondary">
+              Recargar tabla
+            </button>
+          </div>
+        </div>
+
+        <div class="carr-search-row">
+          <div class="carr-search-box">
+            <label for="carrTablaBuscar" class="carr-search-label">Buscar en la tabla</label>
+            <input
+              id="carrTablaBuscar"
+              class="carr-search-input"
+              type="search"
+              placeholder="Buscar por id, nombre, tipo o estado"
+              autocomplete="off"
+            >
+            <span class="carr-search-help">
+              La búsqueda filtra en tiempo real sobre los registros ya cargados.
+            </span>
+          </div>
+
+          <button id="carrBtnLimpiarBusqueda" type="button" class="carr-btn carr-btn-secondary">
+            Limpiar búsqueda
+          </button>
+        </div>
+
+        <div id="carrTablaWrap" class="carr-tabla-wrap" aria-live="polite">
+          <div class="carr-tabla-empty">Cargando listado de carreras...</div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <button
+    id="carrBtnGuardarCambios"
+    class="carr-fab"
+    type="button"
+    aria-label="Guardar cambios de la tabla"
+    title="Guardar cambios de la tabla"
+  >
+    <span id="carrFabTexto" class="carr-fab-text">Guardar cambios</span>
+    <span id="carrCambiosBadge" class="carr-fab-badge">0</span>
+  </button>
+
+  <script type="module" src="./carr.main.js"></script>
+</body>
+</html>
