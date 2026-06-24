@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PEA</title>
+  <title>CCC</title>
   <link rel="stylesheet" href="./pea.styles.css" />
 </head>
 <body>
@@ -11,7 +11,7 @@
     <section class="pea-panel">
 
       <section class="pea-card">
-        <h2 class="pea-card-title">Carrera, materia y versión</h2>
+        <h2 class="pea-card-title">Carrera, materia y versión CCC</h2>
 
         <div class="pea-grid pea-grid-2">
           <div class="pea-field">
@@ -41,7 +41,7 @@
       </section>
 
       <section class="pea-card">
-        <h2 class="pea-card-title">Tipo de carga</h2>
+        <h2 class="pea-card-title">Carga de archivos CCC</h2>
 
         <div class="pea-radio-row">
           <label class="pea-radio">
@@ -58,17 +58,17 @@
         <div id="peaCargaTriple" class="pea-upload-group">
           <div class="pea-grid pea-grid-3">
             <div class="pea-field">
-              <label for="peaFileBase">PEA Base</label>
+              <label for="peaFileBase">CCC Base</label>
               <input id="peaFileBase" type="file" accept=".xlsx,.xls" />
             </div>
 
             <div class="pea-field">
-              <label for="peaFileUnidades">PEA Unidades</label>
+              <label for="peaFileUnidades">CCC Unidades / Componentes</label>
               <input id="peaFileUnidades" type="file" accept=".xlsx,.xls" />
             </div>
 
             <div class="pea-field">
-              <label for="peaFileActividades">PEA Actividades</label>
+              <label for="peaFileActividades">CCC Actividades</label>
               <input id="peaFileActividades" type="file" accept=".xlsx,.xls" />
             </div>
           </div>
@@ -76,20 +76,20 @@
 
         <div id="peaCargaConsolidado" class="pea-upload-group pea-hidden">
           <div class="pea-field">
-            <label for="peaFileConsolidado">Archivo consolidado</label>
+            <label for="peaFileConsolidado">Archivo consolidado CCC</label>
             <input id="peaFileConsolidado" type="file" accept=".xlsx,.xls" />
           </div>
         </div>
 
         <div class="pea-actions">
-          <button id="peaBtnGuardar" class="pea-btn pea-btn-primary" type="button">Guardar en local</button>
+          <button id="peaBtnGuardar" class="pea-btn pea-btn-primary" type="button">Validar y guardar CCC</button>
           <button id="peaBtnHistorial" class="pea-btn pea-btn-secondary" type="button">Cargar historial</button>
           <button id="peaBtnSync" class="pea-btn pea-btn-secondary" type="button">Sincronizar ahora</button>
           <button id="peaBtnLimpiar" class="pea-btn pea-btn-secondary" type="button">Limpiar</button>
         </div>
 
         <div id="peaStatus" class="pea-status" aria-live="polite">
-          Pantalla lista. El PEA se guarda primero en local y se sube a Firebase una vez al día si existen cambios pendientes.
+          Pantalla lista. El CCC se valida, se guarda primero en local y se sube a Firebase una vez al día si existen cambios pendientes.
         </div>
       </section>
 
@@ -100,17 +100,19 @@
         </section>
 
         <section class="pea-card">
-          <h2 class="pea-card-title">Vista previa</h2>
+          <h2 class="pea-card-title">Vista previa y validación</h2>
           <div id="peaPreview" class="pea-list-empty">Selecciona una versión para verla aquí.</div>
         </section>
       </section>
 
       <section class="pea-grid pea-grid-2 pea-grid-gap">
         <section class="pea-card">
-          <h2 class="pea-card-title">Exportación</h2>
+          <h2 class="pea-card-title">Exportación CCC</h2>
           <div class="pea-actions pea-actions-vertical">
-            <button id="peaBtnPdf" class="pea-btn pea-btn-primary" type="button">Generar PDF de la versión actual</button>
+            <button id="peaBtnPdf" class="pea-btn pea-btn-primary" type="button">Generar PDF CCC</button>
             <button id="peaBtnExcel" class="pea-btn pea-btn-secondary" type="button">Descargar los 3 Excel</button>
+            <button id="peaBtnExcelValidado" class="pea-btn pea-btn-secondary" type="button">Descargar CCC validado</button>
+            <button id="peaBtnCorreoObservaciones" class="pea-btn pea-btn-secondary" type="button">Correo observaciones</button>
           </div>
         </section>
 
@@ -118,11 +120,11 @@
           <h2 class="pea-card-title">Comparación</h2>
           <div class="pea-grid pea-grid-2">
             <div class="pea-field">
-              <label for="peaCompareA">Versión A</label>
+              <label for="peaCompareA">Versión antigua</label>
               <select id="peaCompareA"></select>
             </div>
             <div class="pea-field">
-              <label for="peaCompareB">Versión B</label>
+              <label for="peaCompareB">Versión nueva</label>
               <select id="peaCompareB"></select>
             </div>
           </div>
@@ -143,7 +145,10 @@
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
   <script src="./pea.firebase.js"></script>
+  <script src="./ccc.logo.js"></script>
+  <script src="./ccc.validator.js"></script>
   <script src="./pea.parser.js"></script>
+  <script src="./ccc.patch.js"></script>
   <script src="./pea.store.js"></script>
   <script src="./pea.sync-daily.js"></script>
   <script src="./pea.compare.js"></script>
