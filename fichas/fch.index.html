@@ -14,8 +14,10 @@
           <p class="fch-eyebrow">UTET · Fichas</p>
           <h1 class="fch-title">Gestión de fichas por asignatura</h1>
           <p class="fch-subtitle">
-            Esta pantalla toma la información cargada previamente en PEA y permite
-            componer, editar, guardar y exportar la ficha de cada asignatura.
+            Esta pantalla toma la información cargada previamente en Carreras, Materias y PEA. Guarda primero en local y deja pendiente la subida diaria a Firebase si hay cambios.
+          </p>
+          <p data-curriculo-sync-status class="fch-subtitle" style="font-weight:700;margin-top:6px;">
+            Preparando guardado local...
           </p>
         </div>
       </header>
@@ -24,42 +26,28 @@
         <div class="fch-card-head">
           <div>
             <h2 class="fch-card-title">Selección base</h2>
-            <p class="fch-card-text">
-              Seleccione carrera, nivel y asignatura para cargar los insumos disponibles.
-            </p>
+            <p class="fch-card-text">Seleccione carrera, nivel y asignatura para cargar los insumos disponibles.</p>
           </div>
         </div>
 
         <div class="fch-grid fch-grid-3">
           <div class="fch-field">
             <label for="fchCarrera">Carrera</label>
-            <select id="fchCarrera">
-              <option value="">Seleccione</option>
-            </select>
+            <select id="fchCarrera"><option value="">Seleccione</option></select>
           </div>
-
           <div class="fch-field">
             <label for="fchNivel">Nivel</label>
-            <select id="fchNivel">
-              <option value="">Seleccione</option>
-            </select>
+            <select id="fchNivel"><option value="">Seleccione</option></select>
           </div>
-
           <div class="fch-field">
             <label for="fchMateria">Materia</label>
-            <select id="fchMateria">
-              <option value="">Seleccione</option>
-            </select>
+            <select id="fchMateria"><option value="">Seleccione</option></select>
           </div>
         </div>
 
         <div class="fch-actions">
-          <button id="fchBtnCargar" type="button" class="fch-btn fch-btn-primary">
-            Cargar desde PEA
-          </button>
-          <button id="fchBtnLimpiar" type="button" class="fch-btn fch-btn-secondary">
-            Limpiar
-          </button>
+          <button id="fchBtnCargar" type="button" class="fch-btn fch-btn-primary">Cargar desde PEA</button>
+          <button id="fchBtnLimpiar" type="button" class="fch-btn fch-btn-secondary">Limpiar</button>
         </div>
       </section>
 
@@ -67,82 +55,37 @@
         <div class="fch-card-head">
           <div>
             <h2 class="fch-card-title">Datos base</h2>
-            <p class="fch-card-text">
-              Resumen estructurado de los datos que alimentan la ficha.
-            </p>
+            <p class="fch-card-text">Resumen estructurado de los datos que alimentan la ficha.</p>
           </div>
         </div>
-
-        <div id="fchResumenBase" class="fch-summary">
-          No hay datos cargados todavía.
-        </div>
+        <div id="fchResumenBase" class="fch-summary">No hay datos cargados todavía.</div>
       </section>
 
       <section class="fch-card">
         <div class="fch-card-head">
           <div>
             <h2 class="fch-card-title">Ficha editable</h2>
-            <p class="fch-card-text">
-              Revise y complete la información antes de guardar o exportar.
-            </p>
+            <p class="fch-card-text">Revise y complete la información antes de guardar o exportar.</p>
           </div>
         </div>
 
         <form id="fchForm" class="fch-form" novalidate autocomplete="off">
           <div class="fch-grid fch-grid-2">
-            <div class="fch-field">
-              <label for="fchCarreraNombre">Carrera</label>
-              <input id="fchCarreraNombre" type="text" name="carreraNombre" readonly>
-            </div>
-
-            <div class="fch-field">
-              <label for="fchNivelNombre">Nivel</label>
-              <input id="fchNivelNombre" type="text" name="nivelNombre" readonly>
-            </div>
+            <div class="fch-field"><label for="fchCarreraNombre">Carrera</label><input id="fchCarreraNombre" type="text" name="carreraNombre" readonly></div>
+            <div class="fch-field"><label for="fchNivelNombre">Nivel</label><input id="fchNivelNombre" type="text" name="nivelNombre" readonly></div>
           </div>
-
           <div class="fch-grid fch-grid-2">
-            <div class="fch-field">
-              <label for="fchMateriaNombre">Asignatura</label>
-              <input id="fchMateriaNombre" type="text" name="materiaNombre" readonly>
-            </div>
-
-            <div class="fch-field">
-              <label for="fchCodigoMateria">Código de asignatura</label>
-              <input id="fchCodigoMateria" type="text" name="codigoMateria" placeholder="Código de la asignatura">
-            </div>
+            <div class="fch-field"><label for="fchMateriaNombre">Asignatura</label><input id="fchMateriaNombre" type="text" name="materiaNombre" readonly></div>
+            <div class="fch-field"><label for="fchCodigoMateria">Código de asignatura</label><input id="fchCodigoMateria" type="text" name="codigoMateria" placeholder="Código de la asignatura"></div>
           </div>
-
-          <div class="fch-field">
-            <label for="fchObjetivo">Objetivo</label>
-            <textarea id="fchObjetivo" name="objetivo" placeholder="Objetivo general de la ficha"></textarea>
-          </div>
-
-          <div class="fch-field">
-            <label for="fchObservaciones">Observaciones</label>
-            <textarea id="fchObservaciones" name="observaciones" placeholder="Observaciones generales"></textarea>
-          </div>
-
-          <div class="fch-field">
-            <label for="fchDecisiones">Decisiones adoptadas</label>
-            <textarea id="fchDecisiones" name="decisiones" placeholder="Decisiones adoptadas en el análisis"></textarea>
-          </div>
-
-          <div class="fch-field">
-            <label for="fchResponsables">Responsables</label>
-            <textarea id="fchResponsables" name="responsables" placeholder="Responsables o participantes clave"></textarea>
-          </div>
-
+          <div class="fch-field"><label for="fchObjetivo">Objetivo</label><textarea id="fchObjetivo" name="objetivo" placeholder="Objetivo general de la ficha"></textarea></div>
+          <div class="fch-field"><label for="fchObservaciones">Observaciones</label><textarea id="fchObservaciones" name="observaciones" placeholder="Observaciones generales"></textarea></div>
+          <div class="fch-field"><label for="fchDecisiones">Decisiones adoptadas</label><textarea id="fchDecisiones" name="decisiones" placeholder="Decisiones adoptadas en el análisis"></textarea></div>
+          <div class="fch-field"><label for="fchResponsables">Responsables</label><textarea id="fchResponsables" name="responsables" placeholder="Responsables o participantes clave"></textarea></div>
           <div class="fch-actions">
-            <button id="fchBtnGuardar" type="submit" class="fch-btn fch-btn-primary">
-              Guardar ficha
-            </button>
-            <button id="fchBtnExportarJson" type="button" class="fch-btn fch-btn-secondary">
-              Exportar JSON
-            </button>
-            <button id="fchBtnExportarTxt" type="button" class="fch-btn fch-btn-secondary">
-              Exportar TXT
-            </button>
+            <button id="fchBtnGuardar" type="submit" class="fch-btn fch-btn-primary">Guardar ficha</button>
+            <button id="fchBtnExportarJson" type="button" class="fch-btn fch-btn-secondary">Exportar JSON</button>
+            <button id="fchBtnExportarTxt" type="button" class="fch-btn fch-btn-secondary">Exportar TXT</button>
           </div>
         </form>
       </section>
@@ -151,23 +94,22 @@
         <div class="fch-card-head">
           <div>
             <h2 class="fch-card-title">Vista previa</h2>
-            <p class="fch-card-text">
-              Documento previo de la ficha construida con los datos actuales.
-            </p>
+            <p class="fch-card-text">Documento previo de la ficha construida con los datos actuales.</p>
           </div>
         </div>
-
-        <article id="fchPreview" class="fch-preview">
-          La vista previa aparecerá aquí.
-        </article>
+        <article id="fchPreview" class="fch-preview">La vista previa aparecerá aquí.</article>
       </section>
 
-      <section id="fchEstado" class="fch-status" aria-live="polite">
-        Pantalla lista para trabajar.
-      </section>
+      <section id="fchEstado" class="fch-status" aria-live="polite">Pantalla lista para trabajar.</section>
     </section>
   </main>
 
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script src="../shared/local/curriculo.local-db.js"></script>
+  <script src="../shared/local/curriculo.sync-queue.js"></script>
+  <script src="../shared/local/curriculo.sync-engine.js"></script>
+  <script src="../shared/local/curriculo.sync-status.js"></script>
   <script type="module" src="./fch.main.js"></script>
 </body>
 </html>
