@@ -3,11 +3,17 @@ Nombre completo: act.ui.js
 Ruta o ubicación: /actas/act.ui.js
 Función o funciones:
 - Manejar la interfaz del módulo
-- Llenar selectores y formulario
+- Llenar selectores con filtro por carrera y nivel
 - Leer selección y campos del acta
 - Mostrar estado, resumen base y vista previa
 - Limpiar la pantalla completa
 */
+
+let actCatalogosCache = {
+  carreras: [],
+  niveles: [],
+  materias: []
+};
 
 function actSafeText(value) {
   return String(value ?? "").trim();
@@ -31,10 +37,55 @@ function actFillSelect(selectId, items, placeholder) {
   });
 }
 
+function actGetCurrentCarreraId() {
+  return actSafeText(document.getElementById("actCarrera")?.value);
+}
+
+function actGetCurrentNivelId() {
+  return actSafeText(document.getElementById("actNivel")?.value);
+}
+
+function actFilterMaterias(carreraId, nivelId) {
+  return (actCatalogosCache.materias || []).filter((item) => {
+    const sameCarrera = !carreraId || actSafeText(item.carreraId) === carreraId;
+    const sameNivel = !nivelId || actSafeText(item.nivelId) === nivelId;
+    return sameCarrera && sameNivel;
+  });
+}
+
+function actRefreshMateriasSelect() {
+  const carreraId = actGetCurrentCarreraId();
+  const nivelId = actGetCurrentNivelId();
+  const materias = actFilterMaterias(carreraId, nivelId);
+  actFillSelect("actMateria", materias, materias.length ? "Seleccione" : "Sin materias para esta selección");
+}
+
+function actBindSelectorFilters() {
+  const carrera = document.getElementById("actCarrera");
+  const nivel = document.getElementById("actNivel");
+
+  if (carrera && !carrera.__actFilterBound) {
+    carrera.addEventListener("change", actRefreshMateriasSelect);
+    carrera.__actFilterBound = true;
+  }
+
+  if (nivel && !nivel.__actFilterBound) {
+    nivel.addEventListener("change", actRefreshMateriasSelect);
+    nivel.__actFilterBound = true;
+  }
+}
+
 function actUiBindCatalogos(catalogos) {
-  actFillSelect("actCarrera", catalogos?.carreras || [], "Seleccione");
-  actFillSelect("actNivel", catalogos?.niveles || [], "Seleccione");
-  actFillSelect("actMateria", catalogos?.materias || [], "Seleccione");
+  actCatalogosCache = {
+    carreras: Array.isArray(catalogos?.carreras) ? catalogos.carreras : [],
+    niveles: Array.isArray(catalogos?.niveles) ? catalogos.niveles : [],
+    materias: Array.isArray(catalogos?.materias) ? catalogos.materias : []
+  };
+
+  actFillSelect("actCarrera", actCatalogosCache.carreras, "Seleccione");
+  actFillSelect("actNivel", actCatalogosCache.niveles, "Seleccione");
+  actRefreshMateriasSelect();
+  actBindSelectorFilters();
 }
 
 function actUiReadSeleccion() {
@@ -174,6 +225,8 @@ function actUiResetAll() {
       node.value = "";
     }
   });
+
+  actRefreshMateriasSelect();
 }
 
 export {
