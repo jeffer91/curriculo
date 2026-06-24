@@ -1,10 +1,122 @@
-@"
+# =========================================================
+# .gitignore
+# Proyecto: Curriculo
+# Ubicación: /Curriculo/.gitignore
+# Función:
+# - Evitar subir archivos locales, temporales o innecesarios
+# - Mantener limpio el repositorio de GitHub
+# =========================================================
+
+
+# -------------------------
+# Configuración local de VS Code
+# -------------------------
 .vscode/
+
+
+# -------------------------
+# Dependencias de Node.js
+# -------------------------
 node_modules/
-dist/
-build/
+
+
+# -------------------------
+# Archivos de entorno / secretos
+# -------------------------
 .env
 .env.*
+!.env.example
+
+
+# -------------------------
+# Builds / compilados
+# -------------------------
+dist/
+build/
+out/
+release/
+
+
+# -------------------------
+# Cachés
+# -------------------------
+.cache/
+.parcel-cache/
+.vite/
+.next/
+.nuxt/
+
+
+# -------------------------
+# Logs
+# -------------------------
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+
+# -------------------------
+# Archivos temporales del sistema
+# -------------------------
 .DS_Store
 Thumbs.db
-"@ | Out-File -Encoding utf8 .gitignore
+desktop.ini
+
+
+# -------------------------
+# Archivos temporales de editores
+# -------------------------
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+
+# -------------------------
+# Backups locales
+# -------------------------
+*.bak
+*.backup
+*.old
+
+
+# -------------------------
+# Archivos comprimidos generados manualmente
+# -------------------------
+*.zip
+*.rar
+*.7z
+
+
+# -------------------------
+# Exportaciones locales o descargas temporales
+# -------------------------
+exports/
+exportaciones/
+downloads/
+descargas/
+
+
+# -------------------------
+# Firebase local / emuladores
+# -------------------------
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+
+# -------------------------
+# Archivos de cobertura o pruebas
+# -------------------------
+coverage/
+
+
+# -------------------------
+# Electron / empaquetado
+# -------------------------
+*.asar
