@@ -12,19 +12,66 @@
       <div>
         <p class="ctl-eyebrow">UTET · Currículo</p>
         <h1>Control general</h1>
-        <p class="ctl-subtitle">Pantalla creada para el control general del módulo.</p>
+        <p class="ctl-subtitle">
+          Revisa el guardado local, los cambios pendientes y la sincronización diaria con Firebase.
+        </p>
+        <p data-curriculo-sync-status class="ctl-sync-text">Preparando estado local...</p>
+      </div>
+      <div class="ctl-actions">
+        <button id="ctlRefresh" class="ctl-btn" type="button">Actualizar</button>
+        <button id="ctlSyncNow" class="ctl-btn ctl-btn-primary" type="button">Sincronizar ahora</button>
       </div>
     </section>
+
     <section class="ctl-grid">
-      <article class="ctl-card"><span>Carreras</span><strong>Local</strong></article>
-      <article class="ctl-card"><span>Materias</span><strong>Local</strong></article>
-      <article class="ctl-card"><span>Fichas</span><strong>Local</strong></article>
-      <article class="ctl-card"><span>Actas</span><strong>Local</strong></article>
+      <article class="ctl-card ctl-metric">
+        <span>Carreras locales</span>
+        <strong id="ctlCountCarreras">0</strong>
+      </article>
+      <article class="ctl-card ctl-metric">
+        <span>Fichas locales</span>
+        <strong id="ctlCountFichas">0</strong>
+      </article>
+      <article class="ctl-card ctl-metric">
+        <span>Actas locales</span>
+        <strong id="ctlCountActas">0</strong>
+      </article>
+      <article class="ctl-card ctl-metric">
+        <span>Pendientes por subir</span>
+        <strong id="ctlCountPending">0</strong>
+      </article>
     </section>
+
+    <section class="ctl-grid ctl-grid-2">
+      <article class="ctl-card ctl-info">
+        <span>Almacenamiento</span>
+        <strong id="ctlStorage">local</strong>
+      </article>
+      <article class="ctl-card ctl-info">
+        <span>Última subida diaria</span>
+        <strong id="ctlLastSync">Sin registro</strong>
+      </article>
+    </section>
+
     <section class="ctl-card">
       <h2>Estado</h2>
-      <div class="ctl-status">Control disponible. La lógica automática se maneja desde la capa compartida local.</div>
+      <div id="ctlStatus" class="ctl-status">Cargando estado...</div>
+    </section>
+
+    <section class="ctl-card">
+      <h2>Cambios pendientes</h2>
+      <div id="ctlPendingList" class="ctl-list">
+        <div class="ctl-empty">Cargando pendientes...</div>
+      </div>
     </section>
   </main>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script src="../shared/local/curriculo.local-db.js"></script>
+  <script src="../shared/local/curriculo.sync-queue.js"></script>
+  <script src="../shared/local/curriculo.sync-engine.js"></script>
+  <script src="../shared/local/curriculo.sync-status.js"></script>
+  <script src="./ctl.main.js"></script>
 </body>
 </html>
