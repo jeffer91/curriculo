@@ -5,8 +5,7 @@ Función:
 - Mostrar la interfaz principal para crear carreras
 - Guardar primero en local
 - Registrar solo datos básicos de la carrera
-- Mostrar una tabla editable con búsqueda y orden
-- Incluir un botón flotante para guardar cambios de tabla
+- Mostrar una tabla con búsqueda
 - Activar sincronización diaria con Firebase solo si hay cambios pendientes
 -->
 
@@ -51,13 +50,7 @@ Función:
           <div class="carr-grid carr-grid-3">
             <div class="carr-field">
               <label for="carrNombre">Nombre</label>
-              <input
-                id="carrNombre"
-                name="nombre"
-                type="text"
-                placeholder="Ejemplo: Administración"
-                required
-              >
+              <input id="carrNombre" name="nombre" type="text" placeholder="Ejemplo: Administración" required>
             </div>
 
             <div class="carr-field">
@@ -81,13 +74,8 @@ Función:
         </section>
 
         <section class="carr-actions">
-          <button id="carrBtnGuardar" type="submit" class="carr-btn carr-btn-primary">
-            Guardar carrera
-          </button>
-
-          <button id="carrBtnLimpiar" type="reset" class="carr-btn carr-btn-secondary">
-            Limpiar
-          </button>
+          <button id="carrBtnGuardar" type="submit" class="carr-btn carr-btn-primary">Guardar carrera</button>
+          <button id="carrBtnLimpiar" type="reset" class="carr-btn carr-btn-secondary">Limpiar</button>
         </section>
 
         <section id="carrEstadoGuardado" class="carr-status" aria-live="polite"></section>
@@ -97,38 +85,23 @@ Función:
         <div class="carr-list-head">
           <div>
             <h2 class="carr-card-title">Carreras registradas</h2>
-            <p class="carr-card-text">
-              Edite directamente en la tabla. Haga clic en los encabezados para ordenar.
-            </p>
+            <p class="carr-card-text">Listado local con búsqueda en tiempo real.</p>
           </div>
 
           <div class="carr-list-tools">
             <span id="carrTablaResumen" class="carr-list-count">Cargando...</span>
-
-            <button id="carrBtnRecargarTabla" type="button" class="carr-btn carr-btn-secondary">
-              Recargar tabla
-            </button>
+            <button id="carrBtnRecargarTabla" type="button" class="carr-btn carr-btn-secondary">Recargar tabla</button>
           </div>
         </div>
 
         <div class="carr-search-row">
           <div class="carr-search-box">
             <label for="carrTablaBuscar" class="carr-search-label">Buscar en la tabla</label>
-            <input
-              id="carrTablaBuscar"
-              class="carr-search-input"
-              type="search"
-              placeholder="Buscar por id, nombre, tipo o estado"
-              autocomplete="off"
-            >
-            <span class="carr-search-help">
-              La búsqueda filtra en tiempo real sobre los registros ya cargados.
-            </span>
+            <input id="carrTablaBuscar" class="carr-search-input" type="search" placeholder="Buscar por id, nombre, tipo o estado" autocomplete="off">
+            <span class="carr-search-help">La búsqueda filtra sobre los registros locales.</span>
           </div>
 
-          <button id="carrBtnLimpiarBusqueda" type="button" class="carr-btn carr-btn-secondary">
-            Limpiar búsqueda
-          </button>
+          <button id="carrBtnLimpiarBusqueda" type="button" class="carr-btn carr-btn-secondary">Limpiar búsqueda</button>
         </div>
 
         <div id="carrTablaWrap" class="carr-tabla-wrap" aria-live="polite">
@@ -138,13 +111,7 @@ Función:
     </section>
   </main>
 
-  <button
-    id="carrBtnGuardarCambios"
-    class="carr-fab"
-    type="button"
-    aria-label="Guardar cambios de la tabla"
-    title="Guardar cambios de la tabla"
-  >
+  <button id="carrBtnGuardarCambios" class="carr-fab" type="button" aria-label="Guardar cambios de la tabla" title="Guardar cambios de la tabla">
     <span id="carrFabTexto" class="carr-fab-text">Guardar cambios</span>
     <span id="carrCambiosBadge" class="carr-fab-badge">0</span>
   </button>
@@ -153,6 +120,7 @@ Función:
   <script src="../../shared/local/curriculo.sync-queue.js"></script>
   <script src="../../shared/local/curriculo.sync-engine.js"></script>
   <script src="../../shared/local/curriculo.sync-status.js"></script>
-  <script type="module" src="./carr.main.js"></script>
+  <script src="./carr.local-main2.js"></script>
+  <script src="./carr.local-table.js"></script>
 </body>
 </html>
