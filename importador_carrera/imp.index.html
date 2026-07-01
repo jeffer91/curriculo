@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Importador de Carrera</title>
+  <link rel="stylesheet" href="./imp.styles.css">
+</head>
+<body>
+  <main class="imp-app">
+    <section class="imp-shell">
+      <header class="imp-header">
+        <div>
+          <p class="imp-eyebrow">Curriculo · Importador inteligente</p>
+          <h1 class="imp-title">Importador de carrera completa</h1>
+          <p class="imp-subtitle">
+            Cargue una carrera completa en ZIP o carpeta para analizar niveles, materias y documentos PEA antes de guardar.
+          </p>
+        </div>
+        <div class="imp-header-badge" id="impHeaderBadge">Bloque 1</div>
+      </header>
+
+      <section class="imp-grid imp-grid-4 imp-metrics" aria-label="Resumen del importador">
+        <article class="imp-metric-card">
+          <span class="imp-metric-label">Archivos</span>
+          <strong class="imp-metric-value" id="impMetricFiles">0</strong>
+        </article>
+        <article class="imp-metric-card">
+          <span class="imp-metric-label">Niveles</span>
+          <strong class="imp-metric-value" id="impMetricLevels">0</strong>
+        </article>
+        <article class="imp-metric-card">
+          <span class="imp-metric-label">Materias</span>
+          <strong class="imp-metric-value" id="impMetricSubjects">0</strong>
+        </article>
+        <article class="imp-metric-card">
+          <span class="imp-metric-label">Observaciones</span>
+          <strong class="imp-metric-value" id="impMetricIssues">0</strong>
+        </article>
+      </section>
+
+      <section class="imp-card">
+        <div class="imp-card-head">
+          <div>
+            <h2 class="imp-card-title">1. Fuente de carga</h2>
+            <p class="imp-card-text">
+              En la primera version se deja lista la pantalla y el estado. El procesamiento profundo se conectara en los siguientes bloques.
+            </p>
+          </div>
+        </div>
+
+        <div class="imp-source-grid">
+          <label class="imp-source-box" for="impZipInput">
+            <input id="impZipInput" type="file" accept=".zip,application/zip,application/x-zip-compressed">
+            <span class="imp-source-title">Subir ZIP</span>
+            <span class="imp-source-text">Recomendado para conservar la estructura completa de carpetas.</span>
+          </label>
+
+          <label class="imp-source-box" for="impFolderInput">
+            <input id="impFolderInput" type="file" webkitdirectory directory multiple>
+            <span class="imp-source-title">Seleccionar carpeta</span>
+            <span class="imp-source-text">Opcion secundaria para navegadores compatibles.</span>
+          </label>
+        </div>
+
+        <div class="imp-actions">
+          <button id="impBtnAnalyze" type="button" class="imp-btn imp-btn-primary">Analizar carga</button>
+          <button id="impBtnReset" type="button" class="imp-btn imp-btn-secondary">Limpiar</button>
+        </div>
+      </section>
+
+      <section class="imp-card">
+        <div class="imp-card-head">
+          <div>
+            <h2 class="imp-card-title">2. Progreso</h2>
+            <p class="imp-card-text">Estado general del importador y pasos pendientes.</p>
+          </div>
+        </div>
+
+        <div class="imp-progress-wrap" aria-label="Progreso de procesamiento">
+          <div class="imp-progress-bar">
+            <div id="impProgressFill" class="imp-progress-fill" style="width: 0%;"></div>
+          </div>
+          <div id="impProgressLabel" class="imp-progress-label">0%</div>
+        </div>
+
+        <div id="impStatus" class="imp-status" aria-live="polite">Importador listo para iniciar.</div>
+      </section>
+
+      <section class="imp-card">
+        <div class="imp-card-head">
+          <div>
+            <h2 class="imp-card-title">3. Vista previa</h2>
+            <p class="imp-card-text">
+              Aqui se mostraran los archivos detectados y, en los siguientes bloques, la carrera, niveles, materias y PEA.
+            </p>
+          </div>
+        </div>
+
+        <div id="impPreview" class="imp-preview">
+          <p class="imp-empty">Todavia no hay archivos cargados.</p>
+        </div>
+      </section>
+
+      <section class="imp-card">
+        <div class="imp-card-head">
+          <div>
+            <h2 class="imp-card-title">4. Confirmacion</h2>
+            <p class="imp-card-text">
+              El guardado definitivo quedara bloqueado hasta completar validacion y vista previa inteligente.
+            </p>
+          </div>
+        </div>
+
+        <div id="impReport" class="imp-report">
+          No hay reporte generado todavia.
+        </div>
+
+        <div class="imp-actions">
+          <button id="impBtnCommit" type="button" class="imp-btn imp-btn-primary" disabled>Confirmar guardado</button>
+          <button id="impBtnDownloadReport" type="button" class="imp-btn imp-btn-secondary" disabled>Descargar reporte</button>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script type="module" src="./core/imp.main.js"></script>
+</body>
+</html>
