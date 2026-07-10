@@ -5,7 +5,8 @@ Función o funciones:
 - Mostrar la carga y análisis de ZIP de Gestión Curricular CCC.
 - Cargar el menú superior en navegador y Electron.
 - Leer los tres Excel PEA y reemplazar de forma segura carreras existentes.
-- Importar, reparar y validar el contenido completo en BDLocal.
+- Importar mediante un único orquestador con progreso, rollback y diagnóstico.
+- Mostrar un modal técnico cuando falle o se detenga cualquier etapa.
 ========================================================= -->
 <!DOCTYPE html>
 <html lang="es">
@@ -13,8 +14,9 @@ Función o funciones:
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Subir ZIP CCC | Gestión Curricular</title>
-  <link rel="stylesheet" href="../menu-superior/menu-superior.css?v=20260710-8" />
-  <link rel="stylesheet" href="./subir.css?v=20260710-8" />
+  <link rel="stylesheet" href="../menu-superior/menu-superior.css?v=20260710-9" />
+  <link rel="stylesheet" href="../diagnostico/diagnostico-modal.css?v=20260710-9" />
+  <link rel="stylesheet" href="./subir.css?v=20260710-9" />
 </head>
 <body>
   <div class="subir-page">
@@ -71,7 +73,7 @@ Función o funciones:
       <section id="accionesImportacion" class="subir-panel subir-actions-panel" hidden>
         <div>
           <h2>Importar a BDLocal</h2>
-          <p>Si una carrera ya existe, se reemplazarán sus niveles, materias, archivos y datos PEA para evitar información antigua o duplicada.</p>
+          <p>Si una carrera ya existe, se reemplazará de forma controlada. El sistema crea un respaldo temporal y restaura la versión anterior si ocurre un error.</p>
         </div>
         <div class="subir-actions-row">
           <button id="btnImportar" class="subir-btn subir-btn-primary" type="button">Importar sin observaciones</button>
@@ -104,28 +106,32 @@ Función o funciones:
     <div id="modalContenido" class="subir-modal-content">Cargando...</div>
   </dialog>
 
-  <script src="../menu-superior/menu-superior.js?v=20260710-8"></script>
+  <script src="../menu-superior/menu-superior.js?v=20260710-9"></script>
+  <script src="../diagnostico/diagnostico-flujo.js?v=20260710-9"></script>
+  <script src="../diagnostico/diagnostico-modal.js?v=20260710-9"></script>
   <script src="../libs/jszip.min.js"></script>
   <script src="../libs/xlsx.min.js"></script>
 
-  <script src="../bdlocal/bdlocal.schema.js?v=20260710-8"></script>
-  <script src="../bdlocal/bdlocal.core.js?v=20260710-8"></script>
-  <script src="../bdlocal/bdlocal.api.js?v=20260710-8"></script>
-  <script src="../bdlocal/bdlocal.importador.js?v=20260710-8"></script>
-  <script src="../bdlocal/bdlocal.integridad.js?v=20260710-8"></script>
-  <script src="../bdlocal/bdlocal.inteligencia.js?v=20260710-8"></script>
-  <script src="../bdlocal/bdlocal.validaciones.js?v=20260710-8"></script>
-  <script src="../bdlocal/bdlocal.consultas.js?v=20260710-8"></script>
-  <script src="../bdlocal/bdlocal.backup.js?v=20260710-8"></script>
+  <script src="../bdlocal/bdlocal.schema.js?v=20260710-9"></script>
+  <script src="../bdlocal/bdlocal.core.js?v=20260710-9"></script>
+  <script src="../bdlocal/bdlocal.api.js?v=20260710-9"></script>
+  <script src="../bdlocal/bdlocal.importador.js?v=20260710-9"></script>
+  <script src="../bdlocal/bdlocal.importador-base.js?v=20260710-9"></script>
+  <script src="../bdlocal/bdlocal.integridad.js?v=20260710-9"></script>
+  <script src="../bdlocal/bdlocal.inteligencia.js?v=20260710-9"></script>
+  <script src="../bdlocal/bdlocal.validaciones.js?v=20260710-9"></script>
+  <script src="../bdlocal/bdlocal.consultas.js?v=20260710-9"></script>
+  <script src="../bdlocal/bdlocal.backup.js?v=20260710-9"></script>
 
-  <script src="./subir.normalizador.js?v=20260710-8"></script>
-  <script src="./subir.detector-estructura.js?v=20260710-8"></script>
-  <script src="./subir.detector-archivos.js?v=20260710-8"></script>
-  <script src="./subir.zip.js?v=20260710-8"></script>
-  <script src="./subir.excel.js?v=20260710-8"></script>
-  <script src="./subir.validador.js?v=20260710-8"></script>
-  <script src="./subir.conexion-bdlocal.js?v=20260710-8"></script>
-  <script src="./subir.preview.js?v=20260710-8"></script>
-  <script src="./subir.main.js?v=20260710-8"></script>
+  <script src="./subir.normalizador.js?v=20260710-9"></script>
+  <script src="./subir.detector-estructura.js?v=20260710-9"></script>
+  <script src="./subir.detector-archivos.js?v=20260710-9"></script>
+  <script src="./subir.zip.js?v=20260710-9"></script>
+  <script src="./subir.excel.js?v=20260710-9"></script>
+  <script src="./subir.validador.js?v=20260710-9"></script>
+  <script src="./subir.conexion-bdlocal.js?v=20260710-9"></script>
+  <script src="../bdlocal/bdlocal.importacion-orquestador.js?v=20260710-9"></script>
+  <script src="./subir.preview.js?v=20260710-9"></script>
+  <script src="./subir.main.js?v=20260710-9"></script>
 </body>
 </html>
