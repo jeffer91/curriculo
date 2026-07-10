@@ -2,10 +2,10 @@
 Nombre completo: comunicados.html
 Ruta o ubicación: /Curriculo/comunicados/comunicados.html
 Función o funciones:
-- Generar comunicados institucionales únicamente con contenido PEA completo.
-- Usar el logo exacto embebido, sin depender de rutas de imagen.
+- Generar comunicados institucionales con toda la información curricular.
+- Usar el logo exacto embebido.
 - Mantener generación individual, seleccionada y global.
-- Cargar scripts con versión para evitar caché de archivos antiguos.
+- Cargar scripts con versión para evitar archivos antiguos en caché.
 ========================================================= -->
 <!DOCTYPE html>
 <html lang="es">
@@ -13,10 +13,14 @@ Función o funciones:
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Comunicados | Curriculo</title>
-  <link rel="stylesheet" href="../menu-superior/menu-superior.css?v=20260710-4" />
-  <link rel="stylesheet" href="./comunicados.css?v=20260710-4" />
+  <link rel="stylesheet" href="../menu-superior/menu-superior.css?v=20260710-5" />
+  <link rel="stylesheet" href="./comunicados.css?v=20260710-5" />
   <style>
-    .com-logo-ready{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid #d8e2ef;border-radius:12px;background:#f8fafc}.com-logo-ready strong{display:block}.com-logo-ready span{display:block;color:#64748b;font-size:13px}.com-logo-mark{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:#e7f6ec;color:#087f5b;font-weight:900}.com-content-note{margin-top:10px;color:#475569;font-size:13px}
+    .com-logo-ready{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid #d8e2ef;border-radius:12px;background:#f8fafc}
+    .com-logo-ready strong{display:block}
+    .com-logo-ready span{display:block;color:#64748b;font-size:13px}
+    .com-logo-mark{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:#e7f6ec;color:#087f5b;font-weight:900}
+    .com-content-note{margin-top:10px;color:#475569;font-size:13px}
   </style>
 </head>
 <body>
@@ -25,7 +29,10 @@ Función o funciones:
       <div>
         <p class="com-eyebrow">Gestión Curricular CCC</p>
         <h1>Comunicados institucionales</h1>
-        <p class="com-subtitle">Genera comunicados con descripción, objetivo, cuatro unidades, resultados, competencias, contenidos, actividades y bibliografía.</p>
+        <p class="com-subtitle">
+          Genera comunicados con descripción, objetivo, cuatro unidades, todos los contenidos,
+          actividades y bibliografía.
+        </p>
       </div>
       <div class="com-header-actions">
         <button id="btnRecargar" type="button" class="com-btn com-btn-light">Recargar BDLocal</button>
@@ -34,20 +41,44 @@ Función o funciones:
     </header>
 
     <section id="comEstado" class="com-status com-status-neutral">
-      <div class="com-status-dot"></div><div><strong>Inicializando</strong><span>Conectando con BDLocal.</span></div>
+      <div class="com-status-dot"></div>
+      <div><strong>Inicializando</strong><span>Conectando con BDLocal.</span></div>
     </section>
 
     <section class="com-panel">
       <div class="com-form-grid">
-        <div class="com-field"><label for="selectorCarrera">Carrera</label><select id="selectorCarrera"><option value="">Cargando carreras...</option></select></div>
-        <div class="com-field"><label for="inputFecha">Fecha del comunicado</label><input id="inputFecha" type="date" /></div>
-        <div class="com-field"><label for="inputCiudad">Ciudad</label><input id="inputCiudad" type="text" value="Quito, D.M." /></div>
-        <div class="com-field"><label for="inputUnidadResponsable">Unidad responsable</label><input id="inputUnidadResponsable" type="text" value="UNIDAD DE GESTIÓN PEDAGÓGICA ACADÉMICA" /></div>
-        <div class="com-field com-field-full"><label for="inputNota">Nota institucional</label><input id="inputNota" type="text" value="Instituto Superior Tecnológico Quito Metropolitano" /></div>
+        <div class="com-field">
+          <label for="selectorCarrera">Carrera</label>
+          <select id="selectorCarrera"><option value="">Cargando carreras...</option></select>
+        </div>
+        <div class="com-field">
+          <label for="inputFecha">Fecha del comunicado</label>
+          <input id="inputFecha" type="date" />
+        </div>
+        <div class="com-field">
+          <label for="inputCiudad">Ciudad</label>
+          <input id="inputCiudad" type="text" value="Quito, D.M." />
+        </div>
+        <div class="com-field">
+          <label for="inputUnidadResponsable">Unidad responsable</label>
+          <input id="inputUnidadResponsable" type="text" value="UNIDAD DE GESTIÓN PEDAGÓGICA ACADÉMICA" />
+        </div>
+        <div class="com-field com-field-full">
+          <label for="inputNota">Pie institucional</label>
+          <input id="inputNota" type="text" value="Instituto Superior Tecnológico Quito Metropolitano" />
+        </div>
         <input id="inputLogoSrc" type="hidden" value="" />
         <div class="com-field com-field-full">
-          <div class="com-logo-ready"><div class="com-logo-mark">✓</div><div><strong>Logo institucional incorporado</strong><span>El PDF utiliza la imagen exacta embebida para evitar que desaparezca al imprimir.</span></div></div>
-          <p class="com-content-note">Una materia solo aparece como completa cuando los tres archivos y su contenido curricular han sido validados.</p>
+          <div class="com-logo-ready">
+            <div class="com-logo-mark">✓</div>
+            <div>
+              <strong>Logo institucional incorporado</strong>
+              <span>Se utiliza la imagen exacta embebida para que no desaparezca al imprimir.</span>
+            </div>
+          </div>
+          <p class="com-content-note">
+            Los contenidos se agrupan por <code>ordenComponente</code>; una unidad puede contener decenas o cientos de registros.
+          </p>
         </div>
       </div>
     </section>
@@ -62,7 +93,10 @@ Función o funciones:
     </section>
 
     <section class="com-panel com-actions-panel">
-      <div><h2>Generación de comunicados</h2><p>Se bloquea el PDF cuando falta descripción, objetivo, alguna unidad, actividades o bibliografía con justificación.</p></div>
+      <div>
+        <h2>Generación de comunicados</h2>
+        <p>El PDF incluye todos los contenidos de las cuatro unidades, sin limitarse a cuatro filas.</p>
+      </div>
       <div class="com-actions-row">
         <button id="btnSeleccionarTodas" type="button" class="com-btn com-btn-light">Seleccionar todas</button>
         <button id="btnLimpiarSeleccion" type="button" class="com-btn com-btn-light">Limpiar selección</button>
@@ -72,30 +106,41 @@ Función o funciones:
     </section>
 
     <section class="com-panel">
-      <div class="com-panel-head"><div><h2>Materias completas</h2><p>Puedes corregir el nombre institucional antes de generar el comunicado.</p></div></div>
+      <div class="com-panel-head">
+        <div>
+          <h2>Materias completas</h2>
+          <p>Puedes corregir el nombre institucional antes de generar el comunicado.</p>
+        </div>
+      </div>
       <div class="com-table-wrap">
         <table class="com-table">
-          <thead><tr><th>Sel.</th><th>Nivel</th><th>Código</th><th>Nombre importado</th><th>Nombre institucional</th><th>Estado</th><th>PEA</th><th>Acciones</th></tr></thead>
-          <tbody id="tablaMaterias"><tr><td colspan="8" class="com-empty">Selecciona una carrera para cargar materias completas.</td></tr></tbody>
+          <thead>
+            <tr>
+              <th>Sel.</th><th>Nivel</th><th>Código</th><th>Nombre importado</th>
+              <th>Nombre institucional</th><th>Estado</th><th>PEA</th><th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tablaMaterias">
+            <tr><td colspan="8" class="com-empty">Selecciona una carrera para cargar materias completas.</td></tr>
+          </tbody>
         </table>
       </div>
     </section>
   </div>
 
-  <script src="../menu-superior/menu-superior.js?v=20260710-4"></script>
-  <script src="../bdlocal/bdlocal.schema.js?v=20260710-4"></script>
-  <script src="../bdlocal/bdlocal.core.js?v=20260710-4"></script>
-  <script src="../bdlocal/bdlocal.api.js?v=20260710-4"></script>
-  <script src="../bdlocal/bdlocal.consultas.js?v=20260710-4"></script>
-  <script src="../bdlocal/bdlocal.validaciones.js?v=20260710-4"></script>
-  <script src="../bdlocal/bdlocal.backup.js?v=20260710-4"></script>
+  <script src="../menu-superior/menu-superior.js?v=20260710-5"></script>
+  <script src="../bdlocal/bdlocal.schema.js?v=20260710-5"></script>
+  <script src="../bdlocal/bdlocal.core.js?v=20260710-5"></script>
+  <script src="../bdlocal/bdlocal.api.js?v=20260710-5"></script>
+  <script src="../bdlocal/bdlocal.consultas.js?v=20260710-5"></script>
+  <script src="../bdlocal/bdlocal.validaciones.js?v=20260710-5"></script>
+  <script src="../bdlocal/bdlocal.backup.js?v=20260710-5"></script>
 
-  <script src="../assets/logo-itsqmet-comunicado-data.js?v=20260710-4"></script>
-  <script src="./comunicados.bdlocal.js?v=20260710-4"></script>
-  <script src="./comunicados.contador.js?v=20260710-4"></script>
-  <script src="./comunicados.plantilla.js?v=20260710-4"></script>
-  <script src="./comunicados.override.js?v=20260710-4"></script>
-  <script src="./comunicados.pdf.js?v=20260710-4"></script>
-  <script src="./comunicados.main.js?v=20260710-4"></script>
+  <script src="../assets/logo-itsqmet-comunicado-data.js?v=20260710-5"></script>
+  <script src="./comunicados.bdlocal.js?v=20260710-5"></script>
+  <script src="./comunicados.contador.js?v=20260710-5"></script>
+  <script src="./comunicados.plantilla.js?v=20260710-5"></script>
+  <script src="./comunicados.pdf.js?v=20260710-5"></script>
+  <script src="./comunicados.main.js?v=20260710-5"></script>
 </body>
 </html>
