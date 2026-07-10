@@ -1,528 +1,135 @@
 <!-- =========================================================
 Nombre completo: bdlocal.html
-Ruta o ubicación: /gestion-curricular-ccc/bdlocal/bdlocal.html
+Ruta o ubicación: /Curriculo/bdlocal/bdlocal.html
 Función o funciones:
-- Mostrar una pantalla visual para revisar la base local CCC.
-- Presentar dashboard de carreras, niveles, materias, archivos y validaciones.
-- Permitir buscar materias por carrera, nivel, código, nombre o estado.
-- Descargar backup JSON y diagnóstico de la base local.
-- Servir como pantalla de consulta para verificar que la subida ZIP se clasificó correctamente.
+- Mostrar toda la información guardada desde PEA Base, Unidades y Actividades.
+- Presentar descripción, objetivo, cuatro unidades, contenidos, actividades y bibliografía.
+- Mostrar controles de integridad y datos técnicos por materia.
+- Cargar el menú superior en navegador y Electron.
 ========================================================= -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
   <title>BDLocal CCC | Gestión Curricular</title>
-
-  <link rel="stylesheet" href="./bdlocal.css" />
+  <link rel="stylesheet" href="../menu-superior/menu-superior.css?v=20260710-3" />
+  <link rel="stylesheet" href="./bdlocal.css?v=20260710-3" />
+  <style>
+    .bd-detail-section{margin-top:18px;padding-top:14px;border-top:1px solid #d8e2ef}.bd-detail-section h3{margin:0 0 10px}.bd-kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin:12px 0}.bd-kpi{border:1px solid #d8e2ef;border-radius:12px;padding:10px;background:#f8fafc}.bd-kpi span{display:block;font-size:12px;color:#64748b}.bd-kpi strong{font-size:18px}.bd-check-ok{color:#087f5b}.bd-check-bad{color:#b42318}.bd-text-block{white-space:pre-wrap;line-height:1.55;border:1px solid #d8e2ef;border-radius:12px;padding:12px;background:#fff}.bd-unit{border:1px solid #d8e2ef;border-radius:14px;margin:10px 0;background:#fff;overflow:hidden}.bd-unit summary{cursor:pointer;padding:13px 15px;font-weight:800;background:#f5f8fc}.bd-unit-body{padding:14px}.bd-content-list{margin:8px 0 0 20px;padding:0}.bd-content-list li{margin:0 0 7px;line-height:1.45}.bd-activity{border:1px solid #d8e2ef;border-radius:12px;padding:12px;margin:9px 0}.bd-activity-grid{display:grid;grid-template-columns:170px 1fr;gap:8px}.bd-biblio{border-left:4px solid #0b4a8b;padding:10px 12px;margin:10px 0;background:#f8fafc}.bd-raw{max-height:420px;overflow:auto;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:12px;font-size:12px;white-space:pre-wrap}.bd-modal{width:min(1120px,96vw);max-height:94vh}.bd-modal-content{max-height:78vh;overflow:auto}.bd-toolbar{display:flex;gap:10px;flex-wrap:wrap}.bd-alert{padding:10px 12px;border-radius:10px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412}.bd-success{padding:10px 12px;border-radius:10px;background:#ecfdf3;border:1px solid #abefc6;color:#067647}@media(max-width:720px){.bd-activity-grid{grid-template-columns:1fr}}
+  </style>
 </head>
-
 <body>
   <div class="bd-page">
     <header class="bd-header">
       <div>
         <p class="bd-eyebrow">Gestión Curricular CCC</p>
         <h1>Base Local</h1>
-        <p class="bd-subtitle">
-          Revisión de carreras, niveles, materias y archivos PEA clasificados desde ZIP.
-        </p>
+        <p class="bd-subtitle">Consulta completa de carreras, materias y contenido procesado de los tres PEA.</p>
       </div>
-
-      <div class="bd-header-actions">
-        <button id="btnRecargar" class="bd-btn bd-btn-light" type="button">
-          Recargar
-        </button>
-
-        <button id="btnBackup" class="bd-btn bd-btn-primary" type="button">
-          Descargar backup
-        </button>
+      <div class="bd-header-actions bd-toolbar">
+        <button id="btnRecargar" class="bd-btn bd-btn-light" type="button">Recargar</button>
+        <button id="btnValidar" class="bd-btn bd-btn-light" type="button">Validar contenido</button>
+        <button id="btnDiagnostico" class="bd-btn bd-btn-light" type="button">Diagnóstico</button>
+        <button id="btnBackup" class="bd-btn bd-btn-primary" type="button">Descargar backup</button>
       </div>
     </header>
 
     <main>
-      <section class="bd-status-card" id="estadoSistema">
-        <div class="bd-status-dot"></div>
-        <div>
-          <strong>Inicializando base local...</strong>
-          <span>Preparando IndexedDB y consultas.</span>
-        </div>
-      </section>
+      <section class="bd-status-card" id="estadoSistema"><div class="bd-status-dot"></div><div><strong>Inicializando base local...</strong><span>Preparando IndexedDB y consultas.</span></div></section>
 
       <section class="bd-grid bd-grid-cards" aria-label="Resumen general">
-        <article class="bd-card">
-          <span class="bd-card-label">Carreras</span>
-          <strong id="statCarreras">0</strong>
-          <small>Total detectadas</small>
-        </article>
-
-        <article class="bd-card">
-          <span class="bd-card-label">Niveles</span>
-          <strong id="statNiveles">0</strong>
-          <small>Niveles curriculares</small>
-        </article>
-
-        <article class="bd-card">
-          <span class="bd-card-label">Materias</span>
-          <strong id="statMaterias">0</strong>
-          <small>Total registradas</small>
-        </article>
-
-        <article class="bd-card bd-card-ok">
-          <span class="bd-card-label">Completas</span>
-          <strong id="statCompletas">0</strong>
-          <small>Con 3 archivos PEA</small>
-        </article>
-
-        <article class="bd-card bd-card-warn">
-          <span class="bd-card-label">Incompletas</span>
-          <strong id="statIncompletas">0</strong>
-          <small>Requieren revisión</small>
-        </article>
-
-        <article class="bd-card">
-          <span class="bd-card-label">Archivos PEA</span>
-          <strong id="statArchivos">0</strong>
-          <small>Base, Unidades y Actividades</small>
-        </article>
+        <article class="bd-card"><span class="bd-card-label">Carreras</span><strong id="statCarreras">0</strong><small>Total detectadas</small></article>
+        <article class="bd-card"><span class="bd-card-label">Niveles</span><strong id="statNiveles">0</strong><small>Niveles curriculares</small></article>
+        <article class="bd-card"><span class="bd-card-label">Materias</span><strong id="statMaterias">0</strong><small>Total registradas</small></article>
+        <article class="bd-card bd-card-ok"><span class="bd-card-label">Completas</span><strong id="statCompletas">0</strong><small>Archivos y contenido válidos</small></article>
+        <article class="bd-card bd-card-warn"><span class="bd-card-label">Revisión</span><strong id="statIncompletas">0</strong><small>Contenido faltante</small></article>
+        <article class="bd-card"><span class="bd-card-label">Archivos PEA</span><strong id="statArchivos">0</strong><small>Base, Unidades y Actividades</small></article>
       </section>
 
       <section class="bd-panel">
-        <div class="bd-panel-head">
-          <div>
-            <h2>Herramientas de base local</h2>
-            <p>
-              Acciones rápidas para validar, respaldar o diagnosticar la información guardada.
-            </p>
-          </div>
-        </div>
-
-        <div class="bd-tools">
-          <button id="btnValidar" class="bd-tool" type="button">
-            <strong>Validar materias</strong>
-            <span>Recalcular completas, incompletas y revisión.</span>
-          </button>
-
-          <button id="btnDiagnostico" class="bd-tool" type="button">
-            <strong>Descargar diagnóstico</strong>
-            <span>Exportar conteo técnico de tablas.</span>
-          </button>
-
-          <label class="bd-tool bd-tool-file" for="inputBackup">
-            <strong>Importar backup</strong>
-            <span>Restaurar un JSON generado por esta base.</span>
-          </label>
-
-          <input id="inputBackup" type="file" accept="application/json,.json" hidden />
-        </div>
-      </section>
-
-      <section class="bd-panel">
-        <div class="bd-panel-head bd-panel-head-table">
-          <div>
-            <h2>Materias clasificadas</h2>
-            <p>
-              Vista rápida de los 3 Excel principales por cada materia.
-            </p>
-          </div>
-
-          <div class="bd-search">
-            <input
-              id="buscador"
-              type="search"
-              placeholder="Buscar por carrera, nivel, código, materia o estado..."
-              autocomplete="off"
-            />
-          </div>
-        </div>
-
-        <div class="bd-table-wrap">
-          <table class="bd-table">
-            <thead>
-              <tr>
-                <th>Carrera</th>
-                <th>Nivel</th>
-                <th>Código</th>
-                <th>Materia</th>
-                <th>Base</th>
-                <th>Unidades</th>
-                <th>Actividades</th>
-                <th>Estado</th>
-                <th>Detalle</th>
-              </tr>
-            </thead>
-
-            <tbody id="tablaMaterias">
-              <tr>
-                <td colspan="9" class="bd-empty">
-                  Cargando información...
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <div class="bd-panel-head"><div><h2>Materias guardadas</h2><p>Abre una materia para revisar todos sus datos procesados.</p></div><div class="bd-search"><input id="buscador" type="search" placeholder="Buscar carrera, nivel, código, materia o estado..." /></div></div>
+        <div class="bd-table-wrap"><table class="bd-table"><thead><tr><th>Carrera</th><th>Nivel</th><th>Código</th><th>Materia</th><th>Base</th><th>Unidades</th><th>Actividades</th><th>Estado</th><th>Detalle</th></tr></thead><tbody id="tablaMaterias"><tr><td colspan="9" class="bd-empty">Cargando...</td></tr></tbody></table></div>
       </section>
 
       <section class="bd-panel bd-panel-split">
-        <div>
-          <h2>Últimas cargas</h2>
-          <div id="ultimasCargas" class="bd-list">
-            <p class="bd-muted">Sin cargas registradas todavía.</p>
-          </div>
-        </div>
-
-        <div>
-          <h2>Validaciones activas</h2>
-          <div id="validacionesActivas" class="bd-list">
-            <p class="bd-muted">Sin validaciones activas.</p>
-          </div>
-        </div>
+        <div><h2>Últimas cargas</h2><div id="ultimasCargas"><p class="bd-muted">Cargando...</p></div></div>
+        <div><h2>Validaciones activas</h2><div id="validacionesActivas"><p class="bd-muted">Cargando...</p></div></div>
       </section>
     </main>
   </div>
 
   <dialog id="modalDetalle" class="bd-modal">
-    <div class="bd-modal-head">
-      <div>
-        <p class="bd-eyebrow">Detalle de materia</p>
-        <h2 id="modalTitulo">Materia</h2>
-      </div>
-
-      <button id="btnCerrarModal" class="bd-icon-btn" type="button" aria-label="Cerrar">
-        ×
-      </button>
-    </div>
-
-    <div id="modalContenido" class="bd-modal-content">
-      Cargando...
-    </div>
+    <div class="bd-modal-head"><div><p class="bd-eyebrow">Detalle completo de materia</p><h2 id="modalTitulo">Materia</h2></div><button id="btnCerrarModal" class="bd-icon-btn" type="button" aria-label="Cerrar">×</button></div>
+    <div id="modalContenido" class="bd-modal-content">Cargando...</div>
   </dialog>
 
-  <script src="./bdlocal.schema.js"></script>
-  <script src="./bdlocal.core.js"></script>
-  <script src="./bdlocal.api.js"></script>
-  <script src="./bdlocal.importador.js"></script>
-  <script src="./bdlocal.validaciones.js"></script>
-  <script src="./bdlocal.consultas.js"></script>
-  <script src="./bdlocal.backup.js"></script>
+  <script src="../menu-superior/menu-superior.js?v=20260710-3"></script>
+  <script src="./bdlocal.schema.js?v=20260710-3"></script>
+  <script src="./bdlocal.core.js?v=20260710-3"></script>
+  <script src="./bdlocal.api.js?v=20260710-3"></script>
+  <script src="./bdlocal.importador.js?v=20260710-3"></script>
+  <script src="./bdlocal.integridad.js?v=20260710-3"></script>
+  <script src="./bdlocal.validaciones.js?v=20260710-3"></script>
+  <script src="./bdlocal.consultas.js?v=20260710-3"></script>
+  <script src="./bdlocal.backup.js?v=20260710-3"></script>
 
   <script>
     (function () {
       "use strict";
 
       var BD = window.BDLocalCCC;
-
       var estadoSistema = document.getElementById("estadoSistema");
       var tablaMaterias = document.getElementById("tablaMaterias");
       var buscador = document.getElementById("buscador");
       var modal = document.getElementById("modalDetalle");
       var modalTitulo = document.getElementById("modalTitulo");
       var modalContenido = document.getElementById("modalContenido");
-
       var dataTabla = [];
 
-      function setEstado(tipo, titulo, texto) {
-        estadoSistema.className = "bd-status-card bd-status-" + tipo;
-        estadoSistema.innerHTML =
-          '<div class="bd-status-dot"></div>' +
-          "<div>" +
-          "<strong>" + escapar(titulo) + "</strong>" +
-          "<span>" + escapar(texto) + "</span>" +
-          "</div>";
-      }
+      function texto(valor) { return String(valor === null || typeof valor === "undefined" ? "" : valor).trim(); }
+      function arr(valor) { return Array.isArray(valor) ? valor : (valor === null || typeof valor === "undefined" ? [] : [valor]); }
+      function escapar(valor) { return texto(valor).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;"); }
+      function saltos(valor) { return escapar(valor).replace(/\n/g,"<br>"); }
+      function normalizar(valor) { return texto(valor).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase(); }
+      function setEstado(tipo,titulo,mensaje){ estadoSistema.className="bd-status-card bd-status-"+tipo; estadoSistema.innerHTML='<div class="bd-status-dot"></div><div><strong>'+escapar(titulo)+'</strong><span>'+escapar(mensaje)+'</span></div>'; }
+      function badgeSiNo(valor){ return valor?'<span class="bd-badge bd-badge-ok">Sí</span>':'<span class="bd-badge bd-badge-error">No</span>'; }
+      function badgeEstado(valor){ var cls="bd-badge bd-badge-neutral"; if(valor==="completo")cls="bd-badge bd-badge-ok"; else if(valor==="revision")cls="bd-badge bd-badge-warn"; else if(valor==="incompleto"||valor==="error")cls="bd-badge bd-badge-error"; return '<span class="'+cls+'">'+escapar(valor||"pendiente")+'</span>'; }
 
-      function escapar(valor) {
-        return String(valor === null || typeof valor === "undefined" ? "" : valor)
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/"/g, "&quot;")
-          .replace(/'/g, "&#039;");
-      }
+      function obtenerDatosBase(base){ base=base||{}; return base.datos||base; }
+      function obtenerUnidadesBase(base){ var datos=obtenerDatosBase(base); return arr(datos.unidadesBase||base.unidadesBase); }
+      function obtenerBibliografia(base){ var datos=obtenerDatosBase(base); return arr(datos.bibliografia||base.bibliografia); }
+      function obtenerDescripcion(base){ var datos=obtenerDatosBase(base),campos=base&&base.campos||datos.campos||{}; return texto(datos.descripcion||base.descripcion||campos.descripcion_asignatura||campos.descripcion); }
+      function obtenerObjetivo(base){ var datos=obtenerDatosBase(base),campos=base&&base.campos||datos.campos||{}; return texto(datos.objetivo||base.objetivo||campos.objetivo_asignatura||campos.objetivo); }
+      function contenidosUnidad(unidad){ var lista=arr(unidad&&unidad.contenidos).filter(Boolean); if(lista.length)return lista; var valor=texto(unidad&&(unidad.temaDetectado||unidad.contenido||unidad.tema)); return valor?[valor]:[]; }
 
-      function normalizar(valor) {
-        return String(valor || "")
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .toLowerCase()
-          .trim();
-      }
+      function pintarStats(d){ document.getElementById("statCarreras").textContent=d.totalCarreras||0; document.getElementById("statNiveles").textContent=d.totalNiveles||0; document.getElementById("statMaterias").textContent=d.totalMaterias||0; document.getElementById("statCompletas").textContent=d.materias?d.materias.completas||0:0; document.getElementById("statIncompletas").textContent=d.materias?Number(d.materias.incompletas||0)+Number(d.materias.revision||0)+Number(d.materias.pendientes||0):0; document.getElementById("statArchivos").textContent=d.totalArchivos||0; }
 
-      function badgeSiNo(valor) {
-        return valor
-          ? '<span class="bd-badge bd-badge-ok">Sí</span>'
-          : '<span class="bd-badge bd-badge-error">No</span>';
-      }
+      function pintarTabla(filas){ if(!filas.length){tablaMaterias.innerHTML='<tr><td colspan="9" class="bd-empty">No hay materias para mostrar.</td></tr>';return;} tablaMaterias.innerHTML=filas.map(function(f){return '<tr><td>'+escapar(f.carrera)+'</td><td>'+escapar(f.nivel)+'</td><td><code>'+escapar(f.codigo)+'</code></td><td><strong>'+escapar(f.materia)+'</strong></td><td>'+badgeSiNo(f.peaBase)+'</td><td>'+badgeSiNo(f.peaUnidades)+'</td><td>'+badgeSiNo(f.peaActividades)+'</td><td>'+badgeEstado(f.estado)+'</td><td><button class="bd-mini-btn" type="button" data-materia-id="'+escapar(f.materiaId)+'">Ver todo</button></td></tr>';}).join(""); }
+      function filtrar(){ var q=normalizar(buscador.value); if(!q){pintarTabla(dataTabla);return;} pintarTabla(dataTabla.filter(function(f){return normalizar([f.carrera,f.nivel,f.codigo,f.materia,f.estado].join(" ")).includes(q);})); }
 
-      function badgeEstado(estado) {
-        var cls = "bd-badge";
+      function renderKpis(integridad,base,unidades,actividades){ integridad=integridad||{}; var biblio=obtenerBibliografia(base); var totalCont=arr(unidades).reduce(function(t,u){return t+contenidosUnidad(u).length;},0); var valores=[['Descripción',integridad.descripcion!==undefined?integridad.descripcion:!!obtenerDescripcion(base)],['Objetivo',integridad.objetivo!==undefined?integridad.objetivo:!!obtenerObjetivo(base)],['Unidades',integridad.unidadesGuardadas!==undefined?integridad.unidadesGuardadas:arr(unidades).length],['Contenidos',integridad.contenidos!==undefined?integridad.contenidos:totalCont],['Actividades',integridad.actividades!==undefined?integridad.actividades:arr(actividades).length],['Bibliografías',integridad.bibliografias!==undefined?integridad.bibliografias:biblio.length],['Justificaciones',integridad.justificacionesBibliografia!==undefined?integridad.justificacionesBibliografia:biblio.filter(function(x){return texto(x.justificacion);}).length]]; return '<div class="bd-kpi-grid">'+valores.map(function(v){var ok=typeof v[1]==="boolean"?v[1]:Number(v[1])>0;return '<div class="bd-kpi"><span>'+escapar(v[0])+'</span><strong class="'+(ok?'bd-check-ok':'bd-check-bad')+'">'+escapar(typeof v[1]==="boolean"?(v[1]?'Sí':'No'):v[1])+'</strong></div>';}).join('')+'</div>'; }
 
-        if (estado === "completo") cls += " bd-badge-ok";
-        else if (estado === "incompleto") cls += " bd-badge-error";
-        else if (estado === "revision") cls += " bd-badge-warn";
-        else cls += " bd-badge-neutral";
+      function renderUnidades(base,unidades){ var mapa={}; arr(unidades).forEach(function(u){mapa[Number(u.unidadNumero||0)]=u;}); var ub=obtenerUnidadesBase(base); return [1,2,3,4].map(function(n){var meta=ub.find(function(x){return Number(x.unidadNumero||x.orden||0)===n;})||{};var u=mapa[n]||{};var contenidos=contenidosUnidad(u);return '<details class="bd-unit" open><summary>Unidad '+n+': '+escapar(meta.nombre||meta.tituloUnidad||'No registrada')+' · '+contenidos.length+' contenidos</summary><div class="bd-unit-body"><p><strong>Resultado de aprendizaje:</strong></p><div class="bd-text-block">'+saltos(meta.resultadoAprendizaje||meta.resultado||'No registrado')+'</div><p><strong>Competencia:</strong></p><div class="bd-text-block">'+saltos(meta.competencia||'No registrada')+'</div><p><strong>Contenidos:</strong></p>'+(contenidos.length?'<ol class="bd-content-list">'+contenidos.map(function(c){return '<li>'+saltos(c)+'</li>';}).join('')+'</ol>':'<p class="bd-alert">No hay contenidos guardados para esta unidad.</p>')+'</div></details>';}).join(''); }
 
-        return '<span class="' + cls + '">' + escapar(estado || "pendiente") + "</span>";
-      }
+      function renderActividades(actividades){ if(!arr(actividades).length)return '<p class="bd-alert">No hay actividades guardadas.</p>'; return arr(actividades).map(function(a,i){return '<div class="bd-activity"><h4>Actividad '+(i+1)+'</h4><div class="bd-activity-grid"><strong>Mecanismo</strong><span>'+saltos(a.mecanismo||a.tipoActividad||a.tipo||'No registrado')+'</span><strong>Tema</strong><span>'+saltos(a.tema||a.titulo||'No registrado')+'</span><strong>Descripción</strong><span>'+saltos(a.descripcion||a.actividadDetectada||a.actividad||'No registrada')+'</span></div></div>';}).join(''); }
 
-      function pintarStats(dashboard) {
-        document.getElementById("statCarreras").textContent = dashboard.totalCarreras || 0;
-        document.getElementById("statNiveles").textContent = dashboard.totalNiveles || 0;
-        document.getElementById("statMaterias").textContent = dashboard.totalMaterias || 0;
-        document.getElementById("statCompletas").textContent = dashboard.materias ? dashboard.materias.completas || 0 : 0;
-        document.getElementById("statIncompletas").textContent =
-          dashboard.materias
-            ? Number(dashboard.materias.incompletas || 0) + Number(dashboard.materias.revision || 0) + Number(dashboard.materias.pendientes || 0)
-            : 0;
-        document.getElementById("statArchivos").textContent = dashboard.totalArchivos || 0;
-      }
+      function renderBibliografia(base){ var items=obtenerBibliografia(base); if(!items.length)return '<p class="bd-alert">No hay bibliografía guardada.</p>'; return items.map(function(b,i){return '<div class="bd-biblio"><strong>Bibliografía '+(i+1)+'</strong><p>'+saltos(b.referencia||b.bibliografia||b.descripcion)+'</p>'+(texto(b.codigoReferencia||b.codigo)?'<p><strong>Código:</strong> '+escapar(b.codigoReferencia||b.codigo)+'</p>':'')+'<p><strong>Justificación:</strong><br>'+saltos(b.justificacion||b.descripcionComponente3||'No registrada')+'</p></div>';}).join(''); }
 
-      function pintarTabla(filas) {
-        if (!filas.length) {
-          tablaMaterias.innerHTML =
-            '<tr><td colspan="9" class="bd-empty">No hay materias para mostrar.</td></tr>';
-          return;
-        }
+      async function abrirDetalle(id){ try{ modalContenido.innerHTML='<p>Cargando información procesada...</p>'; modal.showModal(); var d=await BD.Consultas.obtenerDetalleMateria(id); var m=d.materia||{},pea=d.pea||{},base=pea.base||{},unidades=pea.unidades||[],actividades=pea.actividades||[],integridad=m.integridadContenido||{}; modalTitulo.textContent=(m.codigo?m.codigo+' · ':'')+m.nombre; var estadoHtml=integridad.completo===true?'<div class="bd-success">La materia tiene archivos y contenido curricular completos.</div>':'<div class="bd-alert">Contenido pendiente: '+escapar(arr(integridad.faltantes).join(', ')||'reimporta el ZIP para recalcular la integridad')+'</div>'; modalContenido.innerHTML='<div class="bd-detail-grid"><div><span>Carrera</span><strong>'+escapar(d.carrera&&d.carrera.nombre)+'</strong></div><div><span>Nivel</span><strong>'+escapar(d.nivel&&d.nivel.nombre)+'</strong></div><div><span>Estado</span><strong>'+escapar(m.estadoValidacion)+'</strong></div><div><span>Archivos</span><strong>'+escapar(arr(d.archivos).length)+'</strong></div></div>'+estadoHtml+renderKpis(integridad,base,unidades,actividades)+'<section class="bd-detail-section"><h3>Descripción de la asignatura</h3><div class="bd-text-block">'+saltos(obtenerDescripcion(base)||'No registrada')+'</div></section><section class="bd-detail-section"><h3>Objetivo de la asignatura</h3><div class="bd-text-block">'+saltos(obtenerObjetivo(base)||'No registrado')+'</div></section><section class="bd-detail-section"><h3>Unidades, resultados, competencias y contenidos</h3>'+renderUnidades(base,unidades)+'</section><section class="bd-detail-section"><h3>Actividades · '+arr(actividades).length+'</h3>'+renderActividades(actividades)+'</section><section class="bd-detail-section"><h3>Bibliografía y justificación</h3>'+renderBibliografia(base)+'</section><section class="bd-detail-section"><h3>Archivos detectados</h3><div class="bd-file-list">'+arr(d.archivos).map(function(a){return '<div class="bd-file-item"><strong>'+escapar(a.nombreArchivo)+'</strong><span>'+escapar(a.tipo)+' · Confianza '+escapar(a.confianza||0)+'%</span><small>'+escapar(a.rutaOriginal)+'</small></div>';}).join('')+'</div></section><section class="bd-detail-section"><details><summary><strong>Datos técnicos completos (JSON)</strong></summary><pre class="bd-raw">'+escapar(JSON.stringify(d,null,2))+'</pre></details></section>'; }catch(error){modalContenido.innerHTML='<p class="bd-alert">'+escapar(error.message||error)+'</p>';} }
 
-        tablaMaterias.innerHTML = filas.map(function (fila) {
-          return (
-            "<tr>" +
-              "<td>" + escapar(fila.carrera || "") + "</td>" +
-              "<td>" + escapar(fila.nivel || "") + "</td>" +
-              "<td><code>" + escapar(fila.codigo || "") + "</code></td>" +
-              "<td><strong>" + escapar(fila.materia || "") + "</strong></td>" +
-              "<td>" + badgeSiNo(fila.peaBase) + "</td>" +
-              "<td>" + badgeSiNo(fila.peaUnidades) + "</td>" +
-              "<td>" + badgeSiNo(fila.peaActividades) + "</td>" +
-              "<td>" + badgeEstado(fila.estado) + "</td>" +
-              '<td><button class="bd-mini-btn" type="button" data-materia-id="' + escapar(fila.materiaId) + '">Ver</button></td>' +
-            "</tr>"
-          );
-        }).join("");
-      }
+      function pintarListas(cargas,validaciones){ document.getElementById('ultimasCargas').innerHTML=arr(cargas).length?arr(cargas).map(function(c){return '<div class="bd-list-item"><strong>'+escapar(c.nombreZip||'Carga ZIP')+'</strong><span>'+escapar(c.estado||'')+' · '+escapar(c.fechaCarga||c.creadoEn||'')+'</span></div>';}).join(''):'<p class="bd-muted">Sin cargas registradas.</p>'; document.getElementById('validacionesActivas').innerHTML=arr(validaciones).length?arr(validaciones).slice(0,12).map(function(v){return '<div class="bd-list-item"><strong>'+escapar(v.tipo||'Validación')+'</strong><span>'+escapar(v.mensaje||'')+'</span></div>';}).join(''):'<p class="bd-muted">Sin validaciones activas.</p>'; }
 
-      function filtrarTabla() {
-        var q = normalizar(buscador.value);
+      async function cargar(){ try{setEstado('loading','Cargando base local...','Consultando información guardada.'); await BD.inicializar(); var d=await BD.Consultas.obtenerDashboard(); dataTabla=await BD.Consultas.construirTablaMaterias(); var cargas=await BD.Consultas.obtenerUltimasCargas(8); var val=BD.Validaciones?await BD.Validaciones.obtenerValidacionesActivas():[]; pintarStats(d);pintarTabla(dataTabla);pintarListas(cargas,val);setEstado('ok','Base local lista','Abre una materia para revisar todos los datos guardados.');}catch(e){console.error(e);setEstado('error','Error en base local',e.message||'No se pudo cargar.');tablaMaterias.innerHTML='<tr><td colspan="9" class="bd-empty bd-empty-error">'+escapar(e.message||e)+'</td></tr>';}}
 
-        if (!q) {
-          pintarTabla(dataTabla);
-          return;
-        }
-
-        var filtradas = dataTabla.filter(function (fila) {
-          var texto = [
-            fila.carrera,
-            fila.nivel,
-            fila.codigo,
-            fila.materia,
-            fila.estado
-          ].join(" ");
-
-          return normalizar(texto).includes(q);
-        });
-
-        pintarTabla(filtradas);
-      }
-
-      function pintarUltimasCargas(cargas) {
-        var cont = document.getElementById("ultimasCargas");
-
-        if (!cargas || !cargas.length) {
-          cont.innerHTML = '<p class="bd-muted">Sin cargas registradas todavía.</p>';
-          return;
-        }
-
-        cont.innerHTML = cargas.map(function (carga) {
-          return (
-            '<div class="bd-list-item">' +
-              '<strong>' + escapar(carga.nombreZip || "Carga ZIP") + '</strong>' +
-              '<span>' + escapar(carga.estado || "") + " · " + escapar(carga.fechaCarga || carga.creadoEn || "") + '</span>' +
-            '</div>'
-          );
-        }).join("");
-      }
-
-      function pintarValidaciones(validaciones) {
-        var cont = document.getElementById("validacionesActivas");
-
-        if (!validaciones || !validaciones.length) {
-          cont.innerHTML = '<p class="bd-muted">Sin validaciones activas.</p>';
-          return;
-        }
-
-        cont.innerHTML = validaciones.slice(0, 8).map(function (v) {
-          return (
-            '<div class="bd-list-item">' +
-              '<strong>' + escapar(v.tipo || "Validación") + '</strong>' +
-              '<span>' + escapar(v.mensaje || "") + '</span>' +
-            '</div>'
-          );
-        }).join("");
-      }
-
-      async function cargarPantalla() {
-        try {
-          setEstado("loading", "Cargando base local...", "Consultando información guardada.");
-
-          await BD.inicializar();
-
-          var dashboard = await BD.Consultas.obtenerDashboard();
-          var tabla = await BD.Consultas.construirTablaMaterias();
-          var cargas = await BD.Consultas.obtenerUltimasCargas(5);
-          var validaciones = BD.Validaciones
-            ? await BD.Validaciones.obtenerValidacionesActivas()
-            : [];
-
-          dataTabla = tabla;
-
-          pintarStats(dashboard);
-          pintarTabla(dataTabla);
-          pintarUltimasCargas(cargas);
-          pintarValidaciones(validaciones);
-
-          setEstado(
-            "ok",
-            "Base local lista",
-            "La información está disponible para futuras pantallas."
-          );
-        } catch (error) {
-          console.error(error);
-          setEstado("error", "Error en base local", error.message || "No se pudo cargar la información.");
-          tablaMaterias.innerHTML =
-            '<tr><td colspan="9" class="bd-empty bd-empty-error">' +
-            escapar(error.message || "Error desconocido") +
-            "</td></tr>";
-        }
-      }
-
-      async function abrirDetalle(materiaId) {
-        try {
-          var detalle = await BD.Consultas.obtenerDetalleMateria(materiaId);
-          var materia = detalle.materia;
-          var archivos = detalle.archivos || [];
-          var validaciones = detalle.validaciones || [];
-
-          modalTitulo.textContent = (materia.codigo ? materia.codigo + " · " : "") + materia.nombre;
-
-          modalContenido.innerHTML =
-            '<div class="bd-detail-grid">' +
-              '<div><span>Carrera</span><strong>' + escapar(detalle.carrera ? detalle.carrera.nombre : "") + '</strong></div>' +
-              '<div><span>Nivel</span><strong>' + escapar(detalle.nivel ? detalle.nivel.nombre : "") + '</strong></div>' +
-              '<div><span>Estado</span><strong>' + escapar(materia.estadoValidacion || "") + '</strong></div>' +
-              '<div><span>Total archivos</span><strong>' + escapar(archivos.length) + '</strong></div>' +
-            '</div>' +
-
-            '<h3>Archivos detectados</h3>' +
-            (
-              archivos.length
-                ? '<div class="bd-file-list">' + archivos.map(function (archivo) {
-                    return (
-                      '<div class="bd-file-item">' +
-                        '<strong>' + escapar(archivo.nombreArchivo || "") + '</strong>' +
-                        '<span>' + escapar(archivo.tipo || "no_identificado") + ' · Confianza: ' + escapar(archivo.confianza || 0) + '%</span>' +
-                        '<small>' + escapar(archivo.rutaOriginal || "") + '</small>' +
-                      '</div>'
-                    );
-                  }).join("") + '</div>'
-                : '<p class="bd-muted">No hay archivos asociados.</p>'
-            ) +
-
-            '<h3>Validaciones</h3>' +
-            (
-              validaciones.length
-                ? '<div class="bd-file-list">' + validaciones.map(function (v) {
-                    return (
-                      '<div class="bd-file-item">' +
-                        '<strong>' + escapar(v.tipo || "") + '</strong>' +
-                        '<span>' + escapar(v.severidad || "") + '</span>' +
-                        '<small>' + escapar(v.mensaje || "") + '</small>' +
-                      '</div>'
-                    );
-                  }).join("") + '</div>'
-                : '<p class="bd-muted">Sin validaciones activas para esta materia.</p>'
-            );
-
-          modal.showModal();
-        } catch (error) {
-          alert(error.message || "No se pudo abrir el detalle.");
-        }
-      }
-
-      document.getElementById("btnRecargar").addEventListener("click", cargarPantalla);
-
-      document.getElementById("btnBackup").addEventListener("click", async function () {
-        try {
-          await BD.Backup.descargarBackup();
-        } catch (error) {
-          alert(error.message || "No se pudo descargar el backup.");
-        }
-      });
-
-      document.getElementById("btnDiagnostico").addEventListener("click", async function () {
-        try {
-          await BD.Backup.descargarDiagnostico();
-        } catch (error) {
-          alert(error.message || "No se pudo descargar el diagnóstico.");
-        }
-      });
-
-      document.getElementById("btnValidar").addEventListener("click", async function () {
-        try {
-          setEstado("loading", "Validando materias...", "Recalculando estado de archivos PEA.");
-          await BD.Validaciones.validarTodasLasMaterias();
-          await cargarPantalla();
-        } catch (error) {
-          alert(error.message || "No se pudo validar la base.");
-        }
-      });
-
-      document.getElementById("inputBackup").addEventListener("change", async function (event) {
-        var file = event.target.files && event.target.files[0];
-
-        if (!file) return;
-
-        var confirmar = confirm(
-          "¿Quieres importar este backup?\n\n" +
-          "Aceptar: fusiona el contenido con la base actual.\n" +
-          "Cancelar: no importa nada."
-        );
-
-        if (!confirmar) {
-          event.target.value = "";
-          return;
-        }
-
-        try {
-          setEstado("loading", "Importando backup...", "Restaurando información desde JSON.");
-          await BD.Backup.importarBackupDesdeArchivo(file, {
-            limpiarAntes: false
-          });
-
-          event.target.value = "";
-          await cargarPantalla();
-        } catch (error) {
-          event.target.value = "";
-          alert(error.message || "No se pudo importar el backup.");
-          await cargarPantalla();
-        }
-      });
-
-      buscador.addEventListener("input", filtrarTabla);
-
-      tablaMaterias.addEventListener("click", function (event) {
-        var btn = event.target.closest("[data-materia-id]");
-
-        if (!btn) return;
-
-        abrirDetalle(btn.getAttribute("data-materia-id"));
-      });
-
-      document.getElementById("btnCerrarModal").addEventListener("click", function () {
-        modal.close();
-      });
-
-      cargarPantalla();
+      document.getElementById('btnRecargar').addEventListener('click',cargar);
+      document.getElementById('btnBackup').addEventListener('click',function(){BD.Backup.descargarBackup().catch(function(e){alert(e.message);});});
+      document.getElementById('btnDiagnostico').addEventListener('click',function(){BD.Backup.descargarDiagnostico().catch(function(e){alert(e.message);});});
+      document.getElementById('btnValidar').addEventListener('click',async function(){try{setEstado('loading','Validando contenido...','Recalculando archivos y datos procesados.'); if(BD.Validaciones&&BD.Validaciones.validarTodasLasMaterias)await BD.Validaciones.validarTodasLasMaterias(); var materias=await BD.Core.getAll(BD.Schema.STORES.MATERIAS); if(BD.Integridad){for(var i=0;i<materias.length;i+=1)await BD.Integridad.validarMateria(materias[i]);} await cargar();}catch(e){alert(e.message||e);await cargar();}});
+      buscador.addEventListener('input',filtrar);
+      tablaMaterias.addEventListener('click',function(e){var b=e.target.closest('[data-materia-id]');if(b)abrirDetalle(b.getAttribute('data-materia-id'));});
+      document.getElementById('btnCerrarModal').addEventListener('click',function(){modal.close();});
+      cargar();
     })();
   </script>
 </body>
