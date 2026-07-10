@@ -2,11 +2,11 @@
 Nombre completo: bdlocal.html
 Ruta o ubicación: /Curriculo/bdlocal/bdlocal.html
 Función o funciones:
-- Mostrar toda la información guardada desde PEA Base, Unidades y Actividades.
-- Reconstruir automáticamente datos semánticos desde filas heredadas del PEA Base.
+- Mostrar inmediatamente la información existente en IndexedDB.
+- Ejecutar la reparación curricular en segundo plano sin bloquear la tabla.
 - Presentar descripción, objetivo, cuatro unidades, contenidos, actividades y bibliografía.
-- Mostrar controles de integridad y datos técnicos por materia.
-- Cargar el menú superior en navegador y Electron.
+- Mostrar progreso y errores por materia con límites de tiempo.
+- Evitar consultas duplicadas y recargas automáticas superpuestas.
 ========================================================= -->
 <!DOCTYPE html>
 <html lang="es">
@@ -14,10 +14,10 @@ Función o funciones:
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>BDLocal CCC | Gestión Curricular</title>
-  <link rel="stylesheet" href="../menu-superior/menu-superior.css?v=20260710-6" />
-  <link rel="stylesheet" href="./bdlocal.css?v=20260710-6" />
+  <link rel="stylesheet" href="../menu-superior/menu-superior.css?v=20260710-8" />
+  <link rel="stylesheet" href="./bdlocal.css?v=20260710-8" />
   <style>
-    .bd-detail-section{margin-top:18px;padding-top:14px;border-top:1px solid #d8e2ef}.bd-detail-section h3{margin:0 0 10px}.bd-kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin:12px 0}.bd-kpi{border:1px solid #d8e2ef;border-radius:12px;padding:10px;background:#f8fafc}.bd-kpi span{display:block;font-size:12px;color:#64748b}.bd-kpi strong{font-size:18px}.bd-check-ok{color:#087f5b}.bd-check-bad{color:#b42318}.bd-text-block{white-space:pre-wrap;line-height:1.55;border:1px solid #d8e2ef;border-radius:12px;padding:12px;background:#fff}.bd-unit{border:1px solid #d8e2ef;border-radius:14px;margin:10px 0;background:#fff;overflow:hidden}.bd-unit summary{cursor:pointer;padding:13px 15px;font-weight:800;background:#f5f8fc}.bd-unit-body{padding:14px}.bd-content-list{margin:8px 0 0 20px;padding:0}.bd-content-list li{margin:0 0 7px;line-height:1.45}.bd-activity{border:1px solid #d8e2ef;border-radius:12px;padding:12px;margin:9px 0}.bd-activity-grid{display:grid;grid-template-columns:170px 1fr;gap:8px}.bd-biblio{border-left:4px solid #0b4a8b;padding:10px 12px;margin:10px 0;background:#f8fafc}.bd-raw{max-height:420px;overflow:auto;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:12px;font-size:12px;white-space:pre-wrap}.bd-modal{width:min(1120px,96vw);max-height:94vh}.bd-modal-content{max-height:78vh;overflow:auto}.bd-toolbar{display:flex;gap:10px;flex-wrap:wrap}.bd-alert{padding:10px 12px;border-radius:10px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412}.bd-success{padding:10px 12px;border-radius:10px;background:#ecfdf3;border:1px solid #abefc6;color:#067647}@media(max-width:720px){.bd-activity-grid{grid-template-columns:1fr}}
+    .bd-detail-section{margin-top:18px;padding-top:14px;border-top:1px solid #d8e2ef}.bd-detail-section h3{margin:0 0 10px}.bd-kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin:12px 0}.bd-kpi{border:1px solid #d8e2ef;border-radius:12px;padding:10px;background:#f8fafc}.bd-kpi span{display:block;font-size:12px;color:#64748b}.bd-kpi strong{font-size:18px}.bd-check-ok{color:#087f5b}.bd-check-bad{color:#b42318}.bd-text-block{white-space:pre-wrap;line-height:1.55;border:1px solid #d8e2ef;border-radius:12px;padding:12px;background:#fff}.bd-unit{border:1px solid #d8e2ef;border-radius:14px;margin:10px 0;background:#fff;overflow:hidden}.bd-unit summary{cursor:pointer;padding:13px 15px;font-weight:800;background:#f5f8fc}.bd-unit-body{padding:14px}.bd-content-list{margin:8px 0 0 20px;padding:0}.bd-content-list li{margin:0 0 7px;line-height:1.45}.bd-activity{border:1px solid #d8e2ef;border-radius:12px;padding:12px;margin:9px 0}.bd-activity-grid{display:grid;grid-template-columns:170px 1fr;gap:8px}.bd-biblio{border-left:4px solid #0b4a8b;padding:10px 12px;margin:10px 0;background:#f8fafc}.bd-raw{max-height:420px;overflow:auto;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:12px;font-size:12px;white-space:pre-wrap}.bd-modal{width:min(1120px,96vw);max-height:94vh}.bd-modal-content{max-height:78vh;overflow:auto}.bd-toolbar{display:flex;gap:10px;flex-wrap:wrap}.bd-alert{padding:10px 12px;border-radius:10px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412}.bd-success{padding:10px 12px;border-radius:10px;background:#ecfdf3;border:1px solid #abefc6;color:#067647}.bd-progress-note{font-size:12px;color:#52647b;margin-top:4px}.bd-btn[disabled]{opacity:.6;cursor:not-allowed}@media(max-width:720px){.bd-activity-grid{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
@@ -44,13 +44,13 @@ Función o funciones:
         <article class="bd-card"><span class="bd-card-label">Niveles</span><strong id="statNiveles">0</strong><small>Niveles curriculares</small></article>
         <article class="bd-card"><span class="bd-card-label">Materias</span><strong id="statMaterias">0</strong><small>Total registradas</small></article>
         <article class="bd-card bd-card-ok"><span class="bd-card-label">Completas</span><strong id="statCompletas">0</strong><small>Archivos y contenido válidos</small></article>
-        <article class="bd-card bd-card-warn"><span class="bd-card-label">Revisión</span><strong id="statIncompletas">0</strong><small>Contenido faltante</small></article>
+        <article class="bd-card bd-card-warn"><span class="bd-card-label">Revisión</span><strong id="statIncompletas">0</strong><small>Contenido pendiente</small></article>
         <article class="bd-card"><span class="bd-card-label">Archivos PEA</span><strong id="statArchivos">0</strong><small>Base, Unidades y Actividades</small></article>
       </section>
 
       <section class="bd-panel">
         <div class="bd-panel-head"><div><h2>Materias guardadas</h2><p>Abre una materia para revisar todos sus datos procesados.</p></div><div class="bd-search"><input id="buscador" type="search" placeholder="Buscar carrera, nivel, código, materia o estado..." /></div></div>
-        <div class="bd-table-wrap"><table class="bd-table"><thead><tr><th>Carrera</th><th>Nivel</th><th>Código</th><th>Materia</th><th>Base</th><th>Unidades</th><th>Actividades</th><th>Estado</th><th>Detalle</th></tr></thead><tbody id="tablaMaterias"><tr><td colspan="9" class="bd-empty">Cargando...</td></tr></tbody></table></div>
+        <div class="bd-table-wrap"><table class="bd-table"><thead><tr><th>Carrera</th><th>Nivel</th><th>Código</th><th>Materia</th><th>Base</th><th>Unidades</th><th>Actividades</th><th>Estado</th><th>Detalle</th></tr></thead><tbody id="tablaMaterias"><tr><td colspan="9" class="bd-empty">Cargando información guardada...</td></tr></tbody></table></div>
       </section>
 
       <section class="bd-panel bd-panel-split">
@@ -65,39 +65,77 @@ Función o funciones:
     <div id="modalContenido" class="bd-modal-content">Cargando...</div>
   </dialog>
 
-  <script src="../menu-superior/menu-superior.js?v=20260710-6"></script>
-  <script src="./bdlocal.schema.js?v=20260710-6"></script>
-  <script src="./bdlocal.core.js?v=20260710-6"></script>
-  <script src="./bdlocal.api.js?v=20260710-6"></script>
-  <script src="./bdlocal.importador.js?v=20260710-6"></script>
-  <script src="./bdlocal.integridad.js?v=20260710-6"></script>
-  <script src="./bdlocal.inteligencia.js?v=20260710-6"></script>
-  <script src="./bdlocal.validaciones.js?v=20260710-6"></script>
-  <script src="./bdlocal.consultas.js?v=20260710-6"></script>
-  <script src="./bdlocal.backup.js?v=20260710-6"></script>
+  <script src="../menu-superior/menu-superior.js?v=20260710-8"></script>
+  <script src="./bdlocal.schema.js?v=20260710-8"></script>
+  <script src="./bdlocal.core.js?v=20260710-8"></script>
+  <script src="./bdlocal.api.js?v=20260710-8"></script>
+  <script src="./bdlocal.importador.js?v=20260710-8"></script>
+  <script src="./bdlocal.integridad.js?v=20260710-8"></script>
+  <script src="./bdlocal.inteligencia.js?v=20260710-8"></script>
+  <script src="./bdlocal.validaciones.js?v=20260710-8"></script>
+  <script src="./bdlocal.consultas.js?v=20260710-8"></script>
+  <script src="./bdlocal.backup.js?v=20260710-8"></script>
 
   <script>
     (function () {
       "use strict";
 
       var BD = window.BDLocalCCC;
+      var S = BD && BD.Schema && BD.Schema.STORES;
       var estadoSistema = document.getElementById("estadoSistema");
       var tablaMaterias = document.getElementById("tablaMaterias");
       var buscador = document.getElementById("buscador");
       var modal = document.getElementById("modalDetalle");
       var modalTitulo = document.getElementById("modalTitulo");
       var modalContenido = document.getElementById("modalContenido");
+      var btnRecargar = document.getElementById("btnRecargar");
+      var btnValidar = document.getElementById("btnValidar");
       var dataTabla = [];
-      var reparacionInicialRealizada = false;
+      var cargaActiva = null;
+      var reparacionInicialIniciada = false;
+      var refrescoPendiente = null;
 
       function texto(valor) { return String(valor === null || typeof valor === "undefined" ? "" : valor).trim(); }
       function arr(valor) { return Array.isArray(valor) ? valor : (valor === null || typeof valor === "undefined" ? [] : [valor]); }
       function escapar(valor) { return texto(valor).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;"); }
       function saltos(valor) { return escapar(valor).replace(/\n/g,"<br>"); }
       function normalizar(valor) { return texto(valor).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase(); }
-      function setEstado(tipo,titulo,mensaje){ estadoSistema.className="bd-status-card bd-status-"+tipo; estadoSistema.innerHTML='<div class="bd-status-dot"></div><div><strong>'+escapar(titulo)+'</strong><span>'+escapar(mensaje)+'</span></div>'; }
-      function badgeSiNo(valor){ return valor?'<span class="bd-badge bd-badge-ok">Sí</span>':'<span class="bd-badge bd-badge-error">No</span>'; }
-      function badgeEstado(valor){ var cls="bd-badge bd-badge-neutral"; if(valor==="completo")cls="bd-badge bd-badge-ok"; else if(valor==="revision")cls="bd-badge bd-badge-warn"; else if(valor==="incompleto"||valor==="error")cls="bd-badge bd-badge-error"; return '<span class="'+cls+'">'+escapar(valor||"pendiente")+'</span>'; }
+
+      function conTiempoLimite(promesa, ms, contexto) {
+        return new Promise(function (resolve, reject) {
+          var terminada = false;
+          var timer = setTimeout(function () {
+            if (terminada) return;
+            terminada = true;
+            reject(new Error("Tiempo agotado: " + contexto));
+          }, Number(ms || 15000));
+
+          Promise.resolve(promesa).then(function (resultado) {
+            if (terminada) return;
+            terminada = true;
+            clearTimeout(timer);
+            resolve(resultado);
+          }).catch(function (error) {
+            if (terminada) return;
+            terminada = true;
+            clearTimeout(timer);
+            reject(error);
+          });
+        });
+      }
+
+      function setEstado(tipo, titulo, mensaje) {
+        estadoSistema.className = "bd-status-card bd-status-" + tipo;
+        estadoSistema.innerHTML = '<div class="bd-status-dot"></div><div><strong>' + escapar(titulo) + '</strong><span>' + escapar(mensaje) + '</span></div>';
+      }
+
+      function setBotonesOcupados(ocupado) {
+        btnRecargar.disabled = !!ocupado;
+        btnValidar.disabled = !!ocupado;
+      }
+
+      function badgeSiNo(valor) { return valor ? '<span class="bd-badge bd-badge-ok">Sí</span>' : '<span class="bd-badge bd-badge-error">No</span>'; }
+      function badgeEstado(valor) { var cls="bd-badge bd-badge-neutral"; if(valor==="completo")cls="bd-badge bd-badge-ok"; else if(valor==="revision")cls="bd-badge bd-badge-warn"; else if(valor==="incompleto"||valor==="error")cls="bd-badge bd-badge-error"; return '<span class="'+cls+'">'+escapar(valor||"pendiente")+'</span>'; }
 
       function obtenerDatosBase(base){ base=base||{}; return base.datos||base; }
       function obtenerUnidadesBase(base){ var datos=obtenerDatosBase(base); return arr(datos.unidadesBase||base.unidadesBase); }
@@ -106,33 +144,259 @@ Función o funciones:
       function obtenerObjetivo(base){ var datos=obtenerDatosBase(base),campos=base&&base.campos||datos.campos||{}; return texto(datos.objetivo||base.objetivo||campos.objetivo_asignatura||campos.objetivo); }
       function contenidosUnidad(unidad){ var lista=arr(unidad&&unidad.contenidos).filter(Boolean); if(lista.length)return lista; var valor=texto(unidad&&(unidad.temaDetectado||unidad.contenido||unidad.tema)); return valor?[valor]:[]; }
 
-      function pintarStats(d){ document.getElementById("statCarreras").textContent=d.totalCarreras||0; document.getElementById("statNiveles").textContent=d.totalNiveles||0; document.getElementById("statMaterias").textContent=d.totalMaterias||0; document.getElementById("statCompletas").textContent=d.materias?d.materias.completas||0:0; document.getElementById("statIncompletas").textContent=d.materias?Number(d.materias.incompletas||0)+Number(d.materias.revision||0)+Number(d.materias.pendientes||0):0; document.getElementById("statArchivos").textContent=d.totalArchivos||0; }
+      function construirSnapshot(datos) {
+        var carrerasPorId = {};
+        var nivelesPorId = {};
+        var archivosPorMateria = {};
 
-      function pintarTabla(filas){ if(!filas.length){tablaMaterias.innerHTML='<tr><td colspan="9" class="bd-empty">No hay materias para mostrar.</td></tr>';return;} tablaMaterias.innerHTML=filas.map(function(f){return '<tr><td>'+escapar(f.carrera)+'</td><td>'+escapar(f.nivel)+'</td><td><code>'+escapar(f.codigo)+'</code></td><td><strong>'+escapar(f.materia)+'</strong></td><td>'+badgeSiNo(f.peaBase)+'</td><td>'+badgeSiNo(f.peaUnidades)+'</td><td>'+badgeSiNo(f.peaActividades)+'</td><td>'+badgeEstado(f.estado)+'</td><td><button class="bd-mini-btn" type="button" data-materia-id="'+escapar(f.materiaId)+'">Ver todo</button></td></tr>';}).join(""); }
-      function filtrar(){ var q=normalizar(buscador.value); if(!q){pintarTabla(dataTabla);return;} pintarTabla(dataTabla.filter(function(f){return normalizar([f.carrera,f.nivel,f.codigo,f.materia,f.estado].join(" ")).includes(q);})); }
+        arr(datos.carreras).forEach(function (c) { carrerasPorId[c.id] = c; });
+        arr(datos.niveles).forEach(function (n) { nivelesPorId[n.id] = n; });
+        arr(datos.archivos).forEach(function (a) {
+          if (!archivosPorMateria[a.materiaId]) archivosPorMateria[a.materiaId] = [];
+          archivosPorMateria[a.materiaId].push(a);
+        });
+
+        var filas = arr(datos.materias).slice().sort(function (a, b) {
+          return texto(a.codigo || a.nombre).localeCompare(texto(b.codigo || b.nombre), "es", { sensitivity: "base" });
+        }).map(function (materia) {
+          var archivos = archivosPorMateria[materia.id] || [];
+          return {
+            carrera: carrerasPorId[materia.carreraId] ? carrerasPorId[materia.carreraId].nombre : "",
+            nivel: nivelesPorId[materia.nivelId] ? nivelesPorId[materia.nivelId].nombre : "",
+            codigo: materia.codigo,
+            materia: materia.nombre,
+            materiaId: materia.id,
+            estado: materia.estadoValidacion,
+            peaBase: archivos.some(function (a) { return a.tipo === "pea_base"; }),
+            peaUnidades: archivos.some(function (a) { return a.tipo === "pea_unidades"; }),
+            peaActividades: archivos.some(function (a) { return a.tipo === "pea_actividades"; })
+          };
+        });
+
+        var completas = arr(datos.materias).filter(function (m) { return m.estadoValidacion === "completo"; }).length;
+
+        return {
+          dashboard: {
+            totalCarreras: arr(datos.carreras).length,
+            totalNiveles: arr(datos.niveles).length,
+            totalMaterias: arr(datos.materias).length,
+            totalArchivos: arr(datos.archivos).length,
+            completas: completas,
+            revision: arr(datos.materias).length - completas
+          },
+          filas: filas,
+          cargas: arr(datos.cargas).slice().sort(function (a, b) {
+            return texto(b.fechaCarga || b.creadoEn).localeCompare(texto(a.fechaCarga || a.creadoEn));
+          }).slice(0, 8),
+          validaciones: arr(datos.validaciones).filter(function (v) { return v.estado !== "resuelto"; }).sort(function (a, b) {
+            return texto(b.creadoEn).localeCompare(texto(a.creadoEn));
+          }).slice(0, 12)
+        };
+      }
+
+      async function obtenerSnapshot() {
+        if (!BD || !BD.Core || !S) throw new Error("Los módulos de BDLocal no se cargaron correctamente.");
+        await conTiempoLimite(BD.Core.ready(), 15000, "abrir BDLocal");
+
+        var resultados = await conTiempoLimite(Promise.all([
+          BD.Core.getAll(S.CARRERAS),
+          BD.Core.getAll(S.NIVELES),
+          BD.Core.getAll(S.MATERIAS),
+          BD.Core.getAll(S.PEA_ARCHIVOS),
+          BD.Core.getAll(S.VALIDACIONES),
+          BD.Core.getAll(S.CARGAS_ZIP)
+        ]), 20000, "leer la información guardada");
+
+        return construirSnapshot({
+          carreras: resultados[0],
+          niveles: resultados[1],
+          materias: resultados[2],
+          archivos: resultados[3],
+          validaciones: resultados[4],
+          cargas: resultados[5]
+        });
+      }
+
+      function pintarStats(d) {
+        document.getElementById("statCarreras").textContent = d.totalCarreras || 0;
+        document.getElementById("statNiveles").textContent = d.totalNiveles || 0;
+        document.getElementById("statMaterias").textContent = d.totalMaterias || 0;
+        document.getElementById("statCompletas").textContent = d.completas || 0;
+        document.getElementById("statIncompletas").textContent = d.revision || 0;
+        document.getElementById("statArchivos").textContent = d.totalArchivos || 0;
+      }
+
+      function pintarTabla(filas) {
+        if (!filas.length) {
+          tablaMaterias.innerHTML = '<tr><td colspan="9" class="bd-empty">No hay materias para mostrar.</td></tr>';
+          return;
+        }
+
+        tablaMaterias.innerHTML = filas.map(function (f) {
+          return '<tr><td>'+escapar(f.carrera)+'</td><td>'+escapar(f.nivel)+'</td><td><code>'+escapar(f.codigo)+'</code></td><td><strong>'+escapar(f.materia)+'</strong></td><td>'+badgeSiNo(f.peaBase)+'</td><td>'+badgeSiNo(f.peaUnidades)+'</td><td>'+badgeSiNo(f.peaActividades)+'</td><td>'+badgeEstado(f.estado)+'</td><td><button class="bd-mini-btn" type="button" data-materia-id="'+escapar(f.materiaId)+'">Ver todo</button></td></tr>';
+        }).join("");
+      }
+
+      function pintarListas(cargas, validaciones) {
+        document.getElementById("ultimasCargas").innerHTML = cargas.length ? cargas.map(function (c) {
+          return '<div class="bd-list-item"><strong>'+escapar(c.nombreZip||"Carga ZIP")+'</strong><span>'+escapar(c.estado||"")+' · '+escapar(c.fechaCarga||c.creadoEn||"")+'</span></div>';
+        }).join("") : '<p class="bd-muted">Sin cargas registradas.</p>';
+
+        document.getElementById("validacionesActivas").innerHTML = validaciones.length ? validaciones.map(function (v) {
+          return '<div class="bd-list-item"><strong>'+escapar(v.tipo||"Validación")+'</strong><span>'+escapar(v.mensaje||"")+'</span></div>';
+        }).join("") : '<p class="bd-muted">Sin validaciones activas.</p>';
+      }
+
+      function pintarSnapshot(snapshot) {
+        dataTabla = snapshot.filas;
+        pintarStats(snapshot.dashboard);
+        pintarTabla(dataTabla);
+        pintarListas(snapshot.cargas, snapshot.validaciones);
+      }
+
+      function filtrar() {
+        var q = normalizar(buscador.value);
+        if (!q) { pintarTabla(dataTabla); return; }
+        pintarTabla(dataTabla.filter(function (f) {
+          return normalizar([f.carrera,f.nivel,f.codigo,f.materia,f.estado].join(" ")).includes(q);
+        }));
+      }
 
       function renderKpis(integridad,base,unidades,actividades){ integridad=integridad||{}; var biblio=obtenerBibliografia(base); var totalCont=arr(unidades).reduce(function(t,u){return t+contenidosUnidad(u).length;},0); var valores=[["Descripción",integridad.descripcion!==undefined?integridad.descripcion:!!obtenerDescripcion(base)],["Objetivo",integridad.objetivo!==undefined?integridad.objetivo:!!obtenerObjetivo(base)],["Unidades",integridad.unidadesGuardadas!==undefined?integridad.unidadesGuardadas:arr(unidades).length],["Contenidos",integridad.contenidos!==undefined?integridad.contenidos:totalCont],["Actividades",integridad.actividades!==undefined?integridad.actividades:arr(actividades).length],["Bibliografías",integridad.bibliografias!==undefined?integridad.bibliografias:biblio.length],["Justificaciones",integridad.justificacionesBibliografia!==undefined?integridad.justificacionesBibliografia:biblio.filter(function(x){return texto(x.justificacion);}).length]]; return '<div class="bd-kpi-grid">'+valores.map(function(v){var ok=typeof v[1]==="boolean"?v[1]:Number(v[1])>0;return '<div class="bd-kpi"><span>'+escapar(v[0])+'</span><strong class="'+(ok?'bd-check-ok':'bd-check-bad')+'">'+escapar(typeof v[1]==="boolean"?(v[1]?'Sí':'No'):v[1])+'</strong></div>';}).join("")+'</div>'; }
 
-      function renderUnidades(base,unidades){ var mapa={}; arr(unidades).forEach(function(u){mapa[Number(u.unidadNumero||0)]=u;}); var ub=obtenerUnidadesBase(base); return [1,2,3,4].map(function(n){var meta=ub.find(function(x){return Number(x.unidadNumero||x.orden||0)===n;})||{};var u=mapa[n]||{};var contenidos=contenidosUnidad(u);return '<details class="bd-unit" open><summary>Unidad '+n+': '+escapar(meta.nombre||meta.tituloUnidad||'No registrada')+' · '+contenidos.length+' contenidos</summary><div class="bd-unit-body"><p><strong>Resultado de aprendizaje:</strong></p><div class="bd-text-block">'+saltos(meta.resultadoAprendizaje||meta.resultado||'No registrado')+'</div><p><strong>Competencia:</strong></p><div class="bd-text-block">'+saltos(meta.competencia||'No registrada')+'</div><p><strong>Contenidos:</strong></p>'+(contenidos.length?'<div class="bd-content-list">'+contenidos.map(function(c){return '<p>'+saltos(c)+'</p>';}).join("")+'</div>':'<p class="bd-alert">No hay contenidos guardados para esta unidad.</p>')+'</div></details>';}).join(""); }
+      function renderUnidades(base,unidades){ var mapa={}; arr(unidades).forEach(function(u){mapa[Number(u.unidadNumero||0)]=u;}); var ub=obtenerUnidadesBase(base); return [1,2,3,4].map(function(n){var meta=ub.find(function(x){return Number(x.unidadNumero||x.orden||0)===n;})||{};var u=mapa[n]||{};var contenidos=contenidosUnidad(u);return '<details class="bd-unit" open><summary>Unidad '+n+': '+escapar(meta.nombre||meta.tituloUnidad||'No registrada')+' · '+contenidos.length+' contenidos</summary><div class="bd-unit-body"><p><strong>Resultado de aprendizaje:</strong></p><div class="bd-text-block">'+saltos(meta.resultadoAprendizaje||meta.resultado||'No registrado')+'</div><p><strong>Competencia:</strong></p><div class="bd-text-block">'+saltos(meta.competencia||'No registrada')+'</div><p><strong>Contenidos:</strong></p>'+(contenidos.length?'<ol class="bd-content-list">'+contenidos.map(function(c){return '<li>'+saltos(c)+'</li>';}).join("")+'</ol>':'<p class="bd-alert">No hay contenidos guardados para esta unidad.</p>')+'</div></details>';}).join(""); }
 
       function renderActividades(actividades){ if(!arr(actividades).length)return '<p class="bd-alert">No hay actividades guardadas.</p>'; return arr(actividades).map(function(a,i){return '<div class="bd-activity"><h4>Actividad '+(i+1)+'</h4><div class="bd-activity-grid"><strong>Mecanismo</strong><span>'+saltos(a.mecanismo||a.tipoActividad||a.tipo||'No registrado')+'</span><strong>Tema</strong><span>'+saltos(a.tema||a.titulo||'No registrado')+'</span><strong>Descripción</strong><span>'+saltos(a.descripcion||a.actividadDetectada||a.actividad||'No registrada')+'</span></div></div>';}).join(""); }
 
       function renderBibliografia(base){ var items=obtenerBibliografia(base); if(!items.length)return '<p class="bd-alert">No hay bibliografía guardada.</p>'; return items.map(function(b,i){return '<div class="bd-biblio"><strong>Bibliografía '+(i+1)+'</strong><p>'+saltos(b.referencia||b.bibliografia||b.descripcion)+'</p>'+(texto(b.codigoReferencia||b.codigo)?'<p><strong>Código:</strong> '+escapar(b.codigoReferencia||b.codigo)+'</p>':'')+'<p><strong>Justificación:</strong><br>'+saltos(b.justificacion||b.descripcionComponente3||'No registrada')+'</p></div>';}).join(""); }
 
-      async function abrirDetalle(id){ try{ modalContenido.innerHTML='<p>Reparando y cargando información procesada...</p>'; modal.showModal(); if(BD.Inteligencia)await BD.Inteligencia.repararMateria(id); var d=await BD.Consultas.obtenerDetalleMateria(id); var m=d.materia||{},pea=d.pea||{},base=pea.base||{},unidades=pea.unidades||[],actividades=pea.actividades||[],integridad=m.integridadContenido||{}; modalTitulo.textContent=(m.codigo?m.codigo+' · ':'')+m.nombre; var estadoHtml=integridad.completo===true?'<div class="bd-success">La materia tiene archivos y contenido curricular completos.</div>':'<div class="bd-alert">Contenido pendiente: '+escapar(arr(integridad.faltantes).join(', ')||'reimporta el ZIP para recalcular la integridad')+'</div>'; modalContenido.innerHTML='<div class="bd-detail-grid"><div><span>Carrera</span><strong>'+escapar(d.carrera&&d.carrera.nombre)+'</strong></div><div><span>Nivel</span><strong>'+escapar(d.nivel&&d.nivel.nombre)+'</strong></div><div><span>Estado</span><strong>'+escapar(m.estadoValidacion)+'</strong></div><div><span>Archivos</span><strong>'+escapar(arr(d.archivos).length)+'</strong></div></div>'+estadoHtml+renderKpis(integridad,base,unidades,actividades)+'<section class="bd-detail-section"><h3>Descripción de la asignatura</h3><div class="bd-text-block">'+saltos(obtenerDescripcion(base)||'No registrada')+'</div></section><section class="bd-detail-section"><h3>Objetivo de la asignatura</h3><div class="bd-text-block">'+saltos(obtenerObjetivo(base)||'No registrado')+'</div></section><section class="bd-detail-section"><h3>Unidades, resultados, competencias y contenidos</h3>'+renderUnidades(base,unidades)+'</section><section class="bd-detail-section"><h3>Actividades · '+arr(actividades).length+'</h3>'+renderActividades(actividades)+'</section><section class="bd-detail-section"><h3>Bibliografía y justificación</h3>'+renderBibliografia(base)+'</section><section class="bd-detail-section"><h3>Archivos detectados</h3><div class="bd-file-list">'+arr(d.archivos).map(function(a){return '<div class="bd-file-item"><strong>'+escapar(a.nombreArchivo)+'</strong><span>'+escapar(a.tipo)+' · Confianza '+escapar(a.confianza||0)+'%</span><small>'+escapar(a.rutaOriginal)+'</small></div>';}).join("")+'</div></section><section class="bd-detail-section"><details><summary><strong>Datos técnicos completos (JSON)</strong></summary><pre class="bd-raw">'+escapar(JSON.stringify(d,null,2))+'</pre></details></section>'; }catch(error){modalContenido.innerHTML='<p class="bd-alert">'+escapar(error.message||error)+'</p>';} }
+      async function abrirDetalle(id) {
+        modalContenido.innerHTML = '<p>Cargando información procesada...</p>';
+        if (!modal.open) modal.showModal();
 
-      function pintarListas(cargas,validaciones){ document.getElementById("ultimasCargas").innerHTML=arr(cargas).length?arr(cargas).map(function(c){return '<div class="bd-list-item"><strong>'+escapar(c.nombreZip||'Carga ZIP')+'</strong><span>'+escapar(c.estado||'')+' · '+escapar(c.fechaCarga||c.creadoEn||'')+'</span></div>';}).join(""):'<p class="bd-muted">Sin cargas registradas.</p>'; document.getElementById("validacionesActivas").innerHTML=arr(validaciones).length?arr(validaciones).slice(0,12).map(function(v){return '<div class="bd-list-item"><strong>'+escapar(v.tipo||'Validación')+'</strong><span>'+escapar(v.mensaje||'')+'</span></div>';}).join(""):'<p class="bd-muted">Sin validaciones activas.</p>'; }
+        var advertenciaReparacion = "";
+        try {
+          if (BD.Inteligencia) {
+            await conTiempoLimite(BD.Inteligencia.repararMateria(id), 28000, "reparar la materia seleccionada");
+          }
+        } catch (errorReparacion) {
+          advertenciaReparacion = '<div class="bd-alert">La reparación no terminó: '+escapar(errorReparacion.message||errorReparacion)+'. Se muestran los datos disponibles.</div>';
+        }
 
-      async function cargar(){ try{setEstado('loading','Analizando base local...','Reconstruyendo información curricular cuando sea necesario.'); await BD.inicializar(); if(!reparacionInicialRealizada&&BD.Inteligencia){reparacionInicialRealizada=true;await BD.Inteligencia.repararTodas();} var d=await BD.Consultas.obtenerDashboard(); dataTabla=await BD.Consultas.construirTablaMaterias(); var cargas=await BD.Consultas.obtenerUltimasCargas(8); var val=BD.Validaciones?await BD.Validaciones.obtenerValidacionesActivas():[]; pintarStats(d);pintarTabla(dataTabla);pintarListas(cargas,val);setEstado('ok','Base local lista','Los datos heredados fueron interpretados y validados automáticamente.');}catch(e){console.error(e);setEstado('error','Error en base local',e.message||'No se pudo cargar.');tablaMaterias.innerHTML='<tr><td colspan="9" class="bd-empty bd-empty-error">'+escapar(e.message||e)+'</td></tr>';}}
+        try {
+          var d = await conTiempoLimite(BD.Consultas.obtenerDetalleMateria(id), 15000, "cargar el detalle de la materia");
+          var m=d.materia||{},pea=d.pea||{},base=pea.base||{},unidades=pea.unidades||[],actividades=pea.actividades||[],integridad=m.integridadContenido||{};
+          modalTitulo.textContent=(m.codigo?m.codigo+' · ':'')+m.nombre;
+          var estadoHtml=integridad.completo===true?'<div class="bd-success">La materia tiene archivos y contenido curricular completos.</div>':'<div class="bd-alert">Contenido pendiente: '+escapar(arr(integridad.faltantes).join(', ')||'revisa la información procesada')+'</div>';
+          modalContenido.innerHTML=advertenciaReparacion+'<div class="bd-detail-grid"><div><span>Carrera</span><strong>'+escapar(d.carrera&&d.carrera.nombre)+'</strong></div><div><span>Nivel</span><strong>'+escapar(d.nivel&&d.nivel.nombre)+'</strong></div><div><span>Estado</span><strong>'+escapar(m.estadoValidacion)+'</strong></div><div><span>Archivos</span><strong>'+escapar(arr(d.archivos).length)+'</strong></div></div>'+estadoHtml+renderKpis(integridad,base,unidades,actividades)+'<section class="bd-detail-section"><h3>Descripción de la asignatura</h3><div class="bd-text-block">'+saltos(obtenerDescripcion(base)||'No registrada')+'</div></section><section class="bd-detail-section"><h3>Objetivo de la asignatura</h3><div class="bd-text-block">'+saltos(obtenerObjetivo(base)||'No registrado')+'</div></section><section class="bd-detail-section"><h3>Unidades, resultados, competencias y contenidos</h3>'+renderUnidades(base,unidades)+'</section><section class="bd-detail-section"><h3>Actividades · '+arr(actividades).length+'</h3>'+renderActividades(actividades)+'</section><section class="bd-detail-section"><h3>Bibliografía y justificación</h3>'+renderBibliografia(base)+'</section><section class="bd-detail-section"><h3>Archivos detectados</h3><div class="bd-file-list">'+arr(d.archivos).map(function(a){return '<div class="bd-file-item"><strong>'+escapar(a.nombreArchivo)+'</strong><span>'+escapar(a.tipo)+' · Confianza '+escapar(a.confianza||0)+'%</span><small>'+escapar(a.rutaOriginal)+'</small></div>';}).join("")+'</div></section><section class="bd-detail-section"><details><summary><strong>Datos técnicos completos (JSON)</strong></summary><pre class="bd-raw">'+escapar(JSON.stringify(d,null,2))+'</pre></details></section>';
+        } catch (error) {
+          modalContenido.innerHTML = advertenciaReparacion + '<p class="bd-alert">'+escapar(error.message||error)+'</p>';
+        }
+      }
 
-      document.getElementById('btnRecargar').addEventListener('click',cargar);
-      document.getElementById('btnBackup').addEventListener('click',function(){BD.Backup.descargarBackup().catch(function(e){alert(e.message);});});
-      document.getElementById('btnDiagnostico').addEventListener('click',function(){BD.Backup.descargarDiagnostico().catch(function(e){alert(e.message);});});
-      document.getElementById('btnValidar').addEventListener('click',async function(){try{setEstado('loading','Reparando contenido...','Interpretando PEA Base, unidades, actividades y bibliografía.'); if(BD.Inteligencia)await BD.Inteligencia.repararTodas(); else if(BD.Validaciones&&BD.Validaciones.validarTodasLasMaterias)await BD.Validaciones.validarTodasLasMaterias(); await cargar();}catch(e){alert(e.message||e);await cargar();}});
-      buscador.addEventListener('input',filtrar);
-      tablaMaterias.addEventListener('click',function(e){var b=e.target.closest('[data-materia-id]');if(b)abrirDetalle(b.getAttribute('data-materia-id'));});
-      document.getElementById('btnCerrarModal').addEventListener('click',function(){modal.close();});
-      cargar();
+      async function cargar(opciones) {
+        opciones = opciones || {};
+        if (cargaActiva) return await cargaActiva;
+
+        cargaActiva = (async function () {
+          setBotonesOcupados(true);
+          setEstado("loading", "Cargando base local...", "Mostrando la información existente antes de ejecutar reparaciones.");
+
+          var snapshot = await obtenerSnapshot();
+          pintarSnapshot(snapshot);
+          setEstado("ok", "Base local cargada", snapshot.dashboard.totalMaterias + " materias disponibles. La consulta ya puede utilizarse.");
+
+          if (opciones.iniciarReparacion && !reparacionInicialIniciada && BD.Inteligencia) {
+            reparacionInicialIniciada = true;
+            BD.Inteligencia.repararTodas({ segundoPlano: true }).catch(function (error) {
+              setEstado("error", "Error en reparación de fondo", error.message || String(error));
+            });
+          }
+        })().catch(function (error) {
+          console.error("[BDLocal] Error cargando pantalla:", error);
+          setEstado("error", "Error en base local", error.message || "No se pudo cargar.");
+          tablaMaterias.innerHTML = '<tr><td colspan="9" class="bd-empty bd-empty-error">'+escapar(error.message||error)+'</td></tr>';
+          document.getElementById("ultimasCargas").innerHTML = '<p class="bd-muted">No disponible.</p>';
+          document.getElementById("validacionesActivas").innerHTML = '<p class="bd-muted">No disponible.</p>';
+        }).finally(function () {
+          cargaActiva = null;
+          setBotonesOcupados(false);
+        });
+
+        return await cargaActiva;
+      }
+
+      function programarRefresco() {
+        if (refrescoPendiente) clearTimeout(refrescoPendiente);
+        refrescoPendiente = setTimeout(function () {
+          refrescoPendiente = null;
+          cargar({ iniciarReparacion: false });
+        }, 250);
+      }
+
+      window.addEventListener("bdlocal:inteligencia-progreso", function (event) {
+        var d = event.detail || {};
+        if (d.indice && d.total) {
+          setEstado("loading", d.titulo || ("Analizando base local " + d.indice + " de " + d.total), d.mensaje || "Procesando información curricular.");
+        } else {
+          setEstado("loading", d.titulo || "Reparando materia", d.mensaje || "Procesando información curricular.");
+        }
+      });
+
+      window.addEventListener("bdlocal:inteligencia-finalizada", function (event) {
+        var resultado = event.detail || {};
+        if (arr(resultado.errores).length) {
+          setEstado("warn", "Reparación finalizada con observaciones", resultado.procesadas + " materias procesadas y " + resultado.errores.length + " observaciones. La tabla seguirá disponible.");
+        } else {
+          setEstado("ok", "Reparación finalizada", resultado.procesadas + " materias procesadas correctamente.");
+        }
+        programarRefresco();
+      });
+
+      btnRecargar.addEventListener("click", function () {
+        cargar({ iniciarReparacion: false });
+      });
+
+      document.getElementById("btnBackup").addEventListener("click", function () {
+        BD.Backup.descargarBackup().catch(function (e) { alert(e.message || e); });
+      });
+
+      document.getElementById("btnDiagnostico").addEventListener("click", function () {
+        BD.Backup.descargarDiagnostico().catch(function (e) { alert(e.message || e); });
+      });
+
+      btnValidar.addEventListener("click", async function () {
+        if (!BD.Inteligencia) {
+          alert("No está disponible el módulo de reparación inteligente.");
+          return;
+        }
+
+        try {
+          setBotonesOcupados(true);
+          setEstado("loading", "Reparando contenido...", "Se revisarán todas las materias. La interfaz seguirá respondiendo.");
+          var resultado = await BD.Inteligencia.repararTodas({ force: true });
+          if (arr(resultado.errores).length) {
+            setEstado("warn", "Reparación terminada con observaciones", resultado.errores.length + " materias requieren revisión técnica.");
+          } else {
+            setEstado("ok", "Reparación terminada", resultado.procesadas + " materias fueron revisadas.");
+          }
+          await cargar({ iniciarReparacion: false });
+        } catch (e) {
+          console.error(e);
+          setEstado("error", "No se pudo reparar", e.message || String(e));
+        } finally {
+          setBotonesOcupados(false);
+        }
+      });
+
+      buscador.addEventListener("input", filtrar);
+      tablaMaterias.addEventListener("click", function (e) {
+        var b = e.target.closest("[data-materia-id]");
+        if (b) abrirDetalle(b.getAttribute("data-materia-id"));
+      });
+      document.getElementById("btnCerrarModal").addEventListener("click", function () { modal.close(); });
+
+      cargar({ iniciarReparacion: true });
     })();
   </script>
 </body>
