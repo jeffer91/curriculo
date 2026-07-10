@@ -2,11 +2,11 @@
 Nombre completo: comunicados.pdf.js
 Ruta o ubicación: /Curriculo/comunicados/comunicados.pdf.js
 Función o funciones:
-- Construir el documento HTML institucional listo para PDF.
-- Mantener el logo oficial con sus colores, transparencia y proporción originales.
-- Aplicar un diseño exclusivamente negro para textos, líneas y tablas.
-- Generar PDF individual o global mediante el puente seguro de Electron.
-- Usar impresión del navegador como respaldo automático.
+- Construir el HTML A4 del comunicado institucional.
+- Aplicar un diseño sobrio en negro, basado en el formato institucional.
+- Mantener todos los contenidos y permitir que continúen entre páginas.
+- Generar PDF individual o global con Electron.
+- Usar la impresión del navegador como respaldo.
 ========================================================= */
 
 (function (window, document) {
@@ -101,7 +101,7 @@ Función o funciones:
     return `
       @page {
         size: A4;
-        margin: 16mm 17mm 17mm 17mm;
+        margin: 12mm 16mm 15mm 16mm;
       }
 
       * {
@@ -116,19 +116,18 @@ Función o funciones:
         background: #ffffff;
         color: #000000;
         font-family: Arial, Helvetica, sans-serif;
-        font-size: 10.5pt;
-        line-height: 1.42;
+        font-size: 9.8pt;
+        line-height: 1.4;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
       }
 
       .com-pdf-page {
         width: 100%;
-        min-height: 260mm;
         margin: 0;
         padding: 0;
-        color: #000000;
         background: #ffffff;
+        color: #000000;
         page-break-after: always;
         break-after: page;
       }
@@ -140,17 +139,26 @@ Función o funciones:
 
       .com-pdf-header {
         width: 100%;
-        margin: 0 0 16mm 0;
-        padding: 0;
+        margin: 0 0 7mm 0;
+        padding: 0 0 4mm 0;
+        border-bottom: 1px solid #000000;
+      }
+
+      .com-pdf-logo-wrap {
+        width: 100%;
+        min-height: 24mm;
+        display: flex;
+        align-items: flex-start;
+        justify-content: flex-start;
       }
 
       .com-pdf-logo {
         display: block;
-        width: auto;
+        width: 58mm;
+        max-width: 58mm;
         height: auto;
-        max-width: 78mm;
-        max-height: 32mm;
-        margin: 0 0 9mm 0;
+        max-height: 24mm;
+        margin: 0;
         padding: 0;
         object-fit: contain;
         object-position: left top;
@@ -160,9 +168,10 @@ Función o funciones:
       }
 
       .com-pdf-numero {
-        margin: 0;
+        margin: 2.5mm 0 0 0;
         text-align: center;
-        font-size: 11pt;
+        font-size: 10.8pt;
+        line-height: 1.25;
         font-weight: 700;
         color: #000000;
       }
@@ -173,72 +182,133 @@ Función o funciones:
       }
 
       .com-pdf-body p {
-        margin: 0 0 7px 0;
-        text-align: justify;
+        margin: 0;
         color: #000000;
       }
 
       .com-pdf-resumen {
-        margin: 0 0 14px 0;
-        padding: 0;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        width: 100%;
+        margin: 0 0 6mm 0;
+        border: 1px solid #000000;
       }
 
       .com-pdf-resumen p {
-        margin-bottom: 6px;
+        min-height: 16mm;
+        padding: 3mm 3.5mm;
+        border-right: 1px solid #000000;
+        border-bottom: 1px solid #000000;
+        text-align: left;
+      }
+
+      .com-pdf-resumen p:nth-child(2n) {
+        border-right: 0;
+      }
+
+      .com-pdf-resumen p:nth-last-child(-n + 2) {
+        border-bottom: 0;
+      }
+
+      .com-pdf-resumen strong {
+        display: block;
+        margin: 0 0 1.2mm 0;
+        font-size: 8.2pt;
+        line-height: 1.2;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .com-pdf-resumen span {
+        display: block;
+        font-size: 10pt;
       }
 
       .com-pdf-seccion,
       .com-pdf-unidad {
-        margin: 13px 0 0 0;
-        padding: 0;
+        width: 100%;
+        margin: 0 0 6mm 0;
         color: #000000;
       }
 
-      .com-pdf-seccion h1,
-      .com-pdf-unidad h2 {
-        margin: 0 0 7px 0;
-        padding: 0 0 3px 0;
-        border: 0;
-        border-bottom: 1px solid #000000;
-        background: transparent;
+      .com-pdf-seccion > h1,
+      .com-pdf-unidad > h2 {
+        margin: 0 0 2.5mm 0;
+        padding: 2.2mm 3mm;
+        border: 1px solid #000000;
+        background: #ffffff;
         color: #000000;
-        font-size: 11pt;
+        font-size: 10.2pt;
         line-height: 1.25;
         font-weight: 700;
-        text-transform: none;
-        letter-spacing: 0;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+        page-break-after: avoid;
+        break-after: avoid;
+      }
+
+      .com-pdf-seccion > p {
+        margin: 0;
+        text-align: justify;
+      }
+
+      .com-pdf-unidad {
+        border: 1px solid #000000;
+        page-break-inside: auto;
+        break-inside: auto;
+      }
+
+      .com-pdf-unidad > h2 {
+        margin: 0;
+        border-width: 0 0 1px 0;
       }
 
       .com-pdf-campo {
-        margin: 0 0 9px 0;
-        padding: 0;
-        color: #000000;
+        margin: 0;
+        padding: 3mm;
+        border-bottom: 1px solid #bdbdbd;
+      }
+
+      .com-pdf-campo:last-child {
+        border-bottom: 0;
       }
 
       .com-pdf-campo > strong {
         display: block;
-        margin-bottom: 3px;
-        color: #000000;
+        margin: 0 0 1.5mm 0;
+        font-size: 8.4pt;
+        line-height: 1.25;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+        page-break-after: avoid;
+        break-after: avoid;
+      }
+
+      .com-pdf-campo > p {
+        text-align: justify;
       }
 
       .com-pdf-lista-contenidos {
-        margin: 5px 0 10px 23px;
+        width: 100%;
+        margin: 0;
         padding: 0;
-        color: #000000;
       }
 
-      .com-pdf-lista-contenidos li {
-        margin: 0 0 4px 0;
-        padding-left: 2px;
-        text-align: justify;
-        color: #000000;
+      .com-pdf-contenido {
+        margin: 0 0 1.35mm 0 !important;
+        padding: 0;
+        text-align: left !important;
         page-break-inside: avoid;
         break-inside: avoid;
       }
 
+      .com-pdf-contenido:last-child {
+        margin-bottom: 0 !important;
+      }
+
       .com-pdf-table {
         width: 100%;
-        margin: 7px 0 12px 0;
+        margin: 0;
         border-collapse: collapse;
         border-spacing: 0;
         table-layout: fixed;
@@ -257,11 +327,12 @@ Función o funciones:
       .com-pdf-table th,
       .com-pdf-table td {
         border: 1px solid #000000;
-        padding: 5px 6px;
+        padding: 2.1mm 2.4mm;
         vertical-align: top;
         background: #ffffff;
         color: #000000;
-        word-break: normal;
+        font-size: 8.8pt;
+        line-height: 1.35;
         overflow-wrap: anywhere;
       }
 
@@ -278,12 +349,12 @@ Función o funciones:
 
       .com-pdf-actividades th:nth-child(2),
       .com-pdf-actividades td:nth-child(2) {
-        width: 21%;
+        width: 20%;
       }
 
       .com-pdf-actividades th:nth-child(3),
       .com-pdf-actividades td:nth-child(3) {
-        width: 22%;
+        width: 23%;
       }
 
       .com-pdf-actividades th:nth-child(4),
@@ -292,25 +363,45 @@ Función o funciones:
       }
 
       .com-pdf-bibliografia-item {
-        margin: 0 0 12px 0;
-        padding: 0 0 8px 0;
-        border-bottom: 1px solid #000000;
+        margin: 0 0 3.5mm 0;
+        padding: 3mm;
+        border: 1px solid #000000;
         color: #000000;
         page-break-inside: avoid;
         break-inside: avoid;
       }
 
-      .com-pdf-bibliografia-item:last-child {
-        border-bottom: 0;
+      .com-pdf-bibliografia-item p {
+        margin: 0 0 1.8mm 0;
+        text-align: justify;
+      }
+
+      .com-pdf-bibliografia-item p:last-child {
+        margin-bottom: 0;
+      }
+
+      .com-pdf-footer {
+        margin: 8mm 0 0 0;
+        padding: 3mm 0 0 0;
+        border-top: 1px solid #000000;
+        display: flex;
+        justify-content: space-between;
+        gap: 8mm;
+        font-size: 8pt;
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      .com-pdf-footer strong {
+        text-transform: uppercase;
+      }
+
+      .com-pdf-footer span {
+        text-align: right;
       }
 
       .com-pdf-vacio {
         font-style: italic;
-        color: #000000;
-      }
-
-      .com-pdf-salto-preferido {
-        break-before: auto;
       }
 
       @media print {
@@ -318,10 +409,6 @@ Función o funciones:
         body {
           width: 210mm;
           min-height: 297mm;
-        }
-
-        .com-pdf-page {
-          min-height: auto;
         }
       }
     `;
@@ -358,7 +445,7 @@ Función o funciones:
       }
 
       var promesasImagenes = imagenes.map(function (img) {
-        if (img.complete) return Promise.resolve();
+        if (img.complete && img.naturalWidth > 0) return Promise.resolve();
 
         return new Promise(function (resolverImagen) {
           var lista = false;
@@ -380,7 +467,7 @@ Función o funciones:
         : Promise.resolve();
 
       Promise.all([Promise.all(promesasImagenes), promesaFuentes]).then(function () {
-        setTimeout(finalizar, 300);
+        setTimeout(finalizar, 250);
       });
 
       setTimeout(finalizar, 6500);
@@ -406,6 +493,7 @@ Función o funciones:
 
       function limpiar() {
         if (timeoutId) clearTimeout(timeoutId);
+
         setTimeout(function () {
           if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
         }, 1500);
@@ -423,7 +511,9 @@ Función o funciones:
 
         try {
           var win = iframe.contentWindow;
-          if (!win || !win.document) throw new Error("No se pudo abrir la vista de impresión.");
+          if (!win || !win.document) {
+            throw new Error("No se pudo abrir la vista de impresión.");
+          }
 
           win.document.title = nombreArchivo;
           await esperarRecursosImpresion(win);
@@ -494,6 +584,7 @@ Función o funciones:
 
     try {
       var diagnostico = await diagnosticarEntorno();
+
       if (!diagnostico.ok) {
         throw new Error(diagnostico.mensaje || "El puente de PDF no está disponible.");
       }
@@ -525,6 +616,7 @@ Función o funciones:
       console.error("[ComunicadosCCC.PDF] Falló la generación directa:", error);
 
       if (opciones.permitirFallbackNavegador === false) throw error;
+
       return await imprimirEnNavegador(htmlFinal, nombreArchivo, error);
     }
   }
