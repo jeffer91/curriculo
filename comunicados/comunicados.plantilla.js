@@ -2,12 +2,11 @@
 Nombre completo: comunicados.plantilla.js
 Ruta o ubicación: /Curriculo/comunicados/comunicados.plantilla.js
 Función o funciones:
-- Recuperar información curricular nueva y datos heredados ya guardados en BDLocal.
-- Interpretar descripción, objetivo, cuatro unidades, resultados y competencias.
-- Agrupar correctamente todos los contenidos en las unidades 1, 2, 3 y 4.
-- Mostrar todas las actividades del PEA Actividades.
-- Mostrar bibliografía y justificación individual de cada referencia.
-- Construir el comunicado institucional con el logo oficial sin modificarlo.
+- Interpretar descripción, objetivo, unidades, competencias y resultados.
+- Recuperar todos los contenidos aunque BDLocal tenga registros agrupados o filas antiguas.
+- Clasificar contenidos por ordenComponente o por su numeración 1.x, 2.x, 3.x y 4.x.
+- Mostrar todas las actividades y toda la bibliografía con justificación.
+- Usar el logo exacto embebido y el formato institucional solicitado.
 ========================================================= */
 
 (function (window) {
@@ -18,8 +17,9 @@ Función o funciones:
   var NS = window.ComunicadosCCC;
 
   var CONFIG_DEFAULT = {
-    logoSrc: "../assets/logo-itsqmet-comunicado-oficial.svg",
-    numeroFijo: "01"
+    numeroFijo: "01",
+    unidadResponsable: "UNIDAD DE GESTIÓN PEDAGÓGICA ACADÉMICA",
+    nota: "Instituto Superior Tecnológico Quito Metropolitano"
   };
 
   function texto(valor) {
@@ -43,6 +43,20 @@ Función o funciones:
 
   function escaparConSaltos(valor) {
     return escapar(valor).replace(/\n/g, "<br>");
+  }
+
+  function normalizarLogoSrc(valor) {
+    var logo = texto(valor);
+
+    /*
+     * Versiones anteriores guardaron bytes WebP con el MIME image/png.
+     * Chromium rechaza esa combinación y muestra el ícono de imagen rota.
+     */
+    if (/^data:image\/png;base64,UklG/i.test(logo)) {
+      logo = logo.replace(/^data:image\/png/i, "data:image/webp");
+    }
+
+    return logo;
   }
 
   function normalizarCampo(valor) {
@@ -108,12 +122,23 @@ Función o funciones:
 
   function interpretarBase(peaBase) {
     peaBase = peaBase || {};
+
     var datos = peaBase.datos || peaBase;
     var campos = peaBase.campos || datos.campos || {};
     var mapaUnidades = crearMapaUnidadesBase();
     var bibliografia = [];
-    var descripcion = texto(datos.descripcion || peaBase.descripcion || campos.descripcion_asignatura || campos.descripcion);
-    var objetivo = texto(datos.objetivo || peaBase.objetivo || campos.objetivo_asignatura || campos.objetivo);
+    var descripcion = texto(
+      datos.descripcion ||
+      peaBase.descripcion ||
+      campos.descripcion_asignatura ||
+      campos.descripcion
+    );
+    var objetivo = texto(
+      datos.objetivo ||
+      peaBase.objetivo ||
+      campos.objetivo_asignatura ||
+      campos.objetivo
+    );
 
     arr(datos.unidadesBase || peaBase.unidadesBase).forEach(function (unidad) {
       var numero = Number(unidad.unidadNumero || unidad.orden || 0);
@@ -161,11 +186,11 @@ Función o funciones:
       }
 
       if (codigo === 8 && descripcion1) {
-        var yaExiste = bibliografia.some(function (item) {
+        var existe = bibliografia.some(function (item) {
           return item.referencia === descripcion1;
         });
 
-        if (!yaExiste) {
+        if (!existe) {
           bibliografia.push({
             orden: orden || bibliografia.length + 1,
             referencia: descripcion1,
@@ -191,24 +216,20 @@ Función o funciones:
     };
   }
 
-  function agregarContenido(unidad, contenido) {
-    contenido = texto(contenido);
-    if (!contenido) return;
-
-    if (unidad.contenidos.indexOf(contenido) === -1) {
-      unidad.contenidos.push(contenido);
-    }
+  function inferirUnidadPorContenido(contenido) {
+    var match = texto(contenido).match(/^\s*([1-4])(?:\s*[.\-:]|\s|$)/);
+    return match ? Number(match[1]) : 0;
   }
 
-  function prepararUnidades(unidadesGuardadas, unidadesBase) {
-    var unidades = {};
+  function crearMapaContenidos(unidadesBase) {
+    var mapa = {};
 
     for (var i = 1; i <= 4; i += 1) {
       var base = arr(unidadesBase).find(function (item) {
-        return Number(item.unidadNumero || 0) === i;
+        return Number(item.unidadNumero || item.orden || 0) === i;
       }) || {};
 
-      unidades[i] = {
+      mapa[i] = {
         unidadNumero: i,
         nombre: texto(base.nombre || base.tituloUnidad || ""),
         resultadoAprendizaje: texto(base.resultadoAprendizaje || base.resultado || ""),
@@ -217,42 +238,96 @@ Función o funciones:
       };
     }
 
-    arr(unidadesGuardadas).forEach(function (registro) {
-      var numero = Number(
-        registro.unidadNumero ||
-        registro.ordenComponente ||
-        registro.orden_componente ||
-        registro.unidad ||
-        0
-      );
+    return mapa;
+  }
 
-      if (!unidades[numero]) return;
+  function agregarContenido(mapa, numero, contenido) {
+    numero = Number(numero || 0);
+    contenido = texto(contenido);
 
-      arr(registro.contenidos).forEach(function (contenido) {
-        agregarContenido(unidades[numero], contenido);
-      });
+    if (!mapa[numero] || !contenido) return;
 
-      arr(registro.filasOriginales).forEach(function (fila) {
-        agregarContenido(
-          unidades[numero],
-          obtenerValor(fila, ["descripcionComponente", "descripcion_componente", "contenido", "tema"])
-        );
-      });
+    if (mapa[numero].contenidos.indexOf(contenido) === -1) {
+      mapa[numero].contenidos.push(contenido);
+    }
+  }
 
+  function procesarRegistroUnidad(mapa, registro) {
+    if (!registro || typeof registro !== "object") return;
+
+    var codigo = obtenerNumero(registro, ["codigoComponente", "codigo_componente"], 0);
+    if (codigo && codigo !== 3) return;
+
+    var numeroOrden = obtenerNumero(registro, ["ordenComponente", "orden_componente"], 0);
+    var numeroGuardado = obtenerNumero(registro, [
+      "unidadNumero",
+      "unidad_numero",
+      "numeroUnidad",
+      "numero_unidad",
+      "unidad",
+      "n_unidad"
+    ], 0);
+
+    arr(registro.contenidos).forEach(function (contenido) {
       agregarContenido(
-        unidades[numero],
-        obtenerValor(registro, [
-          "descripcionComponente",
-          "descripcion_componente",
-          "contenido",
-          "temaDetectado",
-          "tema",
-          "titulo"
-        ])
+        mapa,
+        numeroOrden || inferirUnidadPorContenido(contenido) || numeroGuardado,
+        contenido
       );
     });
 
-    return [unidades[1], unidades[2], unidades[3], unidades[4]];
+    arr(registro.filasOriginales).forEach(function (fila) {
+      procesarRegistroUnidad(mapa, fila);
+    });
+
+    var contenidoDirecto = obtenerValor(registro, [
+      "descripcionComponente",
+      "descripcion_componente",
+      "contenido",
+      "temaDetectado",
+      "tema",
+      "titulo",
+      "descripcion"
+    ]);
+
+    if (!contenidoDirecto && Array.isArray(registro.valores)) {
+      contenidoDirecto = texto(registro.valores[2] || registro.valores[1] || "");
+      if (!numeroOrden) numeroOrden = Number(registro.valores[1] || 0);
+    }
+
+    if (contenidoDirecto) {
+      agregarContenido(
+        mapa,
+        numeroOrden || inferirUnidadPorContenido(contenidoDirecto) || numeroGuardado,
+        contenidoDirecto
+      );
+    }
+
+    arr(registro.filas).forEach(function (fila) {
+      procesarRegistroUnidad(mapa, fila);
+    });
+
+    arr(registro.registros).forEach(function (fila) {
+      procesarRegistroUnidad(mapa, fila);
+    });
+
+    if (registro.hojas && typeof registro.hojas === "object") {
+      Object.keys(registro.hojas).forEach(function (nombre) {
+        arr(registro.hojas[nombre] && registro.hojas[nombre].filas).forEach(function (fila) {
+          procesarRegistroUnidad(mapa, fila);
+        });
+      });
+    }
+  }
+
+  function prepararUnidades(unidadesGuardadas, unidadesBase) {
+    var mapa = crearMapaContenidos(unidadesBase);
+
+    arr(unidadesGuardadas).forEach(function (registro) {
+      procesarRegistroUnidad(mapa, registro);
+    });
+
+    return [mapa[1], mapa[2], mapa[3], mapa[4]];
   }
 
   function prepararActividades(actividades) {
@@ -281,35 +356,67 @@ Función o funciones:
     });
   }
 
+  function validarDatos(data) {
+    var faltantes = [];
+
+    if (!data.descripcion) faltantes.push("descripción de la asignatura");
+    if (!data.objetivo) faltantes.push("objetivo de la asignatura");
+
+    data.unidades.forEach(function (unidad) {
+      if (!unidad.nombre) faltantes.push("nombre de la unidad " + unidad.unidadNumero);
+      if (!unidad.resultadoAprendizaje) {
+        faltantes.push("resultado de aprendizaje de la unidad " + unidad.unidadNumero);
+      }
+      if (!unidad.competencia) {
+        faltantes.push("competencia de la unidad " + unidad.unidadNumero);
+      }
+      if (!unidad.contenidos.length) {
+        faltantes.push("contenidos de la unidad " + unidad.unidadNumero);
+      }
+    });
+
+    if (!data.actividades.length) faltantes.push("actividades");
+    if (!data.bibliografia.length) faltantes.push("bibliografía");
+
+    if (data.bibliografia.some(function (item) {
+      return !texto(item.justificacion);
+    })) {
+      faltantes.push("justificación de cada bibliografía");
+    }
+
+    if (faltantes.length) {
+      throw new Error(
+        "No se puede generar el comunicado. Faltan: " + faltantes.join(", ") + "."
+      );
+    }
+  }
+
   function prepararDatosMateria(detalle, reserva, config) {
     detalle = detalle || {};
     reserva = reserva || {};
     config = Object.assign({}, CONFIG_DEFAULT, config || {});
 
-    config.logoSrc = CONFIG_DEFAULT.logoSrc;
-    config.numeroFijo = CONFIG_DEFAULT.numeroFijo;
-
     var materia = detalle.materia || {};
     var carrera = detalle.carrera || {};
+    var nivel = detalle.nivel || {};
     var base = interpretarBase(detalle.peaBase || {});
     var unidades = prepararUnidades(detalle.unidades || [], base.unidadesBase);
     var actividades = prepararActividades(detalle.actividades || []);
-    var estadoGeneracion = detalle.estadoGeneracion || {};
 
-    if (estadoGeneracion.puedeGenerar === false) {
-      throw new Error(
-        "No se puede generar el comunicado. Faltan: " +
-        arr(estadoGeneracion.faltantes).join(", ")
-      );
-    }
-
-    return {
+    var data = {
       config: config,
+      logoSrc: normalizarLogoSrc(
+        window.CURRICULO_LOGO_COMUNICADO ||
+        config.logoSrc ||
+        "../assets/logo-itsqmet-comunicado-oficial.svg"
+      ),
       materiaId: texto(materia.id),
       carreraId: texto(carrera.id),
       numeroComunicado: texto(reserva.numero),
       numeroFijo: "01",
       carrera: texto(carrera.nombre || "No registrada"),
+      codigo: texto(materia.codigo || materia.codigoMateria || "S/C"),
+      nivel: texto(nivel.nombre || materia.nivelNombre || "No registrado"),
       nombreAsignatura: texto(
         materia.nombreMostrar ||
         materia.nombreInstitucional ||
@@ -317,13 +424,19 @@ Función o funciones:
         materia.nombre ||
         "Asignatura sin nombre"
       ),
-      descripcion: base.descripcion || "No se registra descripción de la asignatura.",
-      objetivo: base.objetivo || "No se registra objetivo de la asignatura.",
+      descripcion: base.descripcion,
+      objetivo: base.objetivo,
       unidades: unidades,
       actividades: actividades,
       bibliografia: base.bibliografia,
+      unidadResponsable: texto(config.unidadResponsable || CONFIG_DEFAULT.unidadResponsable),
+      nota: texto(config.nota || CONFIG_DEFAULT.nota),
       generadoEn: new Date().toISOString()
     };
+
+    validarDatos(data);
+
+    return data;
   }
 
   function renderContenidos(unidad) {
@@ -332,11 +445,11 @@ Función o funciones:
     }
 
     return (
-      '<ol class="com-pdf-lista-contenidos">' +
+      '<div class="com-pdf-lista-contenidos">' +
         unidad.contenidos.map(function (contenido) {
-          return "<li>" + escaparConSaltos(contenido) + "</li>";
+          return '<p class="com-pdf-contenido">' + escaparConSaltos(contenido) + "</p>";
         }).join("") +
-      "</ol>"
+      "</div>"
     );
   }
 
@@ -346,17 +459,19 @@ Función o funciones:
 
       return (
         '<section class="com-pdf-unidad">' +
-          '<h2>Unidad ' + escapar(numero) + ': ' + escapar(unidad.nombre || "No registrada") + "</h2>" +
+          '<h2>Unidad ' + escapar(numero) + ': ' +
+            escapar(unidad.nombre || "No registrada") + "</h2>" +
           '<div class="com-pdf-campo">' +
             '<strong>Resultados de aprendizaje de la unidad ' + escapar(numero) + ':</strong>' +
-            '<p>' + escaparConSaltos(unidad.resultadoAprendizaje || "No registrado") + "</p>" +
+            '<p>' + escaparConSaltos(unidad.resultadoAprendizaje) + "</p>" +
           "</div>" +
           '<div class="com-pdf-campo">' +
             '<strong>Competencias de la unidad ' + escapar(numero) + ':</strong>' +
-            '<p>' + escaparConSaltos(unidad.competencia || "No registrada") + "</p>" +
+            '<p>' + escaparConSaltos(unidad.competencia) + "</p>" +
           "</div>" +
           '<div class="com-pdf-campo">' +
-            '<strong>Contenidos de la unidad ' + escapar(numero) + ':</strong>' +
+            '<strong>Contenidos de la unidad ' + escapar(numero) +
+              ' (' + escapar(unidad.contenidos.length) + '):</strong>' +
             renderContenidos(unidad) +
           "</div>" +
         "</section>"
@@ -365,10 +480,6 @@ Función o funciones:
   }
 
   function renderActividades(data) {
-    if (!data.actividades.length) {
-      return '<p class="com-pdf-vacio">No se registran actividades.</p>';
-    }
-
     return (
       '<table class="com-pdf-table com-pdf-actividades">' +
         "<thead><tr>" +
@@ -394,17 +505,16 @@ Función o funciones:
   }
 
   function renderBibliografia(data) {
-    if (!data.bibliografia.length) {
-      return '<p class="com-pdf-vacio">No se registra bibliografía.</p>';
-    }
-
     return data.bibliografia.map(function (item, index) {
       return (
         '<section class="com-pdf-bibliografia-item">' +
           '<p><strong>Bibliografía ' + escapar(index + 1) + ':</strong> ' +
             escaparConSaltos(item.referencia) + "</p>" +
+          (item.codigoReferencia
+            ? '<p><strong>Código:</strong> ' + escapar(item.codigoReferencia) + "</p>"
+            : "") +
           '<p><strong>Justificación de la bibliografía ' + escapar(index + 1) + ':</strong> ' +
-            escaparConSaltos(item.justificacion || "No registrada") + "</p>" +
+            escaparConSaltos(item.justificacion) + "</p>" +
         "</section>"
       );
     }).join("");
@@ -414,14 +524,19 @@ Función o funciones:
     return (
       '<article class="com-pdf-page" data-materia-id="' + escapar(data.materiaId) + '">' +
         '<header class="com-pdf-header">' +
-          '<img class="com-pdf-logo" src="' + escapar(data.config.logoSrc) + '" alt="ITSQMET" />' +
-          '<div class="com-pdf-numero">Comunicado No. 01 ' + escapar(data.numeroComunicado) + "</div>" +
+          '<div class="com-pdf-logo-wrap">' +
+            '<img class="com-pdf-logo" src="' + escapar(data.logoSrc) + '" alt="ITSQMET" />' +
+          "</div>" +
+          '<div class="com-pdf-numero">Comunicado No. 01 ' +
+            escapar(data.numeroComunicado) + "</div>" +
         "</header>" +
 
         '<main class="com-pdf-body">' +
           '<section class="com-pdf-resumen">' +
-            '<p><strong>Carrera:</strong> ' + escapar(data.carrera) + "</p>" +
-            '<p><strong>Asignatura:</strong> ' + escapar(data.nombreAsignatura) + "</p>" +
+            '<p><strong>Carrera</strong><span>' + escapar(data.carrera) + "</span></p>" +
+            '<p><strong>Asignatura</strong><span>' + escapar(data.nombreAsignatura) + "</span></p>" +
+            '<p><strong>Código</strong><span>' + escapar(data.codigo) + "</span></p>" +
+            '<p><strong>Nivel</strong><span>' + escapar(data.nivel) + "</span></p>" +
           "</section>" +
 
           '<section class="com-pdf-seccion">' +
@@ -445,6 +560,11 @@ Función o funciones:
             "<h1>Bibliografía y justificación:</h1>" +
             renderBibliografia(data) +
           "</section>" +
+
+          '<footer class="com-pdf-footer">' +
+            "<strong>" + escapar(data.unidadResponsable) + "</strong>" +
+            "<span>" + escapar(data.nota) + "</span>" +
+          "</footer>" +
         "</main>" +
       "</article>"
     );
