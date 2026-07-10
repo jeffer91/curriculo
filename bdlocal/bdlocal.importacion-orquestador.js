@@ -197,16 +197,11 @@ Función o funciones:
     snapshot.matrices = await Core.getAllByIndex(STORES.MATRICES, "carreraId", carreraId);
     snapshot.niveles = await Core.getAllByIndex(STORES.NIVELES, "carreraId", carreraId);
     snapshot.materias = await Core.getAllByIndex(STORES.MATERIAS, "carreraId", carreraId);
-
-    for (var i = 0; i < snapshot.materias.length; i += 1) {
-      var materiaId = snapshot.materias[i].id;
-      var base = await Core.get(STORES.PEA_BASE, materiaId);
-      if (base) snapshot.bases.push(base);
-      snapshot.archivos = snapshot.archivos.concat(await Core.getAllByIndex(STORES.PEA_ARCHIVOS, "materiaId", materiaId));
-      snapshot.unidades = snapshot.unidades.concat(await Core.getAllByIndex(STORES.PEA_UNIDADES, "materiaId", materiaId));
-      snapshot.actividades = snapshot.actividades.concat(await Core.getAllByIndex(STORES.PEA_ACTIVIDADES, "materiaId", materiaId));
-      snapshot.validaciones = snapshot.validaciones.concat(await Core.getAllByIndex(STORES.VALIDACIONES, "materiaId", materiaId));
-    }
+    snapshot.archivos = await Core.getAllByIndex(STORES.PEA_ARCHIVOS, "carreraId", carreraId);
+    snapshot.bases = await Core.getAllByIndex(STORES.PEA_BASE, "carreraId", carreraId);
+    snapshot.unidades = await Core.getAllByIndex(STORES.PEA_UNIDADES, "carreraId", carreraId);
+    snapshot.actividades = await Core.getAllByIndex(STORES.PEA_ACTIVIDADES, "carreraId", carreraId);
+    snapshot.validaciones = await Core.getAllByIndex(STORES.VALIDACIONES, "carreraId", carreraId);
     return snapshot;
   }
 
@@ -235,8 +230,7 @@ Función o funciones:
     });
   }
 
-  async function limpiarCarreraRapido(carreraId, materiaIds) {
-    materiaIds = arr(materiaIds).filter(Boolean);
+  async function limpiarCarreraRapido(carreraId) {
     var nombres = [
       STORES.PEA_ARCHIVOS,
       STORES.PEA_BASE,
@@ -249,18 +243,9 @@ Función o funciones:
     ];
 
     return await Core.runTransaction(nombres, "readwrite", function (stores) {
-      var tareas = [];
-      materiaIds.forEach(function (materiaId) {
-        tareas.push(borrarPorIndice(stores[STORES.PEA_ARCHIVOS], "materiaId", materiaId));
-        tareas.push(borrarPorIndice(stores[STORES.PEA_UNIDADES], "materiaId", materiaId));
-        tareas.push(borrarPorIndice(stores[STORES.PEA_ACTIVIDADES], "materiaId", materiaId));
-        tareas.push(borrarPorIndice(stores[STORES.VALIDACIONES], "materiaId", materiaId));
-        stores[STORES.PEA_BASE].delete(materiaId);
-      });
-      tareas.push(borrarPorIndice(stores[STORES.MATERIAS], "carreraId", carreraId));
-      tareas.push(borrarPorIndice(stores[STORES.NIVELES], "carreraId", carreraId));
-      tareas.push(borrarPorIndice(stores[STORES.MATRICES], "carreraId", carreraId));
-      return Promise.all(tareas);
+      return Promise.all(nombres.map(function (storeName) {
+        return borrarPorIndice(stores[storeName], "carreraId", carreraId);
+      }));
     }, {
       contexto: "reemplazar carrera " + carreraId,
       timeoutMs: 90000
@@ -300,8 +285,10 @@ Función o funciones:
     var zip = texto(paquete && paquete.carga && paquete.carga.nombreZip || paquete && paquete.zip && paquete.zip.nombre || "");
     var snapshots = [];
     var ids = [];
-    var progresoCore = 42;
+    var progresoCore = 52;
     var ultimoAvanceCore = 0;
+    var coreProgresoActivo = false;
+    var diagnosticoAntesRollback = null;
 
     if (D) {
       D.iniciar({
@@ -320,7 +307,7 @@ Función o funciones:
 
     function escucharCore(event) {
       var dato = event.detail || {};
-      if (dato.fase !== "inicio") return;
+      if (!coreProgresoActivo || dato.fase !== "inicio") return;
       if (Date.now() - ultimoAvanceCore < 160) return;
       ultimoAvanceCore = Date.now();
       progresoCore = Math.min(78, progresoCore + 1);
@@ -338,27 +325,30 @@ Función o funciones:
     window.addEventListener("diagnostico:core-operacion", escucharCore);
 
     try {
-      progreso(5, "inicializacion", "Conectando con IndexedDB.", {
+      progreso(12, "inicializacion", "Conectando con IndexedDB.", {
         archivo: "bdlocal/bdlocal.core.js",
         funcion: "Core.ready()"
       });
       await conTiempoLimite(BD.inicializar ? BD.inicializar() : Core.ready(), 25000, "inicializar BDLocal");
 
-      progreso(10, "validacion", "Validando la estructura del paquete.", {
+      progreso(18, "validacion", "Validando la estructura del paquete.", {
         archivo: "subir/subir.validador.js",
         funcion: "validarPaquete()"
       });
       var validado = validarPaquete(paquete, opciones);
       ids = idsCarrerasPaquete(validado);
 
-      progreso(16, "preparacion", "Eliminando copias binarias innecesarias de los Excel.", {
+      progreso(24, "preparacion", "Eliminando copias binarias innecesarias de los Excel.", {
         archivo: "bdlocal/bdlocal.importacion-orquestador.js",
         funcion: "quitarBinarios()"
       });
       var limpio = quitarBinarios(validado);
+      if (BD.Integridad && typeof BD.Integridad.normalizarPaquete === "function") {
+        limpio = BD.Integridad.normalizarPaquete(limpio);
+      }
 
       for (var i = 0; i < ids.length; i += 1) {
-        progreso(18 + Math.floor((i / Math.max(1, ids.length)) * 8), "respaldo", "Creando respaldo temporal de la carrera " + (i + 1) + " de " + ids.length + ".", {
+        progreso(30 + Math.floor((i / Math.max(1, ids.length)) * 8), "respaldo", "Creando respaldo temporal de la carrera " + (i + 1) + " de " + ids.length + ".", {
           archivo: "bdlocal/bdlocal.importacion-orquestador.js",
           funcion: "snapshotCarrera()",
           registro: ids[i]
@@ -369,7 +359,7 @@ Función o funciones:
       for (var j = 0; j < snapshots.length; j += 1) {
         var snap = snapshots[j];
         if (!snap.materias.length && !snap.matrices.length && !snap.niveles.length) continue;
-        progreso(28 + Math.floor((j / Math.max(1, snapshots.length)) * 8), "reemplazo", "Retirando la versión anterior de la carrera.", {
+        progreso(40 + Math.floor((j / Math.max(1, snapshots.length)) * 8), "reemplazo", "Retirando la versión anterior de la carrera.", {
           archivo: "bdlocal/bdlocal.importacion-orquestador.js",
           funcion: "limpiarCarreraRapido()",
           tabla: "varias tablas",
@@ -377,17 +367,19 @@ Función o funciones:
           registro: snap.carreraId
         });
         await conTiempoLimite(
-          limpiarCarreraRapido(snap.carreraId, snap.materias.map(function (materia) { return materia.id; })),
+          limpiarCarreraRapido(snap.carreraId),
           100000,
           "limpiar carrera " + snap.carreraId
         );
       }
 
-      progreso(40, "guardado", "Guardando estructura, archivos y datos procesados.", {
+      progreso(50, "guardado", "Guardando estructura, archivos y datos procesados.", {
         archivo: "bdlocal/bdlocal.importador.js",
         funcion: "importarPaqueteCCC()"
       });
+      coreProgresoActivo = true;
       var resultado = await conTiempoLimite(importarBase(limpio), 180000, "guardar paquete completo en BDLocal");
+      coreProgresoActivo = false;
 
       var materias = arr(resultado && resultado.materias);
       var validadas = [];
@@ -436,21 +428,16 @@ Función o funciones:
       if (D) D.completar({ mensaje: "Importación completada y verificada.", porcentaje: 100 });
       return resultado;
     } catch (error) {
-      var contextoError = error.diagnosticoContexto || {};
+      coreProgresoActivo = false;
+      diagnosticoAntesRollback = D && D.obtenerActual ? D.obtenerActual() : null;
+      var contextoError = Object.assign({}, diagnosticoAntesRollback || {}, error.diagnosticoContexto || {});
       try {
         progreso(96, "rollback", "La importación falló. Restaurando la información anterior.", {
           archivo: "bdlocal/bdlocal.importacion-orquestador.js",
           funcion: "restaurarSnapshot()"
         });
         for (var r = 0; r < ids.length; r += 1) {
-          var materiaIdsActuales = [];
-          try {
-            var materiasActuales = await Core.getAllByIndex(STORES.MATERIAS, "carreraId", ids[r]);
-            materiaIdsActuales = materiasActuales.map(function (materia) { return materia.id; });
-          } catch (errorLectura) {
-            materiaIdsActuales = [];
-          }
-          await limpiarCarreraRapido(ids[r], materiaIdsActuales);
+          await limpiarCarreraRapido(ids[r]);
         }
         for (var s = 0; s < snapshots.length; s += 1) {
           await restaurarSnapshot(snapshots[s]);
