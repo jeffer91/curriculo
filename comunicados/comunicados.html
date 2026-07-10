@@ -3,6 +3,7 @@ Nombre completo: comunicados.html
 Ruta o ubicación: /Curriculo/comunicados/comunicados.html
 Función o funciones:
 - Generar comunicados institucionales con toda la información curricular.
+- Reparar automáticamente PEA Base heredados antes de listar materias.
 - Usar el logo exacto embebido.
 - Mantener generación individual, seleccionada y global.
 - Cargar scripts con versión para evitar archivos antiguos en caché.
@@ -13,8 +14,8 @@ Función o funciones:
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Comunicados | Curriculo</title>
-  <link rel="stylesheet" href="../menu-superior/menu-superior.css?v=20260710-5" />
-  <link rel="stylesheet" href="./comunicados.css?v=20260710-5" />
+  <link rel="stylesheet" href="../menu-superior/menu-superior.css?v=20260710-6" />
+  <link rel="stylesheet" href="./comunicados.css?v=20260710-6" />
   <style>
     .com-logo-ready{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid #d8e2ef;border-radius:12px;background:#f8fafc}
     .com-logo-ready strong{display:block}
@@ -61,7 +62,7 @@ Función o funciones:
         </div>
         <div class="com-field">
           <label for="inputUnidadResponsable">Unidad responsable</label>
-          <input id="inputUnidadResponsable" type="text" value="UNIDAD DE GESTIÓN PEDAGÓGICA ACADÉMICA" />
+          <input id="inputUnidadResponsable" type="text" value="Unidad Gestión de Procesos Académicos" />
         </div>
         <div class="com-field com-field-full">
           <label for="inputNota">Pie institucional</label>
@@ -77,7 +78,8 @@ Función o funciones:
             </div>
           </div>
           <p class="com-content-note">
-            Los contenidos se agrupan por <code>ordenComponente</code>; una unidad puede contener decenas o cientos de registros.
+            La pantalla reconstruye automáticamente descripción, objetivo, unidades, competencias,
+            resultados y bibliografía cuando esos datos existen en las filas originales del PEA Base.
           </p>
         </div>
       </div>
@@ -128,19 +130,22 @@ Función o funciones:
     </section>
   </div>
 
-  <script src="../menu-superior/menu-superior.js?v=20260710-5"></script>
-  <script src="../bdlocal/bdlocal.schema.js?v=20260710-5"></script>
-  <script src="../bdlocal/bdlocal.core.js?v=20260710-5"></script>
-  <script src="../bdlocal/bdlocal.api.js?v=20260710-5"></script>
-  <script src="../bdlocal/bdlocal.consultas.js?v=20260710-5"></script>
-  <script src="../bdlocal/bdlocal.validaciones.js?v=20260710-5"></script>
-  <script src="../bdlocal/bdlocal.backup.js?v=20260710-5"></script>
+  <script src="../menu-superior/menu-superior.js?v=20260710-6"></script>
+  <script src="../bdlocal/bdlocal.schema.js?v=20260710-6"></script>
+  <script src="../bdlocal/bdlocal.core.js?v=20260710-6"></script>
+  <script src="../bdlocal/bdlocal.api.js?v=20260710-6"></script>
+  <script src="../bdlocal/bdlocal.importador.js?v=20260710-6"></script>
+  <script src="../bdlocal/bdlocal.integridad.js?v=20260710-6"></script>
+  <script src="../bdlocal/bdlocal.validaciones.js?v=20260710-6"></script>
+  <script src="../bdlocal/bdlocal.consultas.js?v=20260710-6"></script>
+  <script src="../bdlocal/bdlocal.backup.js?v=20260710-6"></script>
 
-  <script src="../assets/logo-itsqmet-comunicado-data.js?v=20260710-5"></script>
-  <script src="./comunicados.bdlocal.js?v=20260710-5"></script>
-  <script src="./comunicados.contador.js?v=20260710-5"></script>
-  <script src="./comunicados.plantilla.js?v=20260710-5"></script>
-  <script src="./comunicados.pdf.js?v=20260710-5"></script>
-  <script src="./comunicados.main.js?v=20260710-5"></script>
+  <script src="../assets/logo-itsqmet-comunicado-data.js?v=20260710-6"></script>
+  <script src="./comunicados.bdlocal.js?v=20260710-6"></script>
+  <script src="../bdlocal/bdlocal.inteligencia.js?v=20260710-6"></script>
+  <script src="./comunicados.contador.js?v=20260710-6"></script>
+  <script src="./comunicados.plantilla.js?v=20260710-6"></script>
+  <script src="./comunicados.pdf.js?v=20260710-6"></script>
+  <script src="./comunicados.main.js?v=20260710-6"></script>
 </body>
 </html>
