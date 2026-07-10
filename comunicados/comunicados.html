@@ -2,207 +2,100 @@
 Nombre completo: comunicados.html
 Ruta o ubicación: /Curriculo/comunicados/comunicados.html
 Función o funciones:
-- Mostrar la pantalla de comunicados institucionales por materia.
-- Conectarse con BDLocal para cargar carreras y materias completas.
-- Permitir editar el nombre institucional de cada materia.
-- Generar PDF institucional por materia.
-- Generar un documento con todos los comunicados de una carrera.
+- Generar comunicados institucionales únicamente con contenido PEA completo.
+- Usar el logo exacto embebido, sin depender de rutas de imagen.
+- Mantener generación individual, seleccionada y global.
+- Cargar scripts con versión para evitar caché de archivos antiguos.
 ========================================================= -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
   <title>Comunicados | Curriculo</title>
-
-  <link rel="stylesheet" href="../menu-superior/menu-superior.css" />
-  <link rel="stylesheet" href="./comunicados.css" />
+  <link rel="stylesheet" href="../menu-superior/menu-superior.css?v=20260710-4" />
+  <link rel="stylesheet" href="./comunicados.css?v=20260710-4" />
+  <style>
+    .com-logo-ready{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid #d8e2ef;border-radius:12px;background:#f8fafc}.com-logo-ready strong{display:block}.com-logo-ready span{display:block;color:#64748b;font-size:13px}.com-logo-mark{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:#e7f6ec;color:#087f5b;font-weight:900}.com-content-note{margin-top:10px;color:#475569;font-size:13px}
+  </style>
 </head>
-
 <body>
   <div class="com-page">
     <header class="com-header">
       <div>
         <p class="com-eyebrow">Gestión Curricular CCC</p>
         <h1>Comunicados institucionales</h1>
-        <p class="com-subtitle">
-          Genera comunicados por materia usando la información procesada desde PEA Base,
-          PEA Unidades y PEA Actividades guardada en BDLocal.
-        </p>
+        <p class="com-subtitle">Genera comunicados con descripción, objetivo, cuatro unidades, resultados, competencias, contenidos, actividades y bibliografía.</p>
       </div>
-
       <div class="com-header-actions">
-        <button id="btnRecargar" type="button" class="com-btn com-btn-light">
-          Recargar BDLocal
-        </button>
-
-        <a href="../subir/subir.html" class="com-btn com-btn-light">
-          Subir ZIP
-        </a>
+        <button id="btnRecargar" type="button" class="com-btn com-btn-light">Recargar BDLocal</button>
+        <a href="../subir/subir.html" class="com-btn com-btn-light">Subir ZIP</a>
       </div>
     </header>
 
     <section id="comEstado" class="com-status com-status-neutral">
-      <div class="com-status-dot"></div>
-      <div>
-        <strong>Inicializando</strong>
-        <span>Conectando con BDLocal.</span>
-      </div>
+      <div class="com-status-dot"></div><div><strong>Inicializando</strong><span>Conectando con BDLocal.</span></div>
     </section>
 
     <section class="com-panel">
       <div class="com-form-grid">
-        <div class="com-field">
-          <label for="selectorCarrera">Carrera</label>
-          <select id="selectorCarrera">
-            <option value="">Cargando carreras...</option>
-          </select>
-        </div>
-
-        <div class="com-field">
-          <label for="inputFecha">Fecha del comunicado</label>
-          <input id="inputFecha" type="date" />
-        </div>
-
-        <div class="com-field">
-          <label for="inputCiudad">Ciudad</label>
-          <input id="inputCiudad" type="text" value="Quito, D.M." />
-        </div>
-
-        <div class="com-field">
-          <label for="inputUnidadResponsable">Unidad responsable</label>
-          <input id="inputUnidadResponsable" type="text" value="UNIDAD DE GESTIÓN PEDAGÓGICA ACADÉMICA" />
-        </div>
-
+        <div class="com-field"><label for="selectorCarrera">Carrera</label><select id="selectorCarrera"><option value="">Cargando carreras...</option></select></div>
+        <div class="com-field"><label for="inputFecha">Fecha del comunicado</label><input id="inputFecha" type="date" /></div>
+        <div class="com-field"><label for="inputCiudad">Ciudad</label><input id="inputCiudad" type="text" value="Quito, D.M." /></div>
+        <div class="com-field"><label for="inputUnidadResponsable">Unidad responsable</label><input id="inputUnidadResponsable" type="text" value="UNIDAD DE GESTIÓN PEDAGÓGICA ACADÉMICA" /></div>
+        <div class="com-field com-field-full"><label for="inputNota">Nota institucional</label><input id="inputNota" type="text" value="Instituto Superior Tecnológico Quito Metropolitano" /></div>
+        <input id="inputLogoSrc" type="hidden" value="" />
         <div class="com-field com-field-full">
-          <label for="inputNota">Nota institucional</label>
-          <input id="inputNota" type="text" value="Nota: Cualquier inquietud por favor acercarse a la Unidad de Gestión Pedagógica Académica." />
-        </div>
-
-        <div class="com-field com-field-full">
-          <label for="inputLogoSrc">Logo del comunicado</label>
-          <input id="inputLogoSrc" type="text" value="../assets/logo-itsqmet-comunicado.png" />
-          <small>
-            Si el logo no existe todavía, el PDF se generará sin imagen. Luego ponemos el archivo correcto en
-            <code>/Curriculo/assets/logo-itsqmet-comunicado.png</code>.
-          </small>
+          <div class="com-logo-ready"><div class="com-logo-mark">✓</div><div><strong>Logo institucional incorporado</strong><span>El PDF utiliza la imagen exacta embebida para evitar que desaparezca al imprimir.</span></div></div>
+          <p class="com-content-note">Una materia solo aparece como completa cuando los tres archivos y su contenido curricular han sido validados.</p>
         </div>
       </div>
     </section>
 
     <section class="com-stats">
-      <article>
-        <span>Total materias</span>
-        <strong id="statTotalMaterias">0</strong>
-      </article>
-
-      <article class="com-stat-ok">
-        <span>Completas</span>
-        <strong id="statCompletas">0</strong>
-      </article>
-
-      <article class="com-stat-warn">
-        <span>En revisión</span>
-        <strong id="statRevision">0</strong>
-      </article>
-
-      <article class="com-stat-error">
-        <span>Incompletas</span>
-        <strong id="statIncompletas">0</strong>
-      </article>
-
-      <article>
-        <span>Mostradas</span>
-        <strong id="statMostradas">0</strong>
-      </article>
-
-      <article>
-        <span>Seleccionadas</span>
-        <strong id="statSeleccionadas">0</strong>
-      </article>
+      <article><span>Total materias</span><strong id="statTotalMaterias">0</strong></article>
+      <article class="com-stat-ok"><span>Completas</span><strong id="statCompletas">0</strong></article>
+      <article class="com-stat-warn"><span>En revisión</span><strong id="statRevision">0</strong></article>
+      <article class="com-stat-error"><span>Incompletas</span><strong id="statIncompletas">0</strong></article>
+      <article><span>Mostradas</span><strong id="statMostradas">0</strong></article>
+      <article><span>Seleccionadas</span><strong id="statSeleccionadas">0</strong></article>
     </section>
 
     <section class="com-panel com-actions-panel">
-      <div>
-        <h2>Generación de comunicados</h2>
-        <p>
-          Solo se generan comunicados de materias completas con PEA Base, PEA Unidades y PEA Actividades.
-        </p>
-      </div>
-
+      <div><h2>Generación de comunicados</h2><p>Se bloquea el PDF cuando falta descripción, objetivo, alguna unidad, actividades o bibliografía con justificación.</p></div>
       <div class="com-actions-row">
-        <button id="btnSeleccionarTodas" type="button" class="com-btn com-btn-light">
-          Seleccionar todas
-        </button>
-
-        <button id="btnLimpiarSeleccion" type="button" class="com-btn com-btn-light">
-          Limpiar selección
-        </button>
-
-        <button id="btnGenerarSeleccionadas" type="button" class="com-btn com-btn-primary">
-          Generar seleccionadas
-        </button>
-
-        <button id="btnGenerarTodas" type="button" class="com-btn com-btn-dark">
-          Generar todas
-        </button>
+        <button id="btnSeleccionarTodas" type="button" class="com-btn com-btn-light">Seleccionar todas</button>
+        <button id="btnLimpiarSeleccion" type="button" class="com-btn com-btn-light">Limpiar selección</button>
+        <button id="btnGenerarSeleccionadas" type="button" class="com-btn com-btn-primary">Generar seleccionadas</button>
+        <button id="btnGenerarTodas" type="button" class="com-btn com-btn-dark">Generar todas</button>
       </div>
     </section>
 
     <section class="com-panel">
-      <div class="com-panel-head">
-        <div>
-          <h2>Materias completas</h2>
-          <p>
-            Puedes corregir el nombre institucional antes de generar el comunicado.
-          </p>
-        </div>
-      </div>
-
+      <div class="com-panel-head"><div><h2>Materias completas</h2><p>Puedes corregir el nombre institucional antes de generar el comunicado.</p></div></div>
       <div class="com-table-wrap">
         <table class="com-table">
-          <thead>
-            <tr>
-              <th>Sel.</th>
-              <th>Nivel</th>
-              <th>Código</th>
-              <th>Nombre importado</th>
-              <th>Nombre institucional</th>
-              <th>Estado</th>
-              <th>PEA</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-
-          <tbody id="tablaMaterias">
-            <tr>
-              <td colspan="8" class="com-empty">
-                Selecciona una carrera para cargar materias completas.
-              </td>
-            </tr>
-          </tbody>
+          <thead><tr><th>Sel.</th><th>Nivel</th><th>Código</th><th>Nombre importado</th><th>Nombre institucional</th><th>Estado</th><th>PEA</th><th>Acciones</th></tr></thead>
+          <tbody id="tablaMaterias"><tr><td colspan="8" class="com-empty">Selecciona una carrera para cargar materias completas.</td></tr></tbody>
         </table>
       </div>
     </section>
   </div>
 
-  <!-- Menú superior -->
-  <script src="../menu-superior/menu-superior.js"></script>
+  <script src="../menu-superior/menu-superior.js?v=20260710-4"></script>
+  <script src="../bdlocal/bdlocal.schema.js?v=20260710-4"></script>
+  <script src="../bdlocal/bdlocal.core.js?v=20260710-4"></script>
+  <script src="../bdlocal/bdlocal.api.js?v=20260710-4"></script>
+  <script src="../bdlocal/bdlocal.consultas.js?v=20260710-4"></script>
+  <script src="../bdlocal/bdlocal.validaciones.js?v=20260710-4"></script>
+  <script src="../bdlocal/bdlocal.backup.js?v=20260710-4"></script>
 
-  <!-- BDLocal -->
-  <script src="../bdlocal/bdlocal.schema.js"></script>
-  <script src="../bdlocal/bdlocal.core.js"></script>
-  <script src="../bdlocal/bdlocal.api.js"></script>
-  <script src="../bdlocal/bdlocal.consultas.js"></script>
-  <script src="../bdlocal/bdlocal.validaciones.js"></script>
-  <script src="../bdlocal/bdlocal.backup.js"></script>
-
-  <!-- Comunicados -->
-  <script src="./comunicados.bdlocal.js"></script>
-  <script src="./comunicados.contador.js"></script>
-  <script src="./comunicados.plantilla.js"></script>
-  <script src="./comunicados.pdf.js"></script>
-  <script src="./comunicados.main.js"></script>
+  <script src="../assets/logo-itsqmet-comunicado-data.js?v=20260710-4"></script>
+  <script src="./comunicados.bdlocal.js?v=20260710-4"></script>
+  <script src="./comunicados.contador.js?v=20260710-4"></script>
+  <script src="./comunicados.plantilla.js?v=20260710-4"></script>
+  <script src="./comunicados.override.js?v=20260710-4"></script>
+  <script src="./comunicados.pdf.js?v=20260710-4"></script>
+  <script src="./comunicados.main.js?v=20260710-4"></script>
 </body>
 </html>
