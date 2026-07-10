@@ -6,7 +6,7 @@ Función o funciones:
 - Navegar de forma segura en navegador y Electron.
 - Usar el resultado { ok: true } devuelto por el puente Electron.
 - Aplicar una ruta HTML de respaldo si el IPC no responde.
-- Cargar automáticamente la reparación inteligente de BDLocal cuando corresponda.
+- Cargar automáticamente diagnóstico global e inteligencia BDLocal.
 ========================================================= */
 
 (function (window, document) {
@@ -14,6 +14,7 @@ Función o funciones:
 
   var MENU_ID = "curriculoMenuSuperior";
   var ROOT_CLASS = "cms-menu-mounted";
+  var VERSION_RECURSOS = "20260710-9";
   var LINKS = [
     { id: "inicio", label: "Inicio", shortLabel: "Inicio", root: "index.html", child: "../index.html", icon: "⌂" },
     { id: "subir", label: "Subir ZIP", shortLabel: "Subir", root: "subir/subir.html", child: "../subir/subir.html", icon: "ZIP" },
@@ -41,6 +42,10 @@ Función o funciones:
   function estaEnSubcarpeta() {
     var path = pathActual();
     return /\/(subir|bdlocal|comunicados|menu-superior)\//.test(path);
+  }
+
+  function rutaDesdeRaiz(ruta) {
+    return (estaEnSubcarpeta() ? "../" : "") + ruta;
   }
 
   function pantallaActual() {
@@ -139,15 +144,63 @@ Función o funciones:
     el.classList.toggle("cms-mode-electron", esElectron());
   }
 
+  function cargarScript(src, atributo, callback) {
+    var existente = document.querySelector('script[' + atributo + '="true"]');
+    if (existente) {
+      if (callback) callback();
+      return;
+    }
+    var script = document.createElement("script");
+    script.src = src;
+    script.async = false;
+    script.setAttribute(atributo, "true");
+    if (callback) script.addEventListener("load", callback, { once: true });
+    script.addEventListener("error", function () {
+      console.error("[MenuSuperior] No se pudo cargar:", src);
+    });
+    document.head.appendChild(script);
+  }
+
+  function cargarDiagnosticoGlobal() {
+    if (!document.querySelector('link[data-diagnostico-css="true"]')) {
+      var link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = rutaDesdeRaiz("diagnostico/diagnostico-modal.css?v=" + VERSION_RECURSOS);
+      link.dataset.diagnosticoCss = "true";
+      document.head.appendChild(link);
+    }
+
+    if (window.DiagnosticoFlujo) {
+      if (!window.DiagnosticoModal) {
+        cargarScript(
+          rutaDesdeRaiz("diagnostico/diagnostico-modal.js?v=" + VERSION_RECURSOS),
+          "data-diagnostico-modal"
+        );
+      }
+      return;
+    }
+
+    cargarScript(
+      rutaDesdeRaiz("diagnostico/diagnostico-flujo.js?v=" + VERSION_RECURSOS),
+      "data-diagnostico-flujo",
+      function () {
+        if (!window.DiagnosticoModal) {
+          cargarScript(
+            rutaDesdeRaiz("diagnostico/diagnostico-modal.js?v=" + VERSION_RECURSOS),
+            "data-diagnostico-modal"
+          );
+        }
+      }
+    );
+  }
+
   function cargarInteligenciaBDLocal() {
     if (!window.BDLocalCCC || !window.BDLocalCCC.Core) return;
     if (window.BDLocalCCC.Inteligencia) return;
     if (document.querySelector('script[data-bdlocal-inteligencia="true"]')) return;
 
     var script = document.createElement("script");
-    script.src = estaEnSubcarpeta()
-      ? "../bdlocal/bdlocal.inteligencia.js?v=20260710-6"
-      : "bdlocal/bdlocal.inteligencia.js?v=20260710-6";
+    script.src = rutaDesdeRaiz("bdlocal/bdlocal.inteligencia.js?v=" + VERSION_RECURSOS);
     script.dataset.bdlocalInteligencia = "true";
     script.async = false;
     script.addEventListener("error", function () {
@@ -157,6 +210,8 @@ Función o funciones:
   }
 
   function montar() {
+    cargarDiagnosticoGlobal();
+
     if (document.getElementById(MENU_ID)) {
       cargarInteligenciaBDLocal();
       return;
@@ -180,8 +235,11 @@ Función o funciones:
     marcarActivo: marcarActivo,
     obtenerPantallaActual: pantallaActual,
     esElectron: esElectron,
-    navegar: navegar
+    navegar: navegar,
+    cargarDiagnosticoGlobal: cargarDiagnosticoGlobal
   };
+
+  cargarDiagnosticoGlobal();
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", montar, { once: true });
