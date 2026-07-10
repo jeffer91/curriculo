@@ -1,11 +1,12 @@
 /* =========================================================
 Nombre completo: subir.excel.js
-Ruta o ubicación: /gestion-curricular-ccc/subir/subir.excel.js
+Ruta o ubicación: /Curriculo/subir/subir.excel.js
 Función o funciones:
 - Leer internamente los archivos Excel detectados dentro del ZIP.
-- Esperar correctamente la carga de XLSX mediante window.__XLSXReady.
-- Convertir hojas Excel en matrices, objetos y datos procesados.
-- Preparar datos diferentes para PEA Base, PEA Unidades y PEA Actividades.
+- Interpretar la estructura real codigoComponente/ordenComponente de los PEA.
+- Guardar descripción, objetivo, cuatro unidades, competencias, resultados y bibliografía.
+- Agrupar todos los contenidos en sus cuatro unidades correctas.
+- Conservar todas las actividades con mecanismo, tema y descripción.
 - Enriquecer el paquete antes de validarlo e importarlo a BDLocal.
 ========================================================= */
 
@@ -44,16 +45,11 @@ Función o funciones:
   }
 
   async function xlsxDisponible() {
-    if (window.XLSX) {
-      return window.XLSX;
-    }
+    if (window.XLSX) return window.XLSX;
 
     if (window.__XLSXReady && typeof window.__XLSXReady.then === "function") {
       await window.__XLSXReady;
-
-      if (window.XLSX) {
-        return window.XLSX;
-      }
+      if (window.XLSX) return window.XLSX;
     }
 
     throw new Error(
@@ -63,13 +59,19 @@ Función o funciones:
 
   function limpiarCelda(valor) {
     if (valor === null || typeof valor === "undefined") return "";
-
-    if (valor instanceof Date) {
-      return valor.toISOString();
-    }
+    if (valor instanceof Date) return valor.toISOString();
 
     return String(valor)
-      .replace(/\s+/g, " ")
+      .replace(/\r\n/g, "\n")
+      .replace(/\r/g, "\n")
+      .split("\n")
+      .map(function (linea) {
+        return linea.replace(/[\t ]+/g, " ").trim();
+      })
+      .filter(function (linea, index, lineas) {
+        return linea || (index > 0 && index < lineas.length - 1);
+      })
+      .join("\n")
       .trim();
   }
 
@@ -84,13 +86,8 @@ Función o funciones:
       return arr(fila).map(limpiarCelda);
     });
 
-    while (matriz.length && filaVacia(matriz[0])) {
-      matriz.shift();
-    }
-
-    while (matriz.length && filaVacia(matriz[matriz.length - 1])) {
-      matriz.pop();
-    }
+    while (matriz.length && filaVacia(matriz[0])) matriz.shift();
+    while (matriz.length && filaVacia(matriz[matriz.length - 1])) matriz.pop();
 
     var maxCols = 0;
 
@@ -110,13 +107,20 @@ Función o funciones:
 
   function normalizarClave(valor) {
     var NLocal = normalizadorDisponible();
-
     var clave = NLocal.normalizarComparacion(valor)
       .replace(/[^\w\s]/g, " ")
       .replace(/\s+/g, "_")
       .replace(/^_|_$/g, "");
 
     return clave || "campo";
+  }
+
+  function normalizarNombreCampo(valor) {
+    return texto(valor)
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-zA-Z0-9]/g, "")
+      .toLowerCase();
   }
 
   function claveUnica(base, usadas) {
@@ -132,8 +136,6 @@ Función o funciones:
   }
 
   function puntuarFilaEncabezado(fila) {
-    var NLocal = normalizadorDisponible();
-
     fila = arr(fila);
 
     var noVacias = fila.filter(function (celda) {
@@ -143,74 +145,49 @@ Función o funciones:
     if (noVacias.length < 2) return 0;
 
     var score = noVacias.length * 4;
-    var textoFila = NLocal.normalizarComparacion(noVacias.join(" "));
-
+    var textoFila = normalizarNombreCampo(noVacias.join(" "));
     var palabrasClave = [
+      "codigocomponente",
+      "ordencomponente",
+      "descripcioncomponente",
       "unidad",
       "tema",
       "subtema",
       "resultado",
       "actividad",
-      "horas",
+      "mecanismo",
+      "nivel",
       "contenido",
       "objetivo",
       "evaluacion",
-      "metodologia",
-      "semana",
-      "descripcion"
+      "bibliografia"
     ];
 
     palabrasClave.forEach(function (palabra) {
-      if (textoFila.includes(palabra)) {
-        score += 10;
-      }
+      if (textoFila.includes(palabra)) score += 12;
     });
-
-    var numericas = noVacias.filter(function (celda) {
-      return /^-?\d+(\.\d+)?$/.test(limpiarCelda(celda));
-    }).length;
-
-    score -= numericas * 2;
 
     return score;
   }
 
   function detectarFilaEncabezado(matriz) {
     matriz = arr(matriz);
-
     var limite = Math.min(matriz.length, 20);
-    var mejor = {
-      index: -1,
-      score: 0
-    };
+    var mejor = { index: -1, score: 0 };
 
     for (var i = 0; i < limite; i += 1) {
       var score = puntuarFilaEncabezado(matriz[i]);
-
-      if (score > mejor.score) {
-        mejor = {
-          index: i,
-          score: score
-        };
-      }
+      if (score > mejor.score) mejor = { index: i, score: score };
     }
 
-    if (mejor.score < 12) {
-      return -1;
-    }
-
-    return mejor.index;
+    return mejor.score >= 12 ? mejor.index : -1;
   }
 
   function matrizAObjetos(matriz) {
     matriz = limpiarMatriz(matriz);
 
     if (!matriz.length) {
-      return {
-        encabezadoIndex: -1,
-        encabezados: [],
-        filas: []
-      };
+      return { encabezadoIndex: -1, encabezados: [], filas: [] };
     }
 
     var encabezadoIndex = detectarFilaEncabezado(matriz);
@@ -220,18 +197,14 @@ Función o funciones:
         encabezadoIndex: -1,
         encabezados: [],
         filas: matriz.map(function (fila, index) {
-          return {
-            __filaExcel: index + 1,
-            valores: fila
-          };
+          return { __filaExcel: index + 1, valores: fila };
         })
       };
     }
 
     var usadas = {};
     var encabezados = arr(matriz[encabezadoIndex]).map(function (celda, index) {
-      var clave = normalizarClave(celda || ("columna_" + (index + 1)));
-      return claveUnica(clave, usadas);
+      return claveUnica(normalizarClave(celda || ("columna_" + (index + 1))), usadas);
     });
 
     var filas = matriz.slice(encabezadoIndex + 1)
@@ -239,9 +212,7 @@ Función o funciones:
         return !filaVacia(fila);
       })
       .map(function (fila, index) {
-        var obj = {
-          __filaExcel: encabezadoIndex + 2 + index
-        };
+        var obj = { __filaExcel: encabezadoIndex + 2 + index };
 
         encabezados.forEach(function (clave, colIndex) {
           obj[clave] = limpiarCelda(fila[colIndex]);
@@ -259,7 +230,6 @@ Función o funciones:
 
   function extraerCamposClaveValor(matriz) {
     matriz = limpiarMatriz(matriz);
-
     var campos = {};
     var usados = {};
 
@@ -268,177 +238,225 @@ Función o funciones:
         return limpiarCelda(celda) !== "";
       });
 
-      if (noVacias.length < 2) return;
-      if (noVacias.length > 4) return;
+      if (noVacias.length < 2 || noVacias.length > 4) return;
 
       var clave = normalizarClave(noVacias[0]);
       var valor = noVacias.slice(1).join(" ").trim();
 
-      if (!clave || !valor) return;
-
-      campos[claveUnica(clave, usados)] = valor;
+      if (clave && valor) campos[claveUnica(clave, usados)] = valor;
     });
 
     return campos;
   }
 
-  function buscarNumeroEnObjeto(obj, claves) {
-    claves = arr(claves);
+  function obtenerValor(obj, aliases) {
+    obj = obj || {};
+    aliases = arr(aliases).map(normalizarNombreCampo);
+    var claves = Object.keys(obj);
 
     for (var i = 0; i < claves.length; i += 1) {
       var clave = claves[i];
-      var valor = obj[clave];
-
-      if (valor === null || typeof valor === "undefined") continue;
-
-      var match = String(valor).match(/\d+/);
-
-      if (match) {
-        return Number(match[0]);
-      }
-    }
-
-    var clavesObj = Object.keys(obj || {});
-
-    for (var j = 0; j < clavesObj.length; j += 1) {
-      var k = clavesObj[j];
-
-      if (k.includes("unidad") || k.includes("nro") || k.includes("numero")) {
-        var match2 = String(obj[k]).match(/\d+/);
-        if (match2) return Number(match2[0]);
-      }
-    }
-
-    return 0;
-  }
-
-  function buscarTextoEnObjeto(obj, palabras) {
-    palabras = arr(palabras);
-
-    var claves = Object.keys(obj || {});
-
-    for (var i = 0; i < claves.length; i += 1) {
-      var clave = claves[i];
-
-      for (var j = 0; j < palabras.length; j += 1) {
-        if (clave.includes(palabras[j])) {
-          return texto(obj[clave]);
-        }
+      if (aliases.indexOf(normalizarNombreCampo(clave)) !== -1 && texto(obj[clave])) {
+        return texto(obj[clave]);
       }
     }
 
     return "";
   }
 
+  function obtenerNumero(obj, aliases, defecto) {
+    var valor = obtenerValor(obj, aliases);
+    var match = valor.match(/-?\d+/);
+    return match ? Number(match[0]) : Number(defecto || 0);
+  }
+
+  function obtenerFilas(hojasProcesadas) {
+    var filas = [];
+
+    arr(hojasProcesadas).forEach(function (hoja) {
+      arr(hoja.objetos && hoja.objetos.filas).forEach(function (fila) {
+        filas.push(Object.assign({ __hoja: hoja.nombre }, fila));
+      });
+    });
+
+    return filas;
+  }
+
+  function esEstructuraComponentes(filas) {
+    return arr(filas).some(function (fila) {
+      return !!obtenerValor(fila, ["codigoComponente", "codigo_componente"]);
+    });
+  }
+
   function procesarBase(hojasProcesadas) {
     var campos = {};
     var hojas = {};
+    var filas = obtenerFilas(hojasProcesadas);
 
     hojasProcesadas.forEach(function (hoja) {
       var kv = extraerCamposClaveValor(hoja.matriz);
 
       Object.keys(kv).forEach(function (clave) {
-        if (!campos[clave]) {
-          campos[clave] = kv[clave];
-        }
+        if (!campos[clave]) campos[clave] = kv[clave];
       });
 
       hojas[hoja.nombre] = {
         totalFilas: hoja.totalFilas,
         totalColumnas: hoja.totalColumnas,
         campos: kv,
-        filas: hoja.objetos.filas.slice(0, 300)
+        filas: arr(hoja.objetos.filas).slice(0, 1000)
       };
     });
 
+    var descripcion = "";
+    var objetivo = "";
+    var mapaUnidades = {};
+    var bibliografia = [];
+
+    if (esEstructuraComponentes(filas)) {
+      filas.forEach(function (fila) {
+        var codigo = obtenerNumero(fila, ["codigoComponente", "codigo_componente"], 0);
+        var orden = obtenerNumero(fila, ["ordenComponente", "orden_componente"], 0);
+        var descripcion1 = obtenerValor(fila, ["descripcionComponente", "descripcion_componente"]);
+        var descripcion2 = obtenerValor(fila, ["descripcionComponente2", "descripcion_componente_2"]);
+        var descripcion3 = obtenerValor(fila, ["descripcionComponente3", "descripcion_componente_3"]);
+
+        if (codigo === 1 && !descripcion) descripcion = descripcion1;
+        if (codigo === 2 && !objetivo) objetivo = descripcion1;
+
+        if (codigo >= 3 && codigo <= 5 && orden > 0) {
+          if (!mapaUnidades[orden]) {
+            mapaUnidades[orden] = {
+              unidadNumero: orden,
+              nombre: "",
+              competencia: "",
+              resultadoAprendizaje: ""
+            };
+          }
+
+          if (codigo === 3) mapaUnidades[orden].nombre = descripcion1;
+          if (codigo === 4) mapaUnidades[orden].competencia = descripcion1;
+          if (codigo === 5) mapaUnidades[orden].resultadoAprendizaje = descripcion1;
+        }
+
+        if (codigo === 8 && descripcion1) {
+          bibliografia.push({
+            orden: orden || bibliografia.length + 1,
+            referencia: descripcion1,
+            codigoReferencia: descripcion2,
+            justificacion: descripcion3
+          });
+        }
+      });
+    }
+
+    var unidadesBase = Object.keys(mapaUnidades)
+      .map(function (key) { return mapaUnidades[key]; })
+      .sort(function (a, b) { return a.unidadNumero - b.unidadNumero; });
+
+    campos.descripcion_asignatura = descripcion || campos.descripcion_asignatura || "";
+    campos.objetivo_asignatura = objetivo || campos.objetivo_asignatura || "";
+
     return {
       tipo: "pea_base",
+      versionEstructura: 2,
+      descripcion: descripcion,
+      objetivo: objetivo,
+      unidadesBase: unidadesBase,
+      bibliografia: bibliografia.sort(function (a, b) { return a.orden - b.orden; }),
       campos: campos,
       hojas: hojas,
+      filas: filas,
       procesadoEn: fechaISO()
     };
   }
 
   function procesarUnidades(hojasProcesadas) {
-    var filas = [];
+    var filas = obtenerFilas(hojasProcesadas);
+    var mapa = {};
 
-    hojasProcesadas.forEach(function (hoja) {
-      var objetos = hoja.objetos.filas || [];
+    filas.forEach(function (fila) {
+      var unidadNumero = obtenerNumero(fila, [
+        "ordenComponente",
+        "orden_componente",
+        "unidadNumero",
+        "unidad_numero",
+        "numeroUnidad",
+        "numero_unidad",
+        "unidad"
+      ], 0);
 
-      objetos.forEach(function (obj, index) {
-        var unidadNumero = buscarNumeroEnObjeto(obj, [
-          "unidad",
-          "n_unidad",
-          "numero_unidad",
-          "unidad_numero"
-        ]);
+      var contenido = obtenerValor(fila, [
+        "descripcionComponente",
+        "descripcion_componente",
+        "contenido",
+        "tema",
+        "titulo"
+      ]);
 
-        var tema = buscarTextoEnObjeto(obj, ["tema", "contenido", "titulo"]);
-        var subtema = buscarTextoEnObjeto(obj, ["subtema", "sub_tema"]);
-        var resultado = buscarTextoEnObjeto(obj, ["resultado", "aprendizaje", "logro"]);
+      if (!unidadNumero || !contenido) return;
 
-        filas.push(Object.assign({}, obj, {
-          id: "unidad_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 7) + "_" + index,
-          hoja: hoja.nombre,
+      if (!mapa[unidadNumero]) {
+        mapa[unidadNumero] = {
           unidadNumero: unidadNumero,
-          temaDetectado: tema,
-          subtemaDetectado: subtema,
-          resultadoDetectado: resultado
-        }));
-      });
+          contenidos: [],
+          filasOriginales: [],
+          temaDetectado: "",
+          subtemaDetectado: "",
+          resultadoDetectado: ""
+        };
+      }
+
+      mapa[unidadNumero].contenidos.push(contenido);
+      mapa[unidadNumero].filasOriginales.push(fila);
     });
 
-    return filas;
+    return Object.keys(mapa)
+      .map(function (key) {
+        var unidad = mapa[key];
+        unidad.totalContenidos = unidad.contenidos.length;
+        unidad.temaDetectado = unidad.contenidos[0] || "";
+        return unidad;
+      })
+      .sort(function (a, b) {
+        return a.unidadNumero - b.unidadNumero;
+      });
   }
 
   function procesarActividades(hojasProcesadas) {
-    var filas = [];
+    var filas = obtenerFilas(hojasProcesadas);
 
-    hojasProcesadas.forEach(function (hoja) {
-      var objetos = hoja.objetos.filas || [];
+    return filas.map(function (fila, index) {
+      var nivel = obtenerNumero(fila, ["nivel", "unidad", "unidadNumero", "unidad_numero"], 0);
+      var mecanismo = obtenerValor(fila, ["mecanismo", "tipoActividad", "tipo_actividad", "tipo", "modalidad"]);
+      var tema = obtenerValor(fila, ["tema", "titulo"]);
+      var descripcion = obtenerValor(fila, ["descripcion", "descripción", "actividad", "contenido"]);
 
-      objetos.forEach(function (obj, index) {
-        var unidadNumero = buscarNumeroEnObjeto(obj, [
-          "unidad",
-          "n_unidad",
-          "numero_unidad",
-          "unidad_numero"
-        ]);
-
-        var actividad = buscarTextoEnObjeto(obj, [
-          "actividad",
-          "taller",
-          "proyecto",
-          "descripcion"
-        ]);
-
-        var tipoActividad = buscarTextoEnObjeto(obj, [
-          "tipo",
-          "tipo_actividad",
-          "modalidad",
-          "componente"
-        ]);
-
-        filas.push(Object.assign({}, obj, {
-          id: "actividad_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 7) + "_" + index,
-          hoja: hoja.nombre,
-          unidadNumero: unidadNumero,
-          actividadDetectada: actividad,
-          tipoActividad: tipoActividad || "actividad"
-        }));
+      return Object.assign({}, fila, {
+        id: "actividad_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8) + "_" + index,
+        nivel: nivel,
+        unidadNumero: nivel,
+        mecanismo: mecanismo,
+        tema: tema,
+        descripcion: descripcion,
+        actividadDetectada: descripcion || tema,
+        tipoActividad: mecanismo || "Actividad",
+        evaluacion: ""
       });
+    }).filter(function (fila) {
+      return texto(fila.mecanismo) || texto(fila.tema) || texto(fila.descripcion);
     });
-
-    return filas;
   }
 
   async function leerExcelArchivo(archivo, opciones) {
     opciones = opciones || {};
-
     var XLSXLocal = await xlsxDisponible();
 
     if (!archivo || !archivo.contenidoBinario) {
-      throw new Error("El archivo no tiene contenido binario para leer: " + (archivo && archivo.nombreArchivo ? archivo.nombreArchivo : ""));
+      throw new Error(
+        "El archivo no tiene contenido binario para leer: " +
+        (archivo && archivo.nombreArchivo ? archivo.nombreArchivo : "")
+      );
     }
 
     var workbook = XLSXLocal.read(archivo.contenidoBinario, {
@@ -448,12 +466,11 @@ Función o funciones:
       cellText: false
     });
 
-    var maxFilasPorHoja = Number(opciones.maxFilasPorHoja || 3000);
+    var maxFilasPorHoja = Number(opciones.maxFilasPorHoja || 5000);
     var hojasProcesadas = [];
 
     workbook.SheetNames.forEach(function (nombreHoja) {
       var ws = workbook.Sheets[nombreHoja];
-
       var matriz = XLSXLocal.utils.sheet_to_json(ws, {
         header: 1,
         defval: "",
@@ -461,7 +478,6 @@ Función o funciones:
       });
 
       matriz = limpiarMatriz(matriz);
-
       if (maxFilasPorHoja > 0 && matriz.length > maxFilasPorHoja) {
         matriz = matriz.slice(0, maxFilasPorHoja);
       }
@@ -479,7 +495,7 @@ Función o funciones:
       });
     });
 
-    var datosProcesados = null;
+    var datosProcesados;
 
     if (archivo.tipo === "pea_base") {
       datosProcesados = procesarBase(hojasProcesadas);
@@ -553,7 +569,6 @@ Función o funciones:
 
     for (var i = 0; i < archivos.length; i += 1) {
       var archivo = archivos[i];
-
       if (excel.indexOf(archivo) === -1) continue;
 
       notificarProgreso(opciones, {
@@ -633,6 +648,9 @@ Función o funciones:
     enriquecerPaqueteConExcel: enriquecerPaqueteConExcel,
     limpiarMatriz: limpiarMatriz,
     matrizAObjetos: matrizAObjetos,
-    extraerCamposClaveValor: extraerCamposClaveValor
+    extraerCamposClaveValor: extraerCamposClaveValor,
+    procesarBase: procesarBase,
+    procesarUnidades: procesarUnidades,
+    procesarActividades: procesarActividades
   };
 })(window);
