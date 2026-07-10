@@ -6,6 +6,7 @@ Función o funciones:
 - Navegar de forma segura en navegador y Electron.
 - Usar el resultado { ok: true } devuelto por el puente Electron.
 - Aplicar una ruta HTML de respaldo si el IPC no responde.
+- Cargar automáticamente la reparación inteligente de BDLocal cuando corresponda.
 ========================================================= */
 
 (function (window, document) {
@@ -138,12 +139,34 @@ Función o funciones:
     el.classList.toggle("cms-mode-electron", esElectron());
   }
 
+  function cargarInteligenciaBDLocal() {
+    if (!window.BDLocalCCC || !window.BDLocalCCC.Core) return;
+    if (window.BDLocalCCC.Inteligencia) return;
+    if (document.querySelector('script[data-bdlocal-inteligencia="true"]')) return;
+
+    var script = document.createElement("script");
+    script.src = estaEnSubcarpeta()
+      ? "../bdlocal/bdlocal.inteligencia.js?v=20260710-6"
+      : "bdlocal/bdlocal.inteligencia.js?v=20260710-6";
+    script.dataset.bdlocalInteligencia = "true";
+    script.async = false;
+    script.addEventListener("error", function () {
+      console.error("[MenuSuperior] No se pudo cargar bdlocal.inteligencia.js.");
+    });
+    document.head.appendChild(script);
+  }
+
   function montar() {
-    if (document.getElementById(MENU_ID)) return;
+    if (document.getElementById(MENU_ID)) {
+      cargarInteligenciaBDLocal();
+      return;
+    }
+
     document.body.classList.add(ROOT_CLASS);
     document.body.insertAdjacentHTML("afterbegin", construirHTML());
     conectarEventos();
     actualizarModo();
+    cargarInteligenciaBDLocal();
   }
 
   function marcarActivo(ruta) {
