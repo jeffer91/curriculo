@@ -3,12 +3,10 @@ Nombre completo: comunicados.pdf.js
 Ruta o ubicación: /Curriculo/comunicados/comunicados.pdf.js
 Función o funciones:
 - Construir el documento HTML institucional listo para PDF.
-- Aplicar formato institucional en negro basado en comunicado/memorando.
-- Mantener el logo original sin filtros, recoloración ni recortes.
-- Enviar el HTML al puente seguro de Electron.
-- Guardar y verificar el PDF directamente en la carpeta Descargas.
-- Permitir generar PDF individual y un único PDF global.
-- Usar impresión del navegador como respaldo automático si Electron falla.
+- Mantener el logo oficial con sus colores, transparencia y proporción originales.
+- Aplicar un diseño exclusivamente negro para textos, líneas y tablas.
+- Generar PDF individual o global mediante el puente seguro de Electron.
+- Usar impresión del navegador como respaldo automático.
 ========================================================= */
 
 (function (window, document) {
@@ -45,25 +43,21 @@ Función o funciones:
   }
 
   function fechaArchivo() {
-    var fecha = new Date();
+    var d = new Date();
 
     return [
-      fecha.getFullYear(),
-      String(fecha.getMonth() + 1).padStart(2, "0"),
-      String(fecha.getDate()).padStart(2, "0"),
-      String(fecha.getHours()).padStart(2, "0"),
-      String(fecha.getMinutes()).padStart(2, "0"),
-      String(fecha.getSeconds()).padStart(2, "0")
+      d.getFullYear(),
+      String(d.getMonth() + 1).padStart(2, "0"),
+      String(d.getDate()).padStart(2, "0"),
+      String(d.getHours()).padStart(2, "0"),
+      String(d.getMinutes()).padStart(2, "0"),
+      String(d.getSeconds()).padStart(2, "0")
     ].join("");
   }
 
   function asegurarExtensionPDF(nombre) {
     nombre = limpiarNombreArchivo(nombre || "comunicado");
-
-    if (!/\.pdf$/i.test(nombre)) {
-      nombre += ".pdf";
-    }
-
+    if (!/\.pdf$/i.test(nombre)) nombre += ".pdf";
     return nombre;
   }
 
@@ -107,7 +101,7 @@ Función o funciones:
     return `
       @page {
         size: A4;
-        margin: 14mm 17mm 15mm 17mm;
+        margin: 16mm 17mm 17mm 17mm;
       }
 
       * {
@@ -122,25 +116,19 @@ Función o funciones:
         background: #ffffff;
         color: #000000;
         font-family: Arial, Helvetica, sans-serif;
-        font-size: 11px;
-        line-height: 1.38;
+        font-size: 10.5pt;
+        line-height: 1.42;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
       }
 
-      body {
-        counter-reset: page;
-      }
-
       .com-pdf-page {
         width: 100%;
-        min-height: 267mm;
+        min-height: 260mm;
         margin: 0;
         padding: 0;
-        display: flex;
-        flex-direction: column;
-        background: #ffffff;
         color: #000000;
+        background: #ffffff;
         page-break-after: always;
         break-after: page;
       }
@@ -152,131 +140,109 @@ Función o funciones:
 
       .com-pdf-header {
         width: 100%;
-        margin: 0 0 8mm 0;
+        margin: 0 0 16mm 0;
         padding: 0;
-        text-align: left;
       }
 
       .com-pdf-logo {
         display: block;
-        width: 66mm;
-        max-width: 66mm;
+        width: auto;
         height: auto;
-        max-height: 28mm;
-        margin: 0;
+        max-width: 78mm;
+        max-height: 32mm;
+        margin: 0 0 9mm 0;
         padding: 0;
         object-fit: contain;
         object-position: left top;
+        opacity: 1;
+        filter: none;
+        transform: none;
       }
 
-      .com-pdf-document-number {
-        margin: 0 0 10mm 0;
+      .com-pdf-numero {
+        margin: 0;
         text-align: center;
+        font-size: 11pt;
+        font-weight: 700;
         color: #000000;
-        font-size: 12px;
-        line-height: 1.25;
-        font-weight: 400;
-      }
-
-      .com-pdf-document-number strong {
-        font-weight: 700;
-      }
-
-      .com-pdf-document-number span {
-        font-weight: 700;
-      }
-
-      .com-pdf-routing {
-        width: 100%;
-        margin: 0 0 9mm 0;
-        border-collapse: separate;
-        border-spacing: 0 4.5mm;
-        table-layout: fixed;
-        color: #000000;
-      }
-
-      .com-pdf-routing th,
-      .com-pdf-routing td {
-        border: 0;
-        padding: 0;
-        vertical-align: top;
-        color: #000000;
-        background: transparent;
-      }
-
-      .com-pdf-routing th {
-        width: 22mm;
-        text-align: left;
-        font-size: 11px;
-        line-height: 1.3;
-        font-weight: 700;
-      }
-
-      .com-pdf-routing-colon {
-        width: 7mm;
-        text-align: center;
-        font-weight: 700;
-      }
-
-      .com-pdf-routing-value {
-        width: auto;
-        text-align: left;
-        font-size: 11px;
-        line-height: 1.3;
-        font-weight: 600;
-        text-transform: uppercase;
-        overflow-wrap: anywhere;
       }
 
       .com-pdf-body {
         width: 100%;
         color: #000000;
-        font-size: 11px;
-        line-height: 1.42;
       }
 
       .com-pdf-body p {
-        margin: 0 0 4mm 0;
-        color: #000000;
+        margin: 0 0 7px 0;
         text-align: justify;
-        orphans: 3;
-        widows: 3;
-      }
-
-      .com-pdf-body h2 {
-        margin: 6mm 0 2.5mm 0;
-        padding: 0 0 1.3mm 0;
-        border: 0;
-        border-bottom: 0.35mm solid #000000;
-        background: #ffffff;
         color: #000000;
-        font-size: 11px;
-        line-height: 1.25;
-        font-weight: 700;
-        text-transform: uppercase;
-        page-break-after: avoid;
-        break-after: avoid;
       }
 
-      .com-pdf-body h3 {
-        margin: 4.5mm 0 2mm 0;
+      .com-pdf-resumen {
+        margin: 0 0 14px 0;
+        padding: 0;
+      }
+
+      .com-pdf-resumen p {
+        margin-bottom: 6px;
+      }
+
+      .com-pdf-seccion,
+      .com-pdf-unidad {
+        margin: 13px 0 0 0;
         padding: 0;
         color: #000000;
-        font-size: 11px;
-        line-height: 1.3;
+      }
+
+      .com-pdf-seccion h1,
+      .com-pdf-unidad h2 {
+        margin: 0 0 7px 0;
+        padding: 0 0 3px 0;
+        border: 0;
+        border-bottom: 1px solid #000000;
+        background: transparent;
+        color: #000000;
+        font-size: 11pt;
+        line-height: 1.25;
         font-weight: 700;
-        page-break-after: avoid;
-        break-after: avoid;
+        text-transform: none;
+        letter-spacing: 0;
+      }
+
+      .com-pdf-campo {
+        margin: 0 0 9px 0;
+        padding: 0;
+        color: #000000;
+      }
+
+      .com-pdf-campo > strong {
+        display: block;
+        margin-bottom: 3px;
+        color: #000000;
+      }
+
+      .com-pdf-lista-contenidos {
+        margin: 5px 0 10px 23px;
+        padding: 0;
+        color: #000000;
+      }
+
+      .com-pdf-lista-contenidos li {
+        margin: 0 0 4px 0;
+        padding-left: 2px;
+        text-align: justify;
+        color: #000000;
+        page-break-inside: avoid;
+        break-inside: avoid;
       }
 
       .com-pdf-table {
         width: 100%;
-        margin: 2.5mm 0 4mm 0;
+        margin: 7px 0 12px 0;
         border-collapse: collapse;
+        border-spacing: 0;
         table-layout: fixed;
         color: #000000;
-        page-break-inside: auto;
-        break-inside: auto;
       }
 
       .com-pdf-table thead {
@@ -290,135 +256,61 @@ Función o funciones:
 
       .com-pdf-table th,
       .com-pdf-table td {
-        border: 0.25mm solid #000000;
-        padding: 2mm 2.2mm;
+        border: 1px solid #000000;
+        padding: 5px 6px;
         vertical-align: top;
-        color: #000000;
         background: #ffffff;
-        font-size: 10px;
-        line-height: 1.3;
+        color: #000000;
+        word-break: normal;
         overflow-wrap: anywhere;
       }
 
       .com-pdf-table th {
-        text-align: left;
         font-weight: 700;
-      }
-
-      .com-pdf-datos th {
-        width: 34%;
+        text-align: left;
       }
 
       .com-pdf-actividades th:nth-child(1),
       .com-pdf-actividades td:nth-child(1) {
-        width: 20%;
+        width: 7%;
+        text-align: center;
       }
 
       .com-pdf-actividades th:nth-child(2),
       .com-pdf-actividades td:nth-child(2) {
-        width: 50%;
+        width: 21%;
       }
 
       .com-pdf-actividades th:nth-child(3),
       .com-pdf-actividades td:nth-child(3) {
-        width: 30%;
+        width: 22%;
       }
 
-      .com-pdf-unidades {
-        width: 100%;
+      .com-pdf-actividades th:nth-child(4),
+      .com-pdf-actividades td:nth-child(4) {
+        width: 50%;
       }
 
-      .com-pdf-unidad {
-        margin: 0 0 5mm 0;
-        padding: 0;
-        border: 0;
-        background: #ffffff;
+      .com-pdf-bibliografia-item {
+        margin: 0 0 12px 0;
+        padding: 0 0 8px 0;
+        border-bottom: 1px solid #000000;
         color: #000000;
-        page-break-inside: auto;
-        break-inside: auto;
+        page-break-inside: avoid;
+        break-inside: avoid;
       }
 
-      .com-pdf-unidad > p {
-        margin-bottom: 2mm;
+      .com-pdf-bibliografia-item:last-child {
+        border-bottom: 0;
       }
 
-      .com-pdf-muted {
-        color: #000000;
+      .com-pdf-vacio {
         font-style: italic;
-      }
-
-      .com-pdf-closing {
-        margin-top: 7mm !important;
-      }
-
-      .com-pdf-signature {
-        margin-top: 9mm;
         color: #000000;
-        page-break-inside: avoid;
-        break-inside: avoid;
       }
 
-      .com-pdf-signature p {
-        margin: 0 0 4mm 0;
-      }
-
-      .com-pdf-signature-space {
-        height: 13mm;
-      }
-
-      .com-pdf-signature strong,
-      .com-pdf-signature span {
-        display: block;
-        color: #000000;
-        line-height: 1.3;
-      }
-
-      .com-pdf-signature strong {
-        max-width: 95mm;
-        font-size: 11px;
-        font-weight: 700;
-      }
-
-      .com-pdf-signature span {
-        margin-top: 0.5mm;
-        font-size: 10.5px;
-        font-weight: 700;
-      }
-
-      .com-pdf-footer {
-        margin-top: auto;
-        padding-top: 8mm;
-        color: #000000;
-        page-break-inside: avoid;
-        break-inside: avoid;
-      }
-
-      .com-pdf-nota {
-        margin: 0 0 4mm 0;
-        padding: 0;
-        color: #000000;
-        background: #ffffff;
-        border: 0;
-        font-size: 9.5px;
-        line-height: 1.3;
-        text-align: justify;
-      }
-
-      .com-pdf-footer-line {
-        width: 100%;
-        height: 0;
-        margin: 0 0 2mm 0;
-        border-top: 0.25mm solid #000000;
-      }
-
-      .com-pdf-footer-institution {
-        margin: 0;
-        color: #000000;
-        font-size: 8.5px;
-        line-height: 1.2;
-        font-weight: 700;
-        text-align: center;
-        letter-spacing: 0.02em;
+      .com-pdf-salto-preferido {
+        break-before: auto;
       }
 
       @media print {
@@ -429,7 +321,7 @@ Función o funciones:
         }
 
         .com-pdf-page {
-          min-height: 267mm;
+          min-height: auto;
         }
       }
     `;
@@ -437,7 +329,6 @@ Función o funciones:
 
   function construirDocumentoHTML(htmlComunicados, opciones) {
     opciones = opciones || {};
-
     var titulo = texto(opciones.titulo || "Comunicado institucional");
 
     return `<!DOCTYPE html>
@@ -466,8 +357,8 @@ Función o funciones:
         resolve();
       }
 
-      var promesasImagenes = imagenes.map(function (imagen) {
-        if (imagen.complete) return Promise.resolve();
+      var promesasImagenes = imagenes.map(function (img) {
+        if (img.complete) return Promise.resolve();
 
         return new Promise(function (resolverImagen) {
           var lista = false;
@@ -478,9 +369,9 @@ Función o funciones:
             resolverImagen();
           }
 
-          imagen.addEventListener("load", terminarImagen, { once: true });
-          imagen.addEventListener("error", terminarImagen, { once: true });
-          setTimeout(terminarImagen, 4000);
+          img.addEventListener("load", terminarImagen, { once: true });
+          img.addEventListener("error", terminarImagen, { once: true });
+          setTimeout(terminarImagen, 5000);
         });
       });
 
@@ -489,10 +380,10 @@ Función o funciones:
         : Promise.resolve();
 
       Promise.all([Promise.all(promesasImagenes), promesaFuentes]).then(function () {
-        setTimeout(finalizar, 250);
+        setTimeout(finalizar, 300);
       });
 
-      setTimeout(finalizar, 5500);
+      setTimeout(finalizar, 6500);
     });
   }
 
@@ -515,11 +406,8 @@ Función o funciones:
 
       function limpiar() {
         if (timeoutId) clearTimeout(timeoutId);
-
         setTimeout(function () {
-          if (iframe.parentNode) {
-            iframe.parentNode.removeChild(iframe);
-          }
+          if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
         }, 1500);
       }
 
@@ -535,14 +423,10 @@ Función o funciones:
 
         try {
           var win = iframe.contentWindow;
-
-          if (!win || !win.document) {
-            throw new Error("No se pudo abrir la vista de impresión.");
-          }
+          if (!win || !win.document) throw new Error("No se pudo abrir la vista de impresión.");
 
           win.document.title = nombreArchivo;
           await esperarRecursosImpresion(win);
-
           win.focus();
           win.print();
 
@@ -556,7 +440,7 @@ Función o funciones:
             fallbackElectron: !!errorElectron,
             errorElectron: errorElectron ? texto(errorElectron.message || errorElectron) : "",
             mensaje: errorElectron
-              ? "Electron no pudo guardar directamente. Se abrió la impresión de respaldo; selecciona Guardar como PDF."
+              ? "Electron no pudo guardar directamente. Se abrió la impresión de respaldo."
               : "Se abrió la ventana de impresión. Selecciona Guardar como PDF."
           });
         } catch (error) {
@@ -566,7 +450,7 @@ Función o funciones:
 
       timeoutId = setTimeout(function () {
         fallar(new Error("La vista de impresión tardó demasiado en abrirse."));
-      }, 12000);
+      }, 14000);
 
       document.body.appendChild(iframe);
       iframe.srcdoc = htmlFinal;
@@ -586,7 +470,7 @@ Función o funciones:
     try {
       return await window.CurriculoElectron.mostrarArchivo(resultado.ruta);
     } catch (error) {
-      console.warn("[ComunicadosCCC.PDF] No se pudo mostrar el PDF en el Explorador:", error);
+      console.warn("[ComunicadosCCC.PDF] No se pudo mostrar el PDF:", error);
       return null;
     }
   }
@@ -602,10 +486,7 @@ Función o funciones:
     var nombreArchivo = asegurarExtensionPDF(
       opciones.nombreArchivo || "comunicado_" + fechaArchivo()
     );
-
-    var htmlFinal = construirDocumentoHTML(htmlComunicados, {
-      titulo: titulo
-    });
+    var htmlFinal = construirDocumentoHTML(htmlComunicados, { titulo: titulo });
 
     if (!electronDisponible()) {
       return await imprimirEnNavegador(htmlFinal, nombreArchivo, null);
@@ -613,12 +494,8 @@ Función o funciones:
 
     try {
       var diagnostico = await diagnosticarEntorno();
-
       if (!diagnostico.ok) {
-        throw new Error(
-          diagnostico.mensaje ||
-          "El puente de PDF de Electron no está disponible."
-        );
+        throw new Error(diagnostico.mensaje || "El puente de PDF no está disponible.");
       }
 
       var resultado = await window.CurriculoElectron.guardarPDFEnDescargas({
@@ -636,7 +513,7 @@ Función o funciones:
       }
 
       if (!resultado.nombreArchivo || !resultado.ruta || Number(resultado.bytes || 0) < 100) {
-        throw new Error("Electron respondió, pero no confirmó un PDF válido en el disco.");
+        throw new Error("Electron no confirmó un PDF válido en el disco.");
       }
 
       if (opciones.mostrarArchivo !== false) {
@@ -645,12 +522,9 @@ Función o funciones:
 
       return resultado;
     } catch (error) {
-      console.error("[ComunicadosCCC.PDF] Falló la generación directa en Electron:", error);
+      console.error("[ComunicadosCCC.PDF] Falló la generación directa:", error);
 
-      if (opciones.permitirFallbackNavegador === false) {
-        throw error;
-      }
-
+      if (opciones.permitirFallbackNavegador === false) throw error;
       return await imprimirEnNavegador(htmlFinal, nombreArchivo, error);
     }
   }
