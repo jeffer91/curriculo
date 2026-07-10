@@ -1,0 +1,419 @@
+<!-- =========================================================
+Nombre completo: index.html
+Ruta o ubicación: /Curriculo/index.html
+Función o funciones:
+- Servir como menú principal de la app Gestión Curricular CCC.
+- Conectar visualmente las carpetas independientes: subir, bdlocal y comunicados.
+- Cargar el menú superior reutilizable.
+- Permitir ingresar a la pantalla de subida ZIP.
+- Permitir ingresar a la pantalla de Base Local y Comunicados institucionales.
+========================================================= -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Curriculo | Gestión Curricular CCC</title>
+
+  <link rel="stylesheet" href="./menu-superior/menu-superior.css" />
+
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --surface: #ffffff;
+      --soft: #f8fafc;
+      --border: #dbe3ef;
+      --text: #142033;
+      --muted: #64748b;
+      --primary: #184f90;
+      --primary-dark: #123e72;
+      --primary-soft: #e8f1fb;
+      --gold: #d6b875;
+      --gold-soft: #fff6df;
+      --shadow: 0 18px 45px rgba(31, 50, 78, 0.08);
+      --radius-xl: 26px;
+      --radius-lg: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(24, 79, 144, 0.14), transparent 34rem),
+        linear-gradient(180deg, #f7faff 0%, var(--bg) 100%);
+    }
+
+    .app {
+      width: min(1280px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 42px 0;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 28px;
+      align-items: center;
+      margin-bottom: 28px;
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--primary);
+      text-transform: uppercase;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(34px, 5vw, 58px);
+      line-height: 1.03;
+      letter-spacing: -0.05em;
+    }
+
+    .subtitle {
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.55;
+      max-width: 780px;
+    }
+
+    .hero-card {
+      padding: 24px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-card h2 {
+      margin: 0 0 10px;
+      font-size: 20px;
+    }
+
+    .hero-card p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .flow {
+      display: grid;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .flow-item {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      padding: 12px;
+      border-radius: 14px;
+      background: var(--soft);
+      border: 1px solid var(--border);
+    }
+
+    .num {
+      width: 30px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      color: #ffffff;
+      background: var(--primary);
+      font-weight: 900;
+      flex: 0 0 auto;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+      margin-top: 20px;
+    }
+
+    .module {
+      position: relative;
+      overflow: hidden;
+      min-height: 310px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 26px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: var(--shadow);
+      text-decoration: none;
+      color: inherit;
+      transition: transform 0.15s ease, border 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .module:hover {
+      transform: translateY(-2px);
+      border-color: var(--primary);
+      box-shadow: 0 22px 58px rgba(24, 79, 144, 0.14);
+    }
+
+    .module::after {
+      content: "";
+      position: absolute;
+      width: 220px;
+      height: 220px;
+      right: -80px;
+      top: -80px;
+      border-radius: 999px;
+      background: var(--primary-soft);
+      z-index: 0;
+    }
+
+    .module-gold::after {
+      background: var(--gold-soft);
+    }
+
+    .module > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    .tag {
+      display: inline-flex;
+      width: fit-content;
+      padding: 7px 11px;
+      border-radius: 999px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    .tag-gold {
+      background: var(--gold-soft);
+      color: #6d5017;
+    }
+
+    .module h2 {
+      margin: 20px 0 10px;
+      font-size: 28px;
+      letter-spacing: -0.03em;
+    }
+
+    .module p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+      max-width: 520px;
+    }
+
+    .module-footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-top: 28px;
+    }
+
+    .btn-text {
+      color: var(--primary);
+      font-weight: 900;
+    }
+
+    .circle {
+      width: 46px;
+      height: 46px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      color: #ffffff;
+      background: var(--primary);
+      font-weight: 900;
+      font-size: 20px;
+    }
+
+    .circle-gold {
+      background: #6d5017;
+    }
+
+    .footer-note {
+      margin-top: 22px;
+      padding: 18px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.76);
+      line-height: 1.5;
+    }
+
+    code {
+      padding: 3px 7px;
+      border-radius: 999px;
+      background: var(--soft);
+      color: var(--primary);
+      font-weight: 900;
+    }
+
+    @media (max-width: 1080px) {
+      .hero,
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .module {
+        min-height: auto;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .app {
+        width: min(100% - 20px, 1280px);
+        padding-top: 24px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="app">
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Gestión Curricular CCC</p>
+        <h1>Menú principal</h1>
+        <p class="subtitle">
+          Esta app está organizada por carpetas independientes. La pantalla de subida interpreta el ZIP,
+          la base local guarda todo en tablas limpias y Comunicados genera PDFs institucionales por materia.
+        </p>
+      </div>
+
+      <aside class="hero-card">
+        <h2>Flujo de trabajo</h2>
+        <p>
+          La app no depende de nombres exactos. Primero detecta, luego valida, guarda y finalmente genera documentos.
+        </p>
+
+        <div class="flow">
+          <div class="flow-item">
+            <span class="num">1</span>
+            <span>Subir ZIP completo de Gestión Curricular.</span>
+          </div>
+
+          <div class="flow-item">
+            <span class="num">2</span>
+            <span>Guardar carrera, niveles, materias y PEA en BDLocal.</span>
+          </div>
+
+          <div class="flow-item">
+            <span class="num">3</span>
+            <span>Generar comunicados institucionales por materia.</span>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="grid">
+      <a class="module" href="./subir/subir.html" data-home-route="subir">
+        <div>
+          <span class="tag">Carpeta subir</span>
+          <h2>Subir ZIP</h2>
+          <p>
+            Lee el ZIP, analiza sus carpetas internas, detecta carreras, niveles, materias y clasifica
+            los archivos <code>PEA Base</code>, <code>PEA Unidades</code> y <code>PEA Actividades</code>.
+          </p>
+        </div>
+
+        <div class="module-footer">
+          <span class="btn-text">Entrar a subida</span>
+          <span class="circle">→</span>
+        </div>
+      </a>
+
+      <a class="module" href="./bdlocal/bdlocal.html" data-home-route="bdlocal">
+        <div>
+          <span class="tag">Carpeta bdlocal</span>
+          <h2>Base Local</h2>
+          <p>
+            Revisa la información guardada en IndexedDB: carreras, niveles, materias, archivos,
+            validaciones, materias completas e incompletas.
+          </p>
+        </div>
+
+        <div class="module-footer">
+          <span class="btn-text">Ver base local</span>
+          <span class="circle">→</span>
+        </div>
+      </a>
+
+      <a class="module module-gold" href="./comunicados/comunicados.html" data-home-route="comunicados">
+        <div>
+          <span class="tag tag-gold">Carpeta comunicados</span>
+          <h2>Comunicados</h2>
+          <p>
+            Genera un comunicado institucional por materia usando la información ya guardada:
+            nombre de asignatura, descripción, objetivo, unidades, contenidos y actividades.
+          </p>
+        </div>
+
+        <div class="module-footer">
+          <span class="btn-text">Generar comunicados</span>
+          <span class="circle circle-gold">→</span>
+        </div>
+      </a>
+    </section>
+
+    <div class="footer-note">
+      Estructura recomendada:
+      <code>/Curriculo/subir</code>,
+      <code>/Curriculo/bdlocal</code>,
+      <code>/Curriculo/comunicados</code>,
+      <code>/Curriculo/libs</code>,
+      <code>/Curriculo/electron</code>,
+      <code>/Curriculo/assets</code> y
+      <code>/Curriculo/menu-superior</code>.
+    </div>
+  </main>
+
+  <script src="./menu-superior/menu-superior.js"></script>
+
+  <script>
+    (function () {
+      "use strict";
+
+      document.addEventListener("click", async function (event) {
+        var card = event.target.closest("[data-home-route]");
+
+        if (!card) return;
+
+        if (window.CurriculoElectron && window.CurriculoElectron.isElectron) {
+          event.preventDefault();
+
+          var ruta = card.getAttribute("data-home-route");
+          var href = card.getAttribute("href");
+
+          try {
+            var resultado = await window.CurriculoElectron.navigate(ruta);
+
+            if (resultado !== true && href) {
+              window.location.href = href;
+            }
+          } catch (error) {
+            if (href) {
+              window.location.href = href;
+            }
+          }
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

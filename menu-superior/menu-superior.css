@@ -1,0 +1,270 @@
+/* =========================================================
+Nombre completo: menu-superior.css
+Ruta o ubicación: /Curriculo/menu-superior/menu-superior.css
+Función o funciones:
+- Diseñar el menú superior reutilizable de Curriculo.
+- Mantener navegación fija entre Inicio, Subir ZIP y BDLocal.
+- Adaptar el menú a navegador y Electron.
+- Resaltar la pantalla activa.
+- Mantener diseño claro, institucional y compatible con las pantallas actuales.
+========================================================= */
+
+:root {
+  --cms-bg: rgba(255, 255, 255, 0.92);
+  --cms-bg-solid: #ffffff;
+  --cms-border: #dbe3ef;
+  --cms-text: #142033;
+  --cms-muted: #64748b;
+  --cms-primary: #184f90;
+  --cms-primary-dark: #123e72;
+  --cms-primary-soft: #e8f1fb;
+  --cms-shadow: 0 12px 35px rgba(31, 50, 78, 0.08);
+  --cms-ok: #137a4b;
+}
+
+body.cms-menu-mounted {
+  padding-top: 78px;
+}
+
+.cms-menu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 9999;
+  border-bottom: 1px solid var(--cms-border);
+  background: var(--cms-bg);
+  backdrop-filter: blur(14px);
+  box-shadow: var(--cms-shadow);
+}
+
+.cms-inner {
+  width: min(1440px, calc(100% - 32px));
+  height: 70px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 18px;
+  align-items: center;
+}
+
+.cms-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  color: var(--cms-text);
+  text-decoration: none;
+  min-width: 230px;
+}
+
+.cms-brand-mark {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: var(--cms-primary);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  box-shadow: 0 10px 22px rgba(24, 79, 144, 0.22);
+}
+
+.cms-brand-text {
+  display: grid;
+  gap: 2px;
+}
+
+.cms-brand-text strong {
+  font-size: 16px;
+  line-height: 1.1;
+}
+
+.cms-brand-text small {
+  color: var(--cms-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.cms-links {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+
+.cms-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 8px 13px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: var(--cms-muted);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 900;
+  transition: background 0.15s ease, color 0.15s ease, border 0.15s ease, transform 0.15s ease;
+}
+
+.cms-link:hover {
+  color: var(--cms-primary);
+  background: var(--cms-primary-soft);
+  transform: translateY(-1px);
+}
+
+.cms-link-active {
+  color: var(--cms-primary);
+  background: var(--cms-primary-soft);
+  border-color: #c7daf2;
+}
+
+.cms-link-active::after {
+  content: "";
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: -15px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--cms-primary);
+}
+
+.cms-link-icon {
+  min-width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--cms-primary);
+  border: 1px solid var(--cms-border);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.cms-link-short {
+  display: none;
+}
+
+.cms-right {
+  display: inline-flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  min-width: 180px;
+}
+
+.cms-mode {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  color: var(--cms-muted);
+  background: #f8fafc;
+  border: 1px solid var(--cms-border);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.cms-mode-electron {
+  color: var(--cms-ok);
+  background: #e7f7ef;
+  border-color: #bde8d2;
+}
+
+.cms-icon-btn {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--cms-border);
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--cms-primary);
+  font-size: 17px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease, border 0.15s ease;
+}
+
+.cms-icon-btn:hover {
+  background: var(--cms-primary-soft);
+  border-color: var(--cms-primary);
+  transform: translateY(-1px);
+}
+
+@media (max-width: 960px) {
+  .cms-inner {
+    grid-template-columns: auto 1fr auto;
+    gap: 10px;
+  }
+
+  .cms-brand {
+    min-width: auto;
+  }
+
+  .cms-brand-text {
+    display: none;
+  }
+
+  .cms-link-label {
+    display: none;
+  }
+
+  .cms-link-short {
+    display: inline;
+  }
+
+  .cms-link {
+    padding: 8px 10px;
+  }
+
+  .cms-right {
+    min-width: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  body.cms-menu-mounted {
+    padding-top: 124px;
+  }
+
+  .cms-inner {
+    width: min(100% - 20px, 1440px);
+    height: auto;
+    min-height: 116px;
+    padding: 10px 0;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "brand right"
+      "links links";
+  }
+
+  .cms-brand {
+    grid-area: brand;
+  }
+
+  .cms-links {
+    grid-area: links;
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .cms-right {
+    grid-area: right;
+  }
+
+  .cms-mode {
+    display: none;
+  }
+
+  .cms-link-active::after {
+    display: none;
+  }
+}

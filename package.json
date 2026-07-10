@@ -1,0 +1,29 @@
+{
+  "__cabecera": {
+    "nombre_completo": "package.json",
+    "ruta_o_ubicacion": "/Curriculo/package.json",
+    "funciones": [
+      "Configurar el proyecto Curriculo para ejecutarse en modo Electron.",
+      "Definir scripts npm para iniciar la aplicación de escritorio.",
+      "Indicar que el archivo principal de Electron está en /electron/main.js.",
+      "Mantener la app local-first usando los HTML existentes.",
+      "Preparar el proyecto para futuras tareas de empaquetado."
+    ]
+  },
+  "name": "curriculo",
+  "version": "1.0.0",
+  "description": "App local para Gestión Curricular CCC con subida ZIP, BDLocal y modo Electron.",
+  "main": "electron/main.js",
+  "private": true,
+  "author": "ITSQMET",
+  "license": "UNLICENSED",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --devtools",
+    "electron": "electron .",
+    "reset": "electron . --reset-local-data"
+  },
+  "devDependencies": {
+    "electron": "latest"
+  }
+}

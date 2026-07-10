@@ -1,0 +1,273 @@
+<!-- =========================================================
+Nombre completo: subir.html
+Ruta o ubicación: /gestion-curricular-ccc/subir/subir.html
+Función o funciones:
+- Mostrar la pantalla para subir un ZIP de Gestión Curricular CCC.
+- Permitir seleccionar o arrastrar un ZIP con carpetas de carreras, niveles y materias.
+- Ejecutar detección inteligente de estructura y clasificación de los 3 Excel PEA.
+- Leer internamente los Excel mediante subir.excel.js y XLSX.
+- Importar la información validada a BDLocal para futuras pantallas.
+========================================================= -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Subir ZIP CCC | Gestión Curricular</title>
+
+  <link rel="stylesheet" href="./subir.css" />
+</head>
+
+<body>
+  <div class="subir-page">
+    <header class="subir-header">
+      <div>
+        <p class="subir-eyebrow">Gestión Curricular CCC</p>
+        <h1>Subir ZIP</h1>
+        <p class="subir-subtitle">
+          Carga un ZIP completo para detectar carreras, niveles, materias y los 3 Excel principales:
+          PEA Base, PEA Unidades y PEA Actividades.
+        </p>
+      </div>
+
+      <div class="subir-header-actions">
+        <a class="subir-btn subir-btn-light" href="../bdlocal/bdlocal.html" id="linkBDLocal" hidden>
+          Ver BDLocal
+        </a>
+
+        <button id="btnProbarBD" class="subir-btn subir-btn-light" type="button">
+          Probar BDLocal
+        </button>
+
+        <button id="btnLimpiar" class="subir-btn subir-btn-light" type="button">
+          Limpiar
+        </button>
+      </div>
+    </header>
+
+    <main>
+      <section id="subirEstado" class="subir-status subir-status-neutral">
+        <div class="subir-status-dot"></div>
+        <div>
+          <strong>Esperando ZIP</strong>
+          <span>Selecciona un archivo .zip para iniciar la lectura.</span>
+        </div>
+      </section>
+
+      <section class="subir-panel subir-upload-panel">
+        <div id="dropZone" class="subir-drop">
+          <div class="subir-drop-icon">ZIP</div>
+
+          <div>
+            <h2>Selecciona o arrastra el ZIP</h2>
+            <p>
+              La pantalla leerá las carpetas internas aunque los nombres no estén escritos exactamente igual.
+            </p>
+          </div>
+
+          <div class="subir-upload-actions">
+            <button id="btnSeleccionarZip" class="subir-btn subir-btn-primary" type="button">
+              Seleccionar ZIP
+            </button>
+
+            <button id="btnAnalizar" class="subir-btn subir-btn-dark" type="button">
+              Analizar ZIP
+            </button>
+          </div>
+
+          <input id="inputZip" type="file" accept=".zip,application/zip" hidden />
+        </div>
+
+        <div id="archivoInfo" class="subir-file-selected" hidden>
+          <div>
+            <span>Archivo seleccionado</span>
+            <strong id="archivoNombre">Ningún archivo seleccionado</strong>
+          </div>
+
+          <small id="archivoTamano"></small>
+        </div>
+
+        <div id="progresoWrap" class="subir-progress-wrap" hidden>
+          <div class="subir-progress-top">
+            <span id="progresoTexto">Procesando...</span>
+          </div>
+
+          <div class="subir-progress">
+            <div id="progresoBar" class="subir-progress-bar" style="width: 0%;"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="subir-grid subir-grid-cards" aria-label="Resumen de subida">
+        <article class="subir-card">
+          <span>Carreras</span>
+          <strong id="statCarreras">0</strong>
+          <small>Detectadas</small>
+        </article>
+
+        <article class="subir-card">
+          <span>Niveles</span>
+          <strong id="statNiveles">0</strong>
+          <small>Clasificados</small>
+        </article>
+
+        <article class="subir-card">
+          <span>Materias</span>
+          <strong id="statMaterias">0</strong>
+          <small>Encontradas</small>
+        </article>
+
+        <article class="subir-card">
+          <span>Archivos</span>
+          <strong id="statArchivos">0</strong>
+          <small>Dentro del ZIP</small>
+        </article>
+
+        <article class="subir-card subir-card-ok">
+          <span>Completas</span>
+          <strong id="statCompletas">0</strong>
+          <small>Con 3 Excel</small>
+        </article>
+
+        <article class="subir-card subir-card-warn">
+          <span>Observaciones</span>
+          <strong id="statObservaciones">0</strong>
+          <small>Revisión requerida</small>
+        </article>
+      </section>
+
+      <section id="accionesImportacion" class="subir-panel subir-actions-panel" hidden>
+        <div>
+          <h2>Importar a BDLocal</h2>
+          <p>
+            La información será guardada en tablas organizadas para que futuras pantallas consulten rápido.
+          </p>
+        </div>
+
+        <div class="subir-actions-row">
+          <button id="btnImportar" class="subir-btn subir-btn-primary" type="button">
+            Importar sin observaciones
+          </button>
+
+          <button id="btnImportarObservaciones" class="subir-btn subir-btn-warn" type="button">
+            Importar con observaciones
+          </button>
+        </div>
+      </section>
+
+      <section id="previewPanel" class="subir-panel" hidden>
+        <div class="subir-panel-head">
+          <div>
+            <h2>Vista previa de materias</h2>
+            <p>
+              Revisa que cada materia tenga PEA Base, PEA Unidades y PEA Actividades antes de importar.
+            </p>
+          </div>
+
+          <div class="subir-search">
+            <input
+              id="buscadorPreview"
+              type="search"
+              placeholder="Buscar por carrera, nivel, código, materia o estado..."
+              autocomplete="off"
+            />
+          </div>
+        </div>
+
+        <div class="subir-table-wrap">
+          <table class="subir-table">
+            <thead>
+              <tr>
+                <th>Carrera</th>
+                <th>Nivel</th>
+                <th>Código</th>
+                <th>Materia</th>
+                <th>Base</th>
+                <th>Unidades</th>
+                <th>Actividades</th>
+                <th>Estado</th>
+                <th>Archivos</th>
+                <th>Detalle</th>
+              </tr>
+            </thead>
+
+            <tbody id="tablaPreview">
+              <tr>
+                <td colspan="10" class="subir-empty">
+                  Sube un ZIP para ver la clasificación.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="subir-panel subir-panel-split">
+        <div>
+          <h2>Estructura detectada</h2>
+          <p class="subir-panel-text">
+            Carreras, niveles y materias encontradas automáticamente.
+          </p>
+
+          <div id="listaEstructura" class="subir-tree">
+            <p class="subir-muted">Sin estructura detectada todavía.</p>
+          </div>
+        </div>
+
+        <div>
+          <h2>Observaciones</h2>
+          <p class="subir-panel-text">
+            Alertas de archivos faltantes, baja confianza o duplicados.
+          </p>
+
+          <div id="listaValidaciones" class="subir-validations">
+            <p class="subir-muted">Sin observaciones todavía.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="modalDetalle" class="subir-modal">
+    <div class="subir-modal-head">
+      <div>
+        <p class="subir-eyebrow">Detalle de materia</p>
+        <h2 id="modalTitulo">Materia</h2>
+      </div>
+
+      <button id="btnCerrarModal" class="subir-icon-btn" type="button" aria-label="Cerrar">
+        ×
+      </button>
+    </div>
+
+    <div id="modalContenido" class="subir-modal-content">
+      Cargando...
+    </div>
+  </dialog>
+
+  <!-- Librerías -->
+  <script src="../libs/jszip.min.js"></script>
+  <script src="../libs/xlsx.min.js"></script>
+
+  <!-- BDLocal: base independiente -->
+  <script src="../bdlocal/bdlocal.schema.js"></script>
+  <script src="../bdlocal/bdlocal.core.js"></script>
+  <script src="../bdlocal/bdlocal.api.js"></script>
+  <script src="../bdlocal/bdlocal.importador.js"></script>
+  <script src="../bdlocal/bdlocal.validaciones.js"></script>
+  <script src="../bdlocal/bdlocal.consultas.js"></script>
+  <script src="../bdlocal/bdlocal.backup.js"></script>
+
+  <!-- Subir: lectura, detección, Excel, validación y conexión -->
+  <script src="./subir.normalizador.js"></script>
+  <script src="./subir.detector-estructura.js"></script>
+  <script src="./subir.detector-archivos.js"></script>
+  <script src="./subir.zip.js"></script>
+  <script src="./subir.excel.js"></script>
+  <script src="./subir.validador.js"></script>
+  <script src="./subir.conexion-bdlocal.js"></script>
+  <script src="./subir.preview.js"></script>
+  <script src="./subir.main.js"></script>
+</body>
+</html>

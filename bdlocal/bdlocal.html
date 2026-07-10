@@ -1,0 +1,529 @@
+<!-- =========================================================
+Nombre completo: bdlocal.html
+Ruta o ubicación: /gestion-curricular-ccc/bdlocal/bdlocal.html
+Función o funciones:
+- Mostrar una pantalla visual para revisar la base local CCC.
+- Presentar dashboard de carreras, niveles, materias, archivos y validaciones.
+- Permitir buscar materias por carrera, nivel, código, nombre o estado.
+- Descargar backup JSON y diagnóstico de la base local.
+- Servir como pantalla de consulta para verificar que la subida ZIP se clasificó correctamente.
+========================================================= -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>BDLocal CCC | Gestión Curricular</title>
+
+  <link rel="stylesheet" href="./bdlocal.css" />
+</head>
+
+<body>
+  <div class="bd-page">
+    <header class="bd-header">
+      <div>
+        <p class="bd-eyebrow">Gestión Curricular CCC</p>
+        <h1>Base Local</h1>
+        <p class="bd-subtitle">
+          Revisión de carreras, niveles, materias y archivos PEA clasificados desde ZIP.
+        </p>
+      </div>
+
+      <div class="bd-header-actions">
+        <button id="btnRecargar" class="bd-btn bd-btn-light" type="button">
+          Recargar
+        </button>
+
+        <button id="btnBackup" class="bd-btn bd-btn-primary" type="button">
+          Descargar backup
+        </button>
+      </div>
+    </header>
+
+    <main>
+      <section class="bd-status-card" id="estadoSistema">
+        <div class="bd-status-dot"></div>
+        <div>
+          <strong>Inicializando base local...</strong>
+          <span>Preparando IndexedDB y consultas.</span>
+        </div>
+      </section>
+
+      <section class="bd-grid bd-grid-cards" aria-label="Resumen general">
+        <article class="bd-card">
+          <span class="bd-card-label">Carreras</span>
+          <strong id="statCarreras">0</strong>
+          <small>Total detectadas</small>
+        </article>
+
+        <article class="bd-card">
+          <span class="bd-card-label">Niveles</span>
+          <strong id="statNiveles">0</strong>
+          <small>Niveles curriculares</small>
+        </article>
+
+        <article class="bd-card">
+          <span class="bd-card-label">Materias</span>
+          <strong id="statMaterias">0</strong>
+          <small>Total registradas</small>
+        </article>
+
+        <article class="bd-card bd-card-ok">
+          <span class="bd-card-label">Completas</span>
+          <strong id="statCompletas">0</strong>
+          <small>Con 3 archivos PEA</small>
+        </article>
+
+        <article class="bd-card bd-card-warn">
+          <span class="bd-card-label">Incompletas</span>
+          <strong id="statIncompletas">0</strong>
+          <small>Requieren revisión</small>
+        </article>
+
+        <article class="bd-card">
+          <span class="bd-card-label">Archivos PEA</span>
+          <strong id="statArchivos">0</strong>
+          <small>Base, Unidades y Actividades</small>
+        </article>
+      </section>
+
+      <section class="bd-panel">
+        <div class="bd-panel-head">
+          <div>
+            <h2>Herramientas de base local</h2>
+            <p>
+              Acciones rápidas para validar, respaldar o diagnosticar la información guardada.
+            </p>
+          </div>
+        </div>
+
+        <div class="bd-tools">
+          <button id="btnValidar" class="bd-tool" type="button">
+            <strong>Validar materias</strong>
+            <span>Recalcular completas, incompletas y revisión.</span>
+          </button>
+
+          <button id="btnDiagnostico" class="bd-tool" type="button">
+            <strong>Descargar diagnóstico</strong>
+            <span>Exportar conteo técnico de tablas.</span>
+          </button>
+
+          <label class="bd-tool bd-tool-file" for="inputBackup">
+            <strong>Importar backup</strong>
+            <span>Restaurar un JSON generado por esta base.</span>
+          </label>
+
+          <input id="inputBackup" type="file" accept="application/json,.json" hidden />
+        </div>
+      </section>
+
+      <section class="bd-panel">
+        <div class="bd-panel-head bd-panel-head-table">
+          <div>
+            <h2>Materias clasificadas</h2>
+            <p>
+              Vista rápida de los 3 Excel principales por cada materia.
+            </p>
+          </div>
+
+          <div class="bd-search">
+            <input
+              id="buscador"
+              type="search"
+              placeholder="Buscar por carrera, nivel, código, materia o estado..."
+              autocomplete="off"
+            />
+          </div>
+        </div>
+
+        <div class="bd-table-wrap">
+          <table class="bd-table">
+            <thead>
+              <tr>
+                <th>Carrera</th>
+                <th>Nivel</th>
+                <th>Código</th>
+                <th>Materia</th>
+                <th>Base</th>
+                <th>Unidades</th>
+                <th>Actividades</th>
+                <th>Estado</th>
+                <th>Detalle</th>
+              </tr>
+            </thead>
+
+            <tbody id="tablaMaterias">
+              <tr>
+                <td colspan="9" class="bd-empty">
+                  Cargando información...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="bd-panel bd-panel-split">
+        <div>
+          <h2>Últimas cargas</h2>
+          <div id="ultimasCargas" class="bd-list">
+            <p class="bd-muted">Sin cargas registradas todavía.</p>
+          </div>
+        </div>
+
+        <div>
+          <h2>Validaciones activas</h2>
+          <div id="validacionesActivas" class="bd-list">
+            <p class="bd-muted">Sin validaciones activas.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="modalDetalle" class="bd-modal">
+    <div class="bd-modal-head">
+      <div>
+        <p class="bd-eyebrow">Detalle de materia</p>
+        <h2 id="modalTitulo">Materia</h2>
+      </div>
+
+      <button id="btnCerrarModal" class="bd-icon-btn" type="button" aria-label="Cerrar">
+        ×
+      </button>
+    </div>
+
+    <div id="modalContenido" class="bd-modal-content">
+      Cargando...
+    </div>
+  </dialog>
+
+  <script src="./bdlocal.schema.js"></script>
+  <script src="./bdlocal.core.js"></script>
+  <script src="./bdlocal.api.js"></script>
+  <script src="./bdlocal.importador.js"></script>
+  <script src="./bdlocal.validaciones.js"></script>
+  <script src="./bdlocal.consultas.js"></script>
+  <script src="./bdlocal.backup.js"></script>
+
+  <script>
+    (function () {
+      "use strict";
+
+      var BD = window.BDLocalCCC;
+
+      var estadoSistema = document.getElementById("estadoSistema");
+      var tablaMaterias = document.getElementById("tablaMaterias");
+      var buscador = document.getElementById("buscador");
+      var modal = document.getElementById("modalDetalle");
+      var modalTitulo = document.getElementById("modalTitulo");
+      var modalContenido = document.getElementById("modalContenido");
+
+      var dataTabla = [];
+
+      function setEstado(tipo, titulo, texto) {
+        estadoSistema.className = "bd-status-card bd-status-" + tipo;
+        estadoSistema.innerHTML =
+          '<div class="bd-status-dot"></div>' +
+          "<div>" +
+          "<strong>" + escapar(titulo) + "</strong>" +
+          "<span>" + escapar(texto) + "</span>" +
+          "</div>";
+      }
+
+      function escapar(valor) {
+        return String(valor === null || typeof valor === "undefined" ? "" : valor)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+
+      function normalizar(valor) {
+        return String(valor || "")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase()
+          .trim();
+      }
+
+      function badgeSiNo(valor) {
+        return valor
+          ? '<span class="bd-badge bd-badge-ok">Sí</span>'
+          : '<span class="bd-badge bd-badge-error">No</span>';
+      }
+
+      function badgeEstado(estado) {
+        var cls = "bd-badge";
+
+        if (estado === "completo") cls += " bd-badge-ok";
+        else if (estado === "incompleto") cls += " bd-badge-error";
+        else if (estado === "revision") cls += " bd-badge-warn";
+        else cls += " bd-badge-neutral";
+
+        return '<span class="' + cls + '">' + escapar(estado || "pendiente") + "</span>";
+      }
+
+      function pintarStats(dashboard) {
+        document.getElementById("statCarreras").textContent = dashboard.totalCarreras || 0;
+        document.getElementById("statNiveles").textContent = dashboard.totalNiveles || 0;
+        document.getElementById("statMaterias").textContent = dashboard.totalMaterias || 0;
+        document.getElementById("statCompletas").textContent = dashboard.materias ? dashboard.materias.completas || 0 : 0;
+        document.getElementById("statIncompletas").textContent =
+          dashboard.materias
+            ? Number(dashboard.materias.incompletas || 0) + Number(dashboard.materias.revision || 0) + Number(dashboard.materias.pendientes || 0)
+            : 0;
+        document.getElementById("statArchivos").textContent = dashboard.totalArchivos || 0;
+      }
+
+      function pintarTabla(filas) {
+        if (!filas.length) {
+          tablaMaterias.innerHTML =
+            '<tr><td colspan="9" class="bd-empty">No hay materias para mostrar.</td></tr>';
+          return;
+        }
+
+        tablaMaterias.innerHTML = filas.map(function (fila) {
+          return (
+            "<tr>" +
+              "<td>" + escapar(fila.carrera || "") + "</td>" +
+              "<td>" + escapar(fila.nivel || "") + "</td>" +
+              "<td><code>" + escapar(fila.codigo || "") + "</code></td>" +
+              "<td><strong>" + escapar(fila.materia || "") + "</strong></td>" +
+              "<td>" + badgeSiNo(fila.peaBase) + "</td>" +
+              "<td>" + badgeSiNo(fila.peaUnidades) + "</td>" +
+              "<td>" + badgeSiNo(fila.peaActividades) + "</td>" +
+              "<td>" + badgeEstado(fila.estado) + "</td>" +
+              '<td><button class="bd-mini-btn" type="button" data-materia-id="' + escapar(fila.materiaId) + '">Ver</button></td>' +
+            "</tr>"
+          );
+        }).join("");
+      }
+
+      function filtrarTabla() {
+        var q = normalizar(buscador.value);
+
+        if (!q) {
+          pintarTabla(dataTabla);
+          return;
+        }
+
+        var filtradas = dataTabla.filter(function (fila) {
+          var texto = [
+            fila.carrera,
+            fila.nivel,
+            fila.codigo,
+            fila.materia,
+            fila.estado
+          ].join(" ");
+
+          return normalizar(texto).includes(q);
+        });
+
+        pintarTabla(filtradas);
+      }
+
+      function pintarUltimasCargas(cargas) {
+        var cont = document.getElementById("ultimasCargas");
+
+        if (!cargas || !cargas.length) {
+          cont.innerHTML = '<p class="bd-muted">Sin cargas registradas todavía.</p>';
+          return;
+        }
+
+        cont.innerHTML = cargas.map(function (carga) {
+          return (
+            '<div class="bd-list-item">' +
+              '<strong>' + escapar(carga.nombreZip || "Carga ZIP") + '</strong>' +
+              '<span>' + escapar(carga.estado || "") + " · " + escapar(carga.fechaCarga || carga.creadoEn || "") + '</span>' +
+            '</div>'
+          );
+        }).join("");
+      }
+
+      function pintarValidaciones(validaciones) {
+        var cont = document.getElementById("validacionesActivas");
+
+        if (!validaciones || !validaciones.length) {
+          cont.innerHTML = '<p class="bd-muted">Sin validaciones activas.</p>';
+          return;
+        }
+
+        cont.innerHTML = validaciones.slice(0, 8).map(function (v) {
+          return (
+            '<div class="bd-list-item">' +
+              '<strong>' + escapar(v.tipo || "Validación") + '</strong>' +
+              '<span>' + escapar(v.mensaje || "") + '</span>' +
+            '</div>'
+          );
+        }).join("");
+      }
+
+      async function cargarPantalla() {
+        try {
+          setEstado("loading", "Cargando base local...", "Consultando información guardada.");
+
+          await BD.inicializar();
+
+          var dashboard = await BD.Consultas.obtenerDashboard();
+          var tabla = await BD.Consultas.construirTablaMaterias();
+          var cargas = await BD.Consultas.obtenerUltimasCargas(5);
+          var validaciones = BD.Validaciones
+            ? await BD.Validaciones.obtenerValidacionesActivas()
+            : [];
+
+          dataTabla = tabla;
+
+          pintarStats(dashboard);
+          pintarTabla(dataTabla);
+          pintarUltimasCargas(cargas);
+          pintarValidaciones(validaciones);
+
+          setEstado(
+            "ok",
+            "Base local lista",
+            "La información está disponible para futuras pantallas."
+          );
+        } catch (error) {
+          console.error(error);
+          setEstado("error", "Error en base local", error.message || "No se pudo cargar la información.");
+          tablaMaterias.innerHTML =
+            '<tr><td colspan="9" class="bd-empty bd-empty-error">' +
+            escapar(error.message || "Error desconocido") +
+            "</td></tr>";
+        }
+      }
+
+      async function abrirDetalle(materiaId) {
+        try {
+          var detalle = await BD.Consultas.obtenerDetalleMateria(materiaId);
+          var materia = detalle.materia;
+          var archivos = detalle.archivos || [];
+          var validaciones = detalle.validaciones || [];
+
+          modalTitulo.textContent = (materia.codigo ? materia.codigo + " · " : "") + materia.nombre;
+
+          modalContenido.innerHTML =
+            '<div class="bd-detail-grid">' +
+              '<div><span>Carrera</span><strong>' + escapar(detalle.carrera ? detalle.carrera.nombre : "") + '</strong></div>' +
+              '<div><span>Nivel</span><strong>' + escapar(detalle.nivel ? detalle.nivel.nombre : "") + '</strong></div>' +
+              '<div><span>Estado</span><strong>' + escapar(materia.estadoValidacion || "") + '</strong></div>' +
+              '<div><span>Total archivos</span><strong>' + escapar(archivos.length) + '</strong></div>' +
+            '</div>' +
+
+            '<h3>Archivos detectados</h3>' +
+            (
+              archivos.length
+                ? '<div class="bd-file-list">' + archivos.map(function (archivo) {
+                    return (
+                      '<div class="bd-file-item">' +
+                        '<strong>' + escapar(archivo.nombreArchivo || "") + '</strong>' +
+                        '<span>' + escapar(archivo.tipo || "no_identificado") + ' · Confianza: ' + escapar(archivo.confianza || 0) + '%</span>' +
+                        '<small>' + escapar(archivo.rutaOriginal || "") + '</small>' +
+                      '</div>'
+                    );
+                  }).join("") + '</div>'
+                : '<p class="bd-muted">No hay archivos asociados.</p>'
+            ) +
+
+            '<h3>Validaciones</h3>' +
+            (
+              validaciones.length
+                ? '<div class="bd-file-list">' + validaciones.map(function (v) {
+                    return (
+                      '<div class="bd-file-item">' +
+                        '<strong>' + escapar(v.tipo || "") + '</strong>' +
+                        '<span>' + escapar(v.severidad || "") + '</span>' +
+                        '<small>' + escapar(v.mensaje || "") + '</small>' +
+                      '</div>'
+                    );
+                  }).join("") + '</div>'
+                : '<p class="bd-muted">Sin validaciones activas para esta materia.</p>'
+            );
+
+          modal.showModal();
+        } catch (error) {
+          alert(error.message || "No se pudo abrir el detalle.");
+        }
+      }
+
+      document.getElementById("btnRecargar").addEventListener("click", cargarPantalla);
+
+      document.getElementById("btnBackup").addEventListener("click", async function () {
+        try {
+          await BD.Backup.descargarBackup();
+        } catch (error) {
+          alert(error.message || "No se pudo descargar el backup.");
+        }
+      });
+
+      document.getElementById("btnDiagnostico").addEventListener("click", async function () {
+        try {
+          await BD.Backup.descargarDiagnostico();
+        } catch (error) {
+          alert(error.message || "No se pudo descargar el diagnóstico.");
+        }
+      });
+
+      document.getElementById("btnValidar").addEventListener("click", async function () {
+        try {
+          setEstado("loading", "Validando materias...", "Recalculando estado de archivos PEA.");
+          await BD.Validaciones.validarTodasLasMaterias();
+          await cargarPantalla();
+        } catch (error) {
+          alert(error.message || "No se pudo validar la base.");
+        }
+      });
+
+      document.getElementById("inputBackup").addEventListener("change", async function (event) {
+        var file = event.target.files && event.target.files[0];
+
+        if (!file) return;
+
+        var confirmar = confirm(
+          "¿Quieres importar este backup?\n\n" +
+          "Aceptar: fusiona el contenido con la base actual.\n" +
+          "Cancelar: no importa nada."
+        );
+
+        if (!confirmar) {
+          event.target.value = "";
+          return;
+        }
+
+        try {
+          setEstado("loading", "Importando backup...", "Restaurando información desde JSON.");
+          await BD.Backup.importarBackupDesdeArchivo(file, {
+            limpiarAntes: false
+          });
+
+          event.target.value = "";
+          await cargarPantalla();
+        } catch (error) {
+          event.target.value = "";
+          alert(error.message || "No se pudo importar el backup.");
+          await cargarPantalla();
+        }
+      });
+
+      buscador.addEventListener("input", filtrarTabla);
+
+      tablaMaterias.addEventListener("click", function (event) {
+        var btn = event.target.closest("[data-materia-id]");
+
+        if (!btn) return;
+
+        abrirDetalle(btn.getAttribute("data-materia-id"));
+      });
+
+      document.getElementById("btnCerrarModal").addEventListener("click", function () {
+        modal.close();
+      });
+
+      cargarPantalla();
+    })();
+  </script>
+</body>
+</html>
