@@ -2,11 +2,10 @@
 Nombre completo: comunicados.contador.js
 Ruta o ubicación: /Curriculo/comunicados/comunicados.contador.js
 Función o funciones:
-- Generar numeración institucional mensual para comunicados.
-- Usar formato COM-ITSQMET-UGPA-AÑO-MES-0X.
-- Reiniciar automáticamente la secuencia cuando cambia el mes.
-- Reservar números individuales o en lote para comunicados por materia.
-- Guardar el contador en localStorage y, si existe, también en BDLocal meta.
+- Generar numeración mensual COM-ITSQMET-UGPA-AÑO-MES-0X.
+- Reiniciar la secuencia con una nueva versión de almacenamiento.
+- Mantener el texto fijo "Comunicado No. 01" separado del código institucional.
+- Registrar números individuales y por lote después de generar el PDF.
 ========================================================= */
 
 (function (window) {
@@ -15,16 +14,21 @@ Función o funciones:
   window.ComunicadosCCC = window.ComunicadosCCC || {};
 
   var NS = window.ComunicadosCCC;
-
-  var STORAGE_KEY = "COMUNICADOS_CCC_CONTADOR_MENSUAL_V1";
+  var STORAGE_KEY = "COMUNICADOS_CCC_CONTADOR_MENSUAL_V2";
   var PREFIJO_DEFAULT = "COM-ITSQMET-UGPA";
 
   function texto(valor) {
     return String(valor === null || typeof valor === "undefined" ? "" : valor).trim();
   }
 
+  function arr(valor) {
+    if (Array.isArray(valor)) return valor;
+    if (valor === null || typeof valor === "undefined") return [];
+    return [valor];
+  }
+
   function pad2(valor) {
-    return String(valor).padStart(2, "0");
+    return String(Number(valor || 0)).padStart(2, "0");
   }
 
   function fechaBase(fechaInput) {
@@ -34,10 +38,7 @@ Función o funciones:
 
     if (typeof fechaInput === "string" && fechaInput.trim()) {
       var parsed = new Date(fechaInput);
-
-      if (!Number.isNaN(parsed.getTime())) {
-        return parsed;
-      }
+      if (!Number.isNaN(parsed.getTime())) return parsed;
     }
 
     return new Date();
@@ -52,75 +53,47 @@ Función o funciones:
   }
 
   function obtenerMesKey(fechaInput) {
-    var d = fechaBase(fechaInput);
-
-    return d.getFullYear() + "-" + pad2(d.getMonth() + 1);
+    var fecha = fechaBase(fechaInput);
+    return fecha.getFullYear() + "-" + pad2(fecha.getMonth() + 1);
   }
 
   function obtenerFechaLarga(fechaInput) {
-    var d = fechaBase(fechaInput);
-
+    var fecha = fechaBase(fechaInput);
     var meses = [
-      "enero",
-      "febrero",
-      "marzo",
-      "abril",
-      "mayo",
-      "junio",
-      "julio",
-      "agosto",
-      "septiembre",
-      "octubre",
-      "noviembre",
-      "diciembre"
+      "enero", "febrero", "marzo", "abril", "mayo", "junio",
+      "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
     ];
 
-    return d.getDate() + " de " + meses[d.getMonth()] + " del " + d.getFullYear();
+    return fecha.getDate() + " de " + meses[fecha.getMonth()] + " del " + fecha.getFullYear();
+  }
+
+  function estadoVacio() {
+    return { version: 2, meses: {} };
   }
 
   function leerEstadoLocal() {
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
-
-      if (!raw) {
-        return {
-          version: 1,
-          meses: {}
-        };
-      }
+      if (!raw) return estadoVacio();
 
       var data = JSON.parse(raw);
+      if (!data || typeof data !== "object") return estadoVacio();
 
-      if (!data || typeof data !== "object") {
-        return {
-          version: 1,
-          meses: {}
-        };
-      }
-
+      data.version = 2;
       data.meses = data.meses || {};
-
       return data;
     } catch (error) {
-      console.warn("[ComunicadosCCC.Contador] No se pudo leer localStorage:", error);
-
-      return {
-        version: 1,
-        meses: {}
-      };
+      console.warn("[ComunicadosCCC.Contador] No se pudo leer el contador:", error);
+      return estadoVacio();
     }
   }
 
   function guardarEstadoLocal(estado) {
-    estado = estado || {
-      version: 1,
-      meses: {}
-    };
-
+    estado = estado || estadoVacio();
+    estado.version = 2;
+    estado.meses = estado.meses || {};
     estado.actualizadoEn = new Date().toISOString();
-
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(estado, null, 2));
-
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(estado));
     return estado;
   }
 
@@ -138,7 +111,6 @@ Función o funciones:
         creadoEn: new Date().toISOString(),
         actualizadoEn: new Date().toISOString()
       };
-
       guardarEstadoLocal(estado);
     }
 
@@ -157,26 +129,24 @@ Función o funciones:
     });
 
     guardarEstadoLocal(estado);
-
     return estado.meses[key];
   }
 
   function formatearSecuencia(numero) {
     numero = Number(numero || 0);
-
-    if (numero < 100) return pad2(numero);
-
-    return String(numero);
+    return numero < 100 ? pad2(numero) : String(numero);
   }
 
   function formatearNumeroComunicado(secuencia, fechaInput, opciones) {
     opciones = opciones || {};
-
     var prefijo = texto(opciones.prefijo || PREFIJO_DEFAULT);
-    var anio = obtenerAnio(fechaInput);
-    var mes = pad2(obtenerMes(fechaInput));
 
-    return prefijo + "-" + anio + "-" + mes + "-" + formatearSecuencia(secuencia);
+    return [
+      prefijo,
+      obtenerAnio(fechaInput),
+      pad2(obtenerMes(fechaInput)),
+      formatearSecuencia(secuencia)
+    ].join("-");
   }
 
   async function guardarEnBDLocalMeta(fechaInput, registro) {
@@ -188,31 +158,28 @@ Función o funciones:
       var Core = window.BDLocalCCC.Core;
       var Schema = window.BDLocalCCC.Schema;
       var storeMeta = Schema.STORES && Schema.STORES.META ? Schema.STORES.META : "meta";
-      var key = "contador_comunicados_" + obtenerMesKey(fechaInput).replace("-", "_");
+      var key = "contador_comunicados_v2_" + obtenerMesKey(fechaInput).replace("-", "_");
 
-      if (typeof Core.ready === "function") {
-        await Core.ready();
-      }
+      if (typeof Core.ready === "function") await Core.ready();
 
       if (typeof Core.put === "function") {
         return await Core.put(storeMeta, {
           key: key,
           tipo: "contador_comunicados",
+          version: 2,
           mesKey: obtenerMesKey(fechaInput),
           data: registro,
           actualizadoEn: new Date().toISOString()
         });
       }
     } catch (error) {
-      console.warn("[ComunicadosCCC.Contador] No se pudo sincronizar con BDLocal meta:", error);
+      console.warn("[ComunicadosCCC.Contador] No se pudo sincronizar el contador:", error);
     }
 
     return null;
   }
 
   async function obtenerSiguienteNumero(fechaInput, opciones) {
-    opciones = opciones || {};
-
     var registro = obtenerRegistroMes(fechaInput);
     var siguiente = Number(registro.ultimo || 0) + 1;
 
@@ -224,65 +191,22 @@ Función o funciones:
     };
   }
 
-  async function reservarNumero(fechaInput, datos, opciones) {
-    opciones = opciones || {};
-
-    var registro = obtenerRegistroMes(fechaInput);
-    var siguiente = Number(registro.ultimo || 0) + 1;
-
-    var numero = formatearNumeroComunicado(siguiente, fechaInput, opciones);
-
-    var item = Object.assign({
-      secuencia: siguiente,
-      numero: numero,
-      mesKey: obtenerMesKey(fechaInput),
-      fechaTexto: obtenerFechaLarga(fechaInput),
-      reservadoEn: new Date().toISOString()
-    }, datos || {});
-
-    registro.ultimo = siguiente;
-    registro.generados = Array.isArray(registro.generados) ? registro.generados : [];
-    registro.generados.push(item);
-
-    var actualizado = actualizarRegistroMes(fechaInput, registro);
-
-    await guardarEnBDLocalMeta(fechaInput, actualizado);
-
-    return item;
-  }
-
-  async function reservarNumeros(fechaInput, items, opciones) {
-    items = Array.isArray(items) ? items : [];
-    opciones = opciones || {};
-
-    var resultados = [];
-
-    for (var i = 0; i < items.length; i += 1) {
-      var reservado = await reservarNumero(fechaInput, items[i], opciones);
-      resultados.push(reservado);
-    }
-
-    return resultados;
-  }
-
   async function registrarNumeroManual(fechaInput, secuencia, datos, opciones) {
     opciones = opciones || {};
-
     secuencia = Number(secuencia || 0);
 
     if (!secuencia || secuencia < 1) {
-      throw new Error("La secuencia manual debe ser mayor a cero.");
+      throw new Error("La secuencia debe ser mayor a cero.");
     }
 
     var registro = obtenerRegistroMes(fechaInput);
     var numero = formatearNumeroComunicado(secuencia, fechaInput, opciones);
-
-    var yaExiste = (registro.generados || []).some(function (item) {
+    var existente = (registro.generados || []).some(function (item) {
       return item.numero === numero || Number(item.secuencia) === secuencia;
     });
 
-    if (yaExiste && opciones.permitirDuplicado !== true) {
-      throw new Error("Ese número de comunicado ya está registrado para este mes: " + numero);
+    if (existente && opciones.permitirDuplicado !== true) {
+      throw new Error("Ese número ya está registrado: " + numero);
     }
 
     var item = Object.assign({
@@ -290,8 +214,7 @@ Función o funciones:
       numero: numero,
       mesKey: obtenerMesKey(fechaInput),
       fechaTexto: obtenerFechaLarga(fechaInput),
-      registradoManual: true,
-      reservadoEn: new Date().toISOString()
+      registradoEn: new Date().toISOString()
     }, datos || {});
 
     registro.ultimo = Math.max(Number(registro.ultimo || 0), secuencia);
@@ -299,10 +222,24 @@ Función o funciones:
     registro.generados.push(item);
 
     var actualizado = actualizarRegistroMes(fechaInput, registro);
-
     await guardarEnBDLocalMeta(fechaInput, actualizado);
-
     return item;
+  }
+
+  async function reservarNumero(fechaInput, datos, opciones) {
+    var siguiente = await obtenerSiguienteNumero(fechaInput, opciones);
+    return await registrarNumeroManual(fechaInput, siguiente.secuencia, datos, opciones);
+  }
+
+  async function reservarNumeros(fechaInput, items, opciones) {
+    items = arr(items);
+    var resultados = [];
+
+    for (var i = 0; i < items.length; i += 1) {
+      resultados.push(await reservarNumero(fechaInput, items[i], opciones));
+    }
+
+    return resultados;
   }
 
   function obtenerHistorialMes(fechaInput) {
@@ -332,7 +269,6 @@ Función o funciones:
     };
 
     guardarEstadoLocal(estado);
-
     return estado.meses[key];
   }
 
