@@ -7,7 +7,7 @@ Función o funciones:
 - Guardar y verificar el PDF directamente en la carpeta Descargas.
 - Permitir generar un PDF individual por materia.
 - Permitir generar un único PDF global con varios comunicados.
-- Ofrecer impresión del navegador como respaldo fuera de Electron.
+- Usar impresión del navegador como respaldo automático si Electron falla.
 - Exponer diagnóstico del entorno de generación.
 ========================================================= */
 
@@ -333,52 +333,122 @@ Función o funciones:
 </html>`;
   }
 
-  function imprimirEnNavegador(htmlFinal, nombreArchivo) {
+  function esperarRecursosImpresion(frameWindow) {
+    return new Promise(function (resolve) {
+      var terminado = false;
+      var doc = frameWindow.document;
+      var imagenes = Array.prototype.slice.call(doc.images || []);
+
+      function finalizar() {
+        if (terminado) return;
+        terminado = true;
+        resolve();
+      }
+
+      var promesasImagenes = imagenes.map(function (img) {
+        if (img.complete) return Promise.resolve();
+
+        return new Promise(function (resolverImagen) {
+          var lista = false;
+
+          function terminarImagen() {
+            if (lista) return;
+            lista = true;
+            resolverImagen();
+          }
+
+          img.addEventListener("load", terminarImagen, { once: true });
+          img.addEventListener("error", terminarImagen, { once: true });
+          setTimeout(terminarImagen, 4000);
+        });
+      });
+
+      var promesaFuentes = doc.fonts && doc.fonts.ready
+        ? doc.fonts.ready.catch(function () {})
+        : Promise.resolve();
+
+      Promise.all([Promise.all(promesasImagenes), promesaFuentes]).then(function () {
+        setTimeout(finalizar, 250);
+      });
+
+      setTimeout(finalizar, 5500);
+    });
+  }
+
+  function imprimirEnNavegador(htmlFinal, nombreArchivo, errorElectron) {
     return new Promise(function (resolve, reject) {
-      try {
-        var iframe = document.createElement("iframe");
-        iframe.setAttribute("title", "Impresión de comunicado");
-        iframe.style.position = "fixed";
-        iframe.style.right = "0";
-        iframe.style.bottom = "0";
-        iframe.style.width = "1px";
-        iframe.style.height = "1px";
-        iframe.style.border = "0";
-        iframe.style.opacity = "0";
-        iframe.style.pointerEvents = "none";
+      var iframe = document.createElement("iframe");
+      var timeoutId = null;
+      var finalizado = false;
 
-        document.body.appendChild(iframe);
+      iframe.setAttribute("title", "Impresión de comunicado");
+      iframe.setAttribute("aria-hidden", "true");
+      iframe.style.position = "fixed";
+      iframe.style.right = "0";
+      iframe.style.bottom = "0";
+      iframe.style.width = "1px";
+      iframe.style.height = "1px";
+      iframe.style.border = "0";
+      iframe.style.opacity = "0";
+      iframe.style.pointerEvents = "none";
 
-        var win = iframe.contentWindow;
-        var doc = win.document;
-
-        doc.open();
-        doc.write(htmlFinal);
-        doc.close();
+      function limpiar() {
+        if (timeoutId) clearTimeout(timeoutId);
 
         setTimeout(function () {
-          try {
-            win.focus();
-            win.print();
-
-            setTimeout(function () {
-              if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
-            }, 1200);
-
-            resolve({
-              ok: true,
-              modo: "navegador",
-              nombreArchivo: nombreArchivo,
-              mensaje: "Se abrió la ventana de impresión. Selecciona Guardar como PDF."
-            });
-          } catch (error) {
-            if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
-            reject(error);
+          if (iframe.parentNode) {
+            iframe.parentNode.removeChild(iframe);
           }
-        }, 500);
-      } catch (error) {
+        }, 1500);
+      }
+
+      function fallar(error) {
+        if (finalizado) return;
+        finalizado = true;
+        limpiar();
         reject(error);
       }
+
+      iframe.onload = async function () {
+        if (finalizado) return;
+
+        try {
+          var win = iframe.contentWindow;
+
+          if (!win || !win.document) {
+            throw new Error("No se pudo abrir la vista de impresión.");
+          }
+
+          win.document.title = nombreArchivo;
+          await esperarRecursosImpresion(win);
+
+          win.focus();
+          win.print();
+
+          finalizado = true;
+          limpiar();
+
+          resolve({
+            ok: true,
+            modo: "navegador",
+            nombreArchivo: nombreArchivo,
+            fallbackElectron: !!errorElectron,
+            errorElectron: errorElectron ? texto(errorElectron.message || errorElectron) : "",
+            mensaje: errorElectron
+              ? "Electron no pudo guardar directamente. Se abrió la impresión de respaldo; selecciona Guardar como PDF."
+              : "Se abrió la ventana de impresión. Selecciona Guardar como PDF."
+          });
+        } catch (error) {
+          fallar(error);
+        }
+      };
+
+      timeoutId = setTimeout(function () {
+        fallar(new Error("La vista de impresión tardó demasiado en abrirse."));
+      }, 12000);
+
+      document.body.appendChild(iframe);
+      iframe.srcdoc = htmlFinal;
     });
   }
 
@@ -417,41 +487,51 @@ Función o funciones:
     });
 
     if (!electronDisponible()) {
-      return await imprimirEnNavegador(htmlFinal, nombreArchivo);
+      return await imprimirEnNavegador(htmlFinal, nombreArchivo, null);
     }
 
-    var diagnostico = await diagnosticarEntorno();
+    try {
+      var diagnostico = await diagnosticarEntorno();
 
-    if (!diagnostico.ok) {
-      throw new Error(
-        diagnostico.mensaje ||
-        "El puente de PDF de Electron no está disponible. Cierra y vuelve a abrir la aplicación."
-      );
+      if (!diagnostico.ok) {
+        throw new Error(
+          diagnostico.mensaje ||
+          "El puente de PDF de Electron no está disponible."
+        );
+      }
+
+      var resultado = await window.CurriculoElectron.guardarPDFEnDescargas({
+        html: htmlFinal,
+        titulo: titulo,
+        nombreArchivo: nombreArchivo
+      });
+
+      if (!resultado || resultado.ok !== true) {
+        throw new Error(
+          resultado && resultado.mensaje
+            ? resultado.mensaje
+            : "No se pudo guardar el PDF en Descargas."
+        );
+      }
+
+      if (!resultado.nombreArchivo || !resultado.ruta || Number(resultado.bytes || 0) < 100) {
+        throw new Error("Electron respondió, pero no confirmó un PDF válido en el disco.");
+      }
+
+      if (opciones.mostrarArchivo !== false) {
+        await mostrarArchivoGenerado(resultado);
+      }
+
+      return resultado;
+    } catch (error) {
+      console.error("[ComunicadosCCC.PDF] Falló la generación directa en Electron:", error);
+
+      if (opciones.permitirFallbackNavegador === false) {
+        throw error;
+      }
+
+      return await imprimirEnNavegador(htmlFinal, nombreArchivo, error);
     }
-
-    var resultado = await window.CurriculoElectron.guardarPDFEnDescargas({
-      html: htmlFinal,
-      titulo: titulo,
-      nombreArchivo: nombreArchivo
-    });
-
-    if (!resultado || resultado.ok !== true) {
-      throw new Error(
-        resultado && resultado.mensaje
-          ? resultado.mensaje
-          : "No se pudo guardar el PDF en Descargas."
-      );
-    }
-
-    if (!resultado.nombreArchivo || !resultado.ruta || Number(resultado.bytes || 0) < 100) {
-      throw new Error("Electron respondió, pero no confirmó un PDF válido en el disco.");
-    }
-
-    if (opciones.mostrarArchivo !== false) {
-      await mostrarArchivoGenerado(resultado);
-    }
-
-    return resultado;
   }
 
   async function generarPDFDocumento(documento, opciones) {
@@ -470,7 +550,8 @@ Función o funciones:
     return await guardarHTMLComoPDF(documento.html, {
       titulo: "Comunicado " + (documento.numeroComunicado || ""),
       nombreArchivo: nombre + "_" + fechaArchivo() + ".pdf",
-      mostrarArchivo: opciones.mostrarArchivo !== false
+      mostrarArchivo: opciones.mostrarArchivo !== false,
+      permitirFallbackNavegador: opciones.permitirFallbackNavegador !== false
     });
   }
 
@@ -488,7 +569,8 @@ Función o funciones:
     return await guardarHTMLComoPDF(resultadoMultiple.html, {
       titulo: opciones.titulo || "Comunicados institucionales",
       nombreArchivo: nombre + "_" + fechaArchivo() + ".pdf",
-      mostrarArchivo: opciones.mostrarArchivo !== false
+      mostrarArchivo: opciones.mostrarArchivo !== false,
+      permitirFallbackNavegador: opciones.permitirFallbackNavegador !== false
     });
   }
 
