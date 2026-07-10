@@ -4,9 +4,9 @@ Ruta o ubicación: /Curriculo/bdlocal/bdlocal.inteligencia.js
 Función o funciones:
 - Reconstruir PEA Base heredados desde filas, hojas y campos guardados.
 - Recuperar descripción, objetivo, unidades, competencias, resultados y bibliografía.
-- Validar materias sin reescribir innecesariamente las cuatro unidades ya agrupadas.
-- Ejecutar la reparación inicial en segundo plano para no bloquear la pantalla.
-- Mostrar progreso, evitar reparaciones duplicadas y revalidar antes de generar PDF.
+- Validar materias con límites de tiempo y continuar ante errores individuales.
+- Ejecutar reparaciones en segundo plano sin bloquear la pantalla BDLocal.
+- Revalidar carreras antes de mostrar o generar comunicados.
 ========================================================= */
 
 (function (window) {
@@ -24,15 +24,14 @@ Función o funciones:
   }
 
   var STORES = Schema.STORES;
-  var VERSION_INTELIGENCIA = 2;
-  var VERSION_ESTRUCTURA_BASE = 4;
-  var reparacionesMateria = {};
-  var reparacionGlobal = null;
-  var reparacionesCarrera = {};
+  var VERSION_INTELIGENCIA = 3;
+  var VERSION_ESTRUCTURA_BASE = 5;
+  var TIMEOUT_MATERIA_MS = 25000;
+  var TIMEOUT_PASO_MS = 12000;
 
-  var validarIntegridadBase = BD.Integridad && typeof BD.Integridad.validarMateria === "function"
-    ? BD.Integridad.validarMateria.bind(BD.Integridad)
-    : null;
+  var reparacionesMateria = {};
+  var reparacionesCarrera = {};
+  var reparacionGlobal = null;
 
   function texto(valor) {
     return String(valor === null || typeof valor === "undefined" ? "" : valor).trim();
@@ -51,6 +50,31 @@ Función o funciones:
   function esperarTurnoUI() {
     return new Promise(function (resolve) {
       setTimeout(resolve, 0);
+    });
+  }
+
+  function conTiempoLimite(promesa, timeoutMs, contexto) {
+    timeoutMs = Number(timeoutMs || TIMEOUT_PASO_MS);
+
+    return new Promise(function (resolve, reject) {
+      var terminada = false;
+      var timer = setTimeout(function () {
+        if (terminada) return;
+        terminada = true;
+        reject(new Error("Tiempo agotado: " + contexto));
+      }, timeoutMs);
+
+      Promise.resolve(promesa).then(function (resultado) {
+        if (terminada) return;
+        terminada = true;
+        clearTimeout(timer);
+        resolve(resultado);
+      }).catch(function (error) {
+        if (terminada) return;
+        terminada = true;
+        clearTimeout(timer);
+        reject(error);
+      });
     });
   }
 
@@ -133,6 +157,9 @@ Función o funciones:
         arr(hoja.filas).forEach(function (fila) {
           agregarFila(destino, fila, vistos);
         });
+        arr(hoja.registros).forEach(function (fila) {
+          agregarFila(destino, fila, vistos);
+        });
       });
     }
   }
@@ -168,7 +195,6 @@ Función o funciones:
     var existe = lista.some(function (actual) {
       return normalizarClave(actual.referencia) === normalizarClave(referencia);
     });
-
     if (existe) return;
 
     lista.push({
@@ -223,6 +249,8 @@ Función o funciones:
       var codigo = Number(match[1]);
       var secuencia = match[2] ? Number(match[2]) : 1;
       var valorOriginal = texto(campos[clave]);
+      if (!valorOriginal) return;
+
       var prefijo = valorOriginal.match(/^\s*([1-9]\d*)\s+/);
       var orden = prefijo ? Number(prefijo[1]) : secuencia;
       var valor = quitarPrefijoOrden(valorOriginal, orden);
@@ -288,24 +316,15 @@ Función o funciones:
     };
   }
 
-  function canonicoCompleto(canonico) {
-    canonico = canonico || {};
-    var unidades = arr(canonico.unidadesBase);
-    return !!(
-      texto(canonico.descripcion) &&
-      texto(canonico.objetivo) &&
-      unidades.filter(function (u) { return texto(u && u.nombre); }).length >= 4 &&
-      unidades.filter(function (u) { return texto(u && u.competencia); }).length >= 4 &&
-      unidades.filter(function (u) { return texto(u && u.resultadoAprendizaje); }).length >= 4 &&
-      arr(canonico.bibliografia).length > 0
-    );
-  }
-
   async function repararBaseMateria(materiaId, opciones) {
     opciones = opciones || {};
     if (!materiaId) return null;
 
-    var base = await Core.get(STORES.PEA_BASE, materiaId);
+    var base = await conTiempoLimite(
+      Core.get(STORES.PEA_BASE, materiaId),
+      TIMEOUT_PASO_MS,
+      "leer PEA Base de " + materiaId
+    );
     if (!base) return null;
 
     var versionActual = Number(
@@ -334,7 +353,12 @@ Función o funciones:
       reparadoInteligentemente: true
     });
 
-    await Core.put(STORES.PEA_BASE, reparada);
+    await conTiempoLimite(
+      Core.put(STORES.PEA_BASE, reparada),
+      TIMEOUT_PASO_MS,
+      "guardar PEA Base reparado de " + materiaId
+    );
+
     return reparada;
   }
 
@@ -343,7 +367,6 @@ Función o funciones:
     if (unidades.length !== 4) return false;
 
     var numeros = {};
-
     for (var i = 0; i < unidades.length; i += 1) {
       var unidad = unidades[i] || {};
       var numero = Number(unidad.unidadNumero || 0);
@@ -356,92 +379,168 @@ Función o funciones:
   }
 
   async function eliminarValidacionesContenido(materiaId) {
-    var validaciones = await Core.getAllByIndex(STORES.VALIDACIONES, "materiaId", materiaId);
+    var validaciones = await conTiempoLimite(
+      Core.getAllByIndex(STORES.VALIDACIONES, "materiaId", materiaId),
+      TIMEOUT_PASO_MS,
+      "consultar validaciones de " + materiaId
+    );
+
     var eliminar = arr(validaciones).filter(function (item) {
       return item && item.tipo === "contenido_pea_incompleto" && item.id;
     });
 
-    if (!eliminar.length) return;
-
-    if (typeof Core.runTransaction === "function") {
-      await Core.runTransaction(STORES.VALIDACIONES, "readwrite", function (stores) {
-        eliminar.forEach(function (item) {
-          stores[STORES.VALIDACIONES].delete(item.id);
-        });
-        return true;
-      });
-      return;
-    }
-
     for (var i = 0; i < eliminar.length; i += 1) {
-      await Core.remove(STORES.VALIDACIONES, eliminar[i].id);
+      await conTiempoLimite(
+        Core.remove(STORES.VALIDACIONES, eliminar[i].id),
+        TIMEOUT_PASO_MS,
+        "eliminar validación antigua de " + materiaId
+      );
     }
   }
 
   async function obtenerMateria(materiaOrId) {
     if (materiaOrId && typeof materiaOrId === "object") return materiaOrId;
     if (!materiaOrId) return null;
-    return await Core.get(STORES.MATERIAS, materiaOrId);
+    return await conTiempoLimite(
+      Core.get(STORES.MATERIAS, materiaOrId),
+      TIMEOUT_PASO_MS,
+      "leer materia " + materiaOrId
+    );
+  }
+
+  function evaluarArchivos(archivos) {
+    var conteos = {};
+    arr(archivos).forEach(function (archivo) {
+      var tipo = texto(archivo && archivo.tipo);
+      if (!tipo) return;
+      conteos[tipo] = Number(conteos[tipo] || 0) + 1;
+    });
+
+    var requeridos = [Schema.TIPOS_PEA.BASE, Schema.TIPOS_PEA.UNIDADES, Schema.TIPOS_PEA.ACTIVIDADES];
+    var faltantes = requeridos.filter(function (tipo) { return !conteos[tipo]; });
+    var duplicados = requeridos.filter(function (tipo) { return Number(conteos[tipo] || 0) > 1; });
+
+    return {
+      completo: faltantes.length === 0 && duplicados.length === 0,
+      totalEncontrados: requeridos.filter(function (tipo) { return !!conteos[tipo]; }).length,
+      faltantes: faltantes,
+      duplicados: duplicados
+    };
+  }
+
+  function emitirProgreso(detalle) {
+    try {
+      window.dispatchEvent(new CustomEvent("bdlocal:inteligencia-progreso", { detail: detalle }));
+    } catch (error) {
+      console.warn("[BDLocalCCC.Inteligencia] No se pudo emitir progreso:", error);
+    }
+  }
+
+  function emitirFinal(detalle) {
+    try {
+      window.dispatchEvent(new CustomEvent("bdlocal:inteligencia-finalizada", { detail: detalle }));
+    } catch (error) {
+      console.warn("[BDLocalCCC.Inteligencia] No se pudo emitir finalización:", error);
+    }
+  }
+
+  function emitirPaso(materia, paso, mensaje) {
+    emitirProgreso({
+      materiaId: materia && materia.id,
+      materia: materia && materia.nombre,
+      paso: paso,
+      titulo: "Revisando " + texto(materia && (materia.nombre || materia.codigo) || "materia"),
+      mensaje: mensaje
+    });
   }
 
   async function validarMateriaInterno(materiaOrId, opciones) {
     opciones = opciones || {};
-    await Core.ready();
+    await conTiempoLimite(Core.ready(), TIMEOUT_PASO_MS, "preparar BDLocal");
 
     var materia = await obtenerMateria(materiaOrId);
     if (!materia) throw new Error("No se encontró la materia para reparar.");
 
+    emitirPaso(materia, "pea_base", "Interpretando descripción, objetivo, unidades y bibliografía.");
     var base = await repararBaseMateria(materia.id, opciones);
-    var unidades = await Core.getAllByIndex(STORES.PEA_UNIDADES, "materiaId", materia.id);
-    var actividades = await Core.getAllByIndex(STORES.PEA_ACTIVIDADES, "materiaId", materia.id);
+
+    emitirPaso(materia, "unidades", "Comprobando las cuatro unidades y todos sus contenidos.");
+    var unidades = await conTiempoLimite(
+      Core.getAllByIndex(STORES.PEA_UNIDADES, "materiaId", materia.id),
+      TIMEOUT_PASO_MS,
+      "leer unidades de " + materia.nombre
+    );
 
     if (!unidadesYaAgrupadas(unidades)) {
-      if (BD.Integridad && typeof BD.Integridad.repararUnidadesMateria === "function") {
-        unidades = await BD.Integridad.repararUnidadesMateria(materia, unidades);
-      } else if (validarIntegridadBase) {
-        return await validarIntegridadBase(materia);
+      if (!BD.Integridad || typeof BD.Integridad.repararUnidadesMateria !== "function") {
+        throw new Error("No está disponible el reparador de unidades.");
       }
+      unidades = await conTiempoLimite(
+        BD.Integridad.repararUnidadesMateria(materia, unidades),
+        TIMEOUT_MATERIA_MS,
+        "agrupar contenidos de " + materia.nombre
+      );
     }
 
+    emitirPaso(materia, "actividades", "Comprobando actividades y archivos PEA.");
+    var actividades = await conTiempoLimite(
+      Core.getAllByIndex(STORES.PEA_ACTIVIDADES, "materiaId", materia.id),
+      TIMEOUT_PASO_MS,
+      "leer actividades de " + materia.nombre
+    );
+    var archivos = await conTiempoLimite(
+      Core.getAllByIndex(STORES.PEA_ARCHIVOS, "materiaId", materia.id),
+      TIMEOUT_PASO_MS,
+      "leer archivos de " + materia.nombre
+    );
+
     if (!BD.Integridad || typeof BD.Integridad.resumenIntegridad !== "function") {
-      if (validarIntegridadBase) return await validarIntegridadBase(materia);
       throw new Error("No está disponible el validador de integridad curricular.");
     }
 
     var integridad = BD.Integridad.resumenIntegridad(base, unidades, actividades);
     integridad.inteligenciaVersion = VERSION_INTELIGENCIA;
 
-    var archivosCompletos = !!(
-      Number(materia.totalArchivosEncontrados || 0) >= 3 &&
-      !arr(materia.archivosFaltantes).length &&
-      !arr(materia.archivosDuplicados).length
-    );
-
+    var evaluacionArchivos = evaluarArchivos(archivos);
     var actualizada = Object.assign({}, materia, {
       integridadContenido: integridad,
       inteligenciaVersion: VERSION_INTELIGENCIA,
-      estadoValidacion: archivosCompletos && integridad.completo ? "completo" : "revision",
+      estadoValidacion: evaluacionArchivos.completo && integridad.completo ? "completo" : "revision",
+      totalArchivosEsperados: 3,
+      totalArchivosEncontrados: evaluacionArchivos.totalEncontrados,
+      archivosFaltantes: evaluacionArchivos.faltantes,
+      archivosDuplicados: evaluacionArchivos.duplicados,
       actualizadoEn: fecha()
     });
 
-    await Core.put(STORES.MATERIAS, actualizada);
+    emitirPaso(materia, "guardar", "Guardando el estado validado de la materia.");
+    await conTiempoLimite(
+      Core.put(STORES.MATERIAS, actualizada),
+      TIMEOUT_PASO_MS,
+      "guardar estado de " + materia.nombre
+    );
+
     await eliminarValidacionesContenido(materia.id);
 
     if (!integridad.completo) {
-      await Core.add(STORES.VALIDACIONES, {
-        cargaId: materia.cargaId || null,
-        carreraId: materia.carreraId || "",
-        matrizId: materia.matrizId || "",
-        nivelId: materia.nivelId || "",
-        materiaId: materia.id,
-        archivoId: "",
-        tipo: "contenido_pea_incompleto",
-        severidad: "error",
-        estado: "activo",
-        mensaje: "Los tres archivos existen, pero falta contenido curricular obligatorio.",
-        detalle: integridad,
-        creadoEn: fecha()
-      });
+      await conTiempoLimite(
+        Core.add(STORES.VALIDACIONES, {
+          cargaId: materia.cargaId || null,
+          carreraId: materia.carreraId || "",
+          matrizId: materia.matrizId || "",
+          nivelId: materia.nivelId || "",
+          materiaId: materia.id,
+          archivoId: "",
+          tipo: "contenido_pea_incompleto",
+          severidad: "error",
+          estado: "activo",
+          mensaje: "Los tres archivos existen, pero falta contenido curricular obligatorio.",
+          detalle: integridad,
+          creadoEn: fecha()
+        }),
+        TIMEOUT_PASO_MS,
+        "guardar validación de " + materia.nombre
+      );
     }
 
     return actualizada;
@@ -453,10 +552,13 @@ Función o funciones:
     if (!materia) throw new Error("No se encontró la materia para reparar.");
 
     if (!reparacionesMateria[materia.id]) {
-      reparacionesMateria[materia.id] = validarMateriaInterno(materia, opciones)
-        .finally(function () {
-          delete reparacionesMateria[materia.id];
-        });
+      reparacionesMateria[materia.id] = conTiempoLimite(
+        validarMateriaInterno(materia, opciones),
+        opciones.timeoutMs || TIMEOUT_MATERIA_MS,
+        "reparar " + texto(materia.nombre || materia.codigo)
+      ).finally(function () {
+        delete reparacionesMateria[materia.id];
+      });
     }
 
     return await reparacionesMateria[materia.id];
@@ -468,34 +570,24 @@ Función o funciones:
     if (!materia) return false;
     if (Number(materia.inteligenciaVersion || 0) < VERSION_INTELIGENCIA) return true;
 
-    var base = await Core.get(STORES.PEA_BASE, materia.id);
+    var base = await conTiempoLimite(
+      Core.get(STORES.PEA_BASE, materia.id),
+      TIMEOUT_PASO_MS,
+      "comprobar PEA Base de " + materia.nombre
+    );
     var versionBase = Number(
       base && (base.versionEstructura || (base.datos && base.datos.versionEstructura)) || 0
     );
 
     if (!base || !base.reparadoInteligentemente || versionBase < VERSION_ESTRUCTURA_BASE) return true;
 
-    var unidades = await Core.getAllByIndex(STORES.PEA_UNIDADES, "materiaId", materia.id);
+    var unidades = await conTiempoLimite(
+      Core.getAllByIndex(STORES.PEA_UNIDADES, "materiaId", materia.id),
+      TIMEOUT_PASO_MS,
+      "comprobar unidades de " + materia.nombre
+    );
+
     return !unidadesYaAgrupadas(unidades);
-  }
-
-  function emitirProgreso(detalle) {
-    try {
-      window.dispatchEvent(new CustomEvent("bdlocal:inteligencia-progreso", { detail: detalle }));
-    } catch (error) {
-      console.warn("[BDLocalCCC.Inteligencia] No se pudo emitir progreso:", error);
-    }
-  }
-
-  function actualizarEstadoPantalla(detalle) {
-    var tarjeta = document.getElementById("estadoSistema");
-    if (!tarjeta || !detalle) return;
-
-    var titulo = tarjeta.querySelector("strong");
-    var mensaje = tarjeta.querySelector("span");
-
-    if (titulo) titulo.textContent = detalle.titulo || "Reparando base local...";
-    if (mensaje) mensaje.textContent = detalle.mensaje || "Procesando información curricular.";
   }
 
   async function repararLista(materias, opciones) {
@@ -512,8 +604,6 @@ Función o funciones:
 
     for (var i = 0; i < materias.length; i += 1) {
       var materia = materias[i];
-      var debeReparar = await necesitaReparacion(materia, opciones);
-
       var progreso = {
         indice: i + 1,
         total: materias.length,
@@ -522,11 +612,10 @@ Función o funciones:
         titulo: "Analizando base local " + (i + 1) + " de " + materias.length,
         mensaje: "Revisando " + texto(materia.nombre || materia.codigo || "materia") + "."
       };
-
       emitirProgreso(progreso);
-      if (opciones.actualizarPantalla !== false) actualizarEstadoPantalla(progreso);
 
       try {
+        var debeReparar = await necesitaReparacion(materia, opciones);
         if (debeReparar) {
           await repararMateria(materia, opciones);
           resultado.reparadas += 1;
@@ -549,97 +638,80 @@ Función o funciones:
     return resultado;
   }
 
-  function esSolicitudManual() {
-    var tarjeta = document.getElementById("estadoSistema");
-    var titulo = tarjeta && tarjeta.querySelector("strong");
-    return !!(titulo && /reparando contenido|reparar y validar/i.test(texto(titulo.textContent)));
-  }
+  async function ejecutarReparacionGlobal(opciones) {
+    opciones = opciones || {};
+    await conTiempoLimite(Core.ready(), TIMEOUT_PASO_MS, "preparar la reparación global");
+    var materias = await conTiempoLimite(
+      Core.getAll(STORES.MATERIAS),
+      TIMEOUT_PASO_MS,
+      "listar materias para reparación"
+    );
 
-  function refrescarPantallaAlFinalizar() {
-    setTimeout(function () {
-      var boton = document.getElementById("btnRecargar");
-      if (boton && !boton.disabled) boton.click();
-    }, 50);
+    var resultado = await repararLista(materias, opciones);
+    emitirFinal(resultado);
+    return resultado;
   }
 
   async function repararTodas(opciones) {
     opciones = opciones || {};
-    await Core.ready();
 
-    var materias = await Core.getAll(STORES.MATERIAS);
-    var bloqueante = opciones.bloqueante === true || opciones.force === true || esSolicitudManual();
+    if (opciones.segundoPlano === true || opciones.background === true) {
+      if (!reparacionGlobal) {
+        reparacionGlobal = ejecutarReparacionGlobal(Object.assign({}, opciones, {
+          segundoPlano: false,
+          background: false
+        })).catch(function (error) {
+          var resultadoError = {
+            total: 0,
+            procesadas: 0,
+            reparadas: 0,
+            omitidas: 0,
+            errores: [{ error: error.message || String(error) }]
+          };
+          emitirFinal(resultadoError);
+          return resultadoError;
+        }).finally(function () {
+          reparacionGlobal = null;
+        });
+      }
 
-    if (bloqueante) {
-      var resultadoBloqueante = await repararLista(materias, Object.assign({}, opciones, {
-        actualizarPantalla: true
-      }));
-      actualizarEstadoPantalla({
-        titulo: "Reparación finalizada",
-        mensaje: resultadoBloqueante.errores.length
-          ? "Se completó con " + resultadoBloqueante.errores.length + " observaciones."
-          : "La información curricular fue reconstruida y validada."
-      });
-      return resultadoBloqueante;
+      return {
+        enSegundoPlano: true,
+        mensaje: "La reparación se ejecuta sin bloquear la consulta de la base."
+      };
     }
 
-    if (!reparacionGlobal) {
-      reparacionGlobal = repararLista(materias, {
-        force: false,
-        actualizarPantalla: true
-      }).then(function (resultado) {
-        refrescarPantallaAlFinalizar();
-        return resultado;
-      }).catch(function (error) {
-        console.error("[BDLocalCCC.Inteligencia] Falló la reparación en segundo plano:", error);
-        return { total: materias.length, procesadas: 0, reparadas: 0, omitidas: 0, errores: [error] };
-      }).finally(function () {
-        reparacionGlobal = null;
-      });
-    }
-
-    return {
-      total: materias.length,
-      enSegundoPlano: true,
-      mensaje: "La base se mostrará inmediatamente mientras la reparación continúa en segundo plano."
-    };
+    if (reparacionGlobal) return await reparacionGlobal;
+    return await ejecutarReparacionGlobal(opciones);
   }
 
   async function repararCarrera(carreraId, opciones) {
     opciones = opciones || {};
-    await Core.ready();
     if (!carreraId) return { carreraId: carreraId, total: 0, reparadas: 0, omitidas: 0, errores: [] };
 
     if (!reparacionesCarrera[carreraId]) {
-      reparacionesCarrera[carreraId] = Core.getAllByIndex(STORES.MATERIAS, "carreraId", carreraId)
-        .then(function (materias) {
-          return repararLista(materias, Object.assign({}, opciones, {
-            actualizarPantalla: false
-          }));
-        })
-        .then(function (resultado) {
-          resultado.carreraId = carreraId;
-          return resultado;
-        })
-        .finally(function () {
-          delete reparacionesCarrera[carreraId];
-        });
+      reparacionesCarrera[carreraId] = conTiempoLimite(
+        Core.getAllByIndex(STORES.MATERIAS, "carreraId", carreraId)
+          .then(function (materias) {
+            return repararLista(materias, Object.assign({}, opciones, { actualizarPantalla: false }));
+          })
+          .then(function (resultado) {
+            resultado.carreraId = carreraId;
+            return resultado;
+          }),
+        Math.max(TIMEOUT_MATERIA_MS, 120000),
+        "reparar carrera " + carreraId
+      ).finally(function () {
+        delete reparacionesCarrera[carreraId];
+      });
     }
 
     return await reparacionesCarrera[carreraId];
   }
 
-  function parchearIntegridad() {
-    if (!BD.Integridad) return;
-    BD.Integridad.validarMateria = repararMateria;
-    BD.Integridad.repararBaseMateria = repararBaseMateria;
-    BD.Integridad.repararCarrera = repararCarrera;
-    BD.Integridad.repararTodas = repararTodas;
-    BD.Integridad.__inteligenciaAplicada = true;
-  }
-
   function parchearImportador() {
     if (!BD.Importador || typeof BD.Importador.importarPaqueteCCC !== "function") return;
-    if (BD.Importador.__inteligenciaAplicadaV2) return;
+    if (BD.Importador.__inteligenciaAplicadaV3) return;
 
     var importarOriginal = BD.Importador.importarPaqueteCCC.bind(BD.Importador);
 
@@ -649,7 +721,12 @@ Función o funciones:
       var reparadas = [];
 
       for (var i = 0; i < materias.length; i += 1) {
-        reparadas.push(await repararMateria(materias[i], { force: true }));
+        try {
+          reparadas.push(await repararMateria(materias[i], { force: true }));
+        } catch (errorMateria) {
+          console.error("[BDLocalCCC.Inteligencia] No se pudo validar la materia importada:", errorMateria);
+          reparadas.push(materias[i]);
+        }
       }
 
       if (resultado) {
@@ -662,12 +739,12 @@ Función o funciones:
     };
 
     BD.importarPaqueteCCC = BD.Importador.importarPaqueteCCC;
-    BD.Importador.__inteligenciaAplicadaV2 = true;
+    BD.Importador.__inteligenciaAplicadaV3 = true;
   }
 
   function parchearComunicados() {
     var Comunicados = window.ComunicadosCCC;
-    if (!Comunicados || !Comunicados.BDLocal || Comunicados.BDLocal.__inteligenciaAplicadaV2) return;
+    if (!Comunicados || !Comunicados.BDLocal || Comunicados.BDLocal.__inteligenciaAplicadaV3) return;
 
     var modulo = Comunicados.BDLocal;
     var resumenOriginal = typeof modulo.obtenerResumenCarrera === "function"
@@ -701,24 +778,29 @@ Función o funciones:
       };
     }
 
-    modulo.__inteligenciaAplicadaV2 = true;
+    modulo.__inteligenciaAplicadaV3 = true;
   }
 
   BD.Inteligencia = {
     VERSION: VERSION_INTELIGENCIA,
     extraerCanonico: extraerCanonico,
-    canonicoCompleto: canonicoCompleto,
     repararBaseMateria: repararBaseMateria,
     repararMateria: repararMateria,
     repararCarrera: repararCarrera,
     repararTodas: repararTodas,
     unidadesYaAgrupadas: unidadesYaAgrupadas,
-    parchearComunicados: parchearComunicados
+    parchearComunicados: parchearComunicados,
+    conTiempoLimite: conTiempoLimite
   };
 
-  parchearIntegridad();
+  if (BD.Integridad) {
+    BD.Integridad.repararBaseMateriaInteligente = repararBaseMateria;
+    BD.Integridad.repararCarreraInteligente = repararCarrera;
+    BD.Integridad.repararTodasInteligente = repararTodas;
+  }
+
   parchearImportador();
   parchearComunicados();
 
-  console.info("[BDLocalCCC.Inteligencia] Reparación estable, progresiva y no bloqueante activada.");
+  console.info("[BDLocalCCC.Inteligencia] Reparación V3 estable, con timeouts y segundo plano activada.");
 })(window);
