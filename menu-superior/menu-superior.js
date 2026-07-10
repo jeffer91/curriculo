@@ -2,63 +2,26 @@
 Nombre completo: menu-superior.js
 Ruta o ubicación: /Curriculo/menu-superior/menu-superior.js
 Función o funciones:
-- Crear un menú superior visual reutilizable para toda la app Curriculo.
-- Permitir navegación entre Inicio, Subir ZIP, BDLocal y Comunicados.
-- Funcionar tanto en navegador normal como en modo Electron.
-- Detectar automáticamente la pantalla activa.
-- Exponer una API pequeña en window.CurriculoMenuSuperior.
+- Crear un menú superior reutilizable en todas las pantallas.
+- Navegar de forma segura en navegador y Electron.
+- Usar el resultado { ok: true } devuelto por el puente Electron.
+- Aplicar una ruta HTML de respaldo si el IPC no responde.
 ========================================================= */
 
 (function (window, document) {
   "use strict";
 
-  var APP_NAME = "Curriculo";
   var MENU_ID = "curriculoMenuSuperior";
   var ROOT_CLASS = "cms-menu-mounted";
-
   var LINKS = [
-    {
-      id: "inicio",
-      label: "Inicio",
-      shortLabel: "Inicio",
-      hrefRoot: "index.html",
-      hrefChild: "../index.html",
-      icon: "⌂"
-    },
-    {
-      id: "subir",
-      label: "Subir ZIP",
-      shortLabel: "Subir",
-      hrefRoot: "subir/subir.html",
-      hrefChild: "../subir/subir.html",
-      icon: "ZIP"
-    },
-    {
-      id: "bdlocal",
-      label: "BDLocal",
-      shortLabel: "BD",
-      hrefRoot: "bdlocal/bdlocal.html",
-      hrefChild: "../bdlocal/bdlocal.html",
-      icon: "BD"
-    },
-    {
-      id: "comunicados",
-      label: "Comunicados",
-      shortLabel: "Com.",
-      hrefRoot: "comunicados/comunicados.html",
-      hrefChild: "../comunicados/comunicados.html",
-      icon: "COM"
-    }
+    { id: "inicio", label: "Inicio", shortLabel: "Inicio", root: "index.html", child: "../index.html", icon: "⌂" },
+    { id: "subir", label: "Subir ZIP", shortLabel: "Subir", root: "subir/subir.html", child: "../subir/subir.html", icon: "ZIP" },
+    { id: "bdlocal", label: "BDLocal", shortLabel: "BD", root: "bdlocal/bdlocal.html", child: "../bdlocal/bdlocal.html", icon: "BD" },
+    { id: "comunicados", label: "Comunicados", shortLabel: "Com.", root: "comunicados/comunicados.html", child: "../comunicados/comunicados.html", icon: "COM" }
   ];
 
   function texto(valor) {
     return String(valor === null || typeof valor === "undefined" ? "" : valor).trim();
-  }
-
-  function normalizar(valor) {
-    return texto(valor)
-      .replace(/\\/g, "/")
-      .toLowerCase();
   }
 
   function escapar(valor) {
@@ -70,62 +33,46 @@ Función o funciones:
       .replace(/'/g, "&#039;");
   }
 
-  function estaEnSubcarpeta() {
-    var path = normalizar(window.location.pathname || "");
-
-    return path.indexOf("/subir/") !== -1 ||
-      path.indexOf("/bdlocal/") !== -1 ||
-      path.indexOf("/comunicados/") !== -1 ||
-      path.indexOf("/menu-superior/") !== -1;
+  function pathActual() {
+    return String(window.location.pathname || "").replace(/\\/g, "/").toLowerCase();
   }
 
-  function obtenerPantallaActual() {
-    var path = normalizar(window.location.pathname || "");
-    var file = path.split("/").pop();
+  function estaEnSubcarpeta() {
+    var path = pathActual();
+    return /\/(subir|bdlocal|comunicados|menu-superior)\//.test(path);
+  }
 
-    if (path.indexOf("/subir/") !== -1 || file === "subir.html") {
-      return "subir";
-    }
-
-    if (path.indexOf("/bdlocal/") !== -1 || file === "bdlocal.html") {
-      return "bdlocal";
-    }
-
-    if (path.indexOf("/comunicados/") !== -1 || file === "comunicados.html") {
-      return "comunicados";
-    }
-
+  function pantallaActual() {
+    var path = pathActual();
+    if (path.indexOf("/subir/") !== -1) return "subir";
+    if (path.indexOf("/bdlocal/") !== -1) return "bdlocal";
+    if (path.indexOf("/comunicados/") !== -1) return "comunicados";
     return "inicio";
   }
 
-  function obtenerHref(link) {
-    return estaEnSubcarpeta() ? link.hrefChild : link.hrefRoot;
+  function hrefDe(link) {
+    return estaEnSubcarpeta() ? link.child : link.root;
   }
 
   function esElectron() {
-    return !!(window.CurriculoElectron && window.CurriculoElectron.isElectron);
-  }
-
-  function crearBotonLink(link, activo) {
-    var href = obtenerHref(link);
-
-    return (
-      '<a class="cms-link ' + (activo ? "cms-link-active" : "") + '" ' +
-        'href="' + escapar(href) + '" ' +
-        'data-cms-route="' + escapar(link.id) + '" ' +
-        'title="' + escapar(link.label) + '">' +
-        '<span class="cms-link-icon">' + escapar(link.icon) + '</span>' +
-        '<span class="cms-link-label">' + escapar(link.label) + '</span>' +
-        '<span class="cms-link-short">' + escapar(link.shortLabel) + '</span>' +
-      '</a>'
+    return !!(
+      window.CurriculoElectron &&
+      window.CurriculoElectron.isElectron === true &&
+      typeof window.CurriculoElectron.navigate === "function"
     );
   }
 
   function construirHTML() {
-    var actual = obtenerPantallaActual();
-
-    var linksHTML = LINKS.map(function (link) {
-      return crearBotonLink(link, link.id === actual);
+    var activa = pantallaActual();
+    var links = LINKS.map(function (link) {
+      return (
+        '<a class="cms-link ' + (link.id === activa ? "cms-link-active" : "") + '" ' +
+          'href="' + escapar(hrefDe(link)) + '" data-cms-route="' + escapar(link.id) + '" title="' + escapar(link.label) + '">' +
+          '<span class="cms-link-icon">' + escapar(link.icon) + '</span>' +
+          '<span class="cms-link-label">' + escapar(link.label) + '</span>' +
+          '<span class="cms-link-short">' + escapar(link.shortLabel) + '</span>' +
+        '</a>'
+      );
     }).join("");
 
     return (
@@ -133,16 +80,9 @@ Función o funciones:
         '<div class="cms-inner">' +
           '<a class="cms-brand" href="' + escapar(estaEnSubcarpeta() ? "../index.html" : "index.html") + '" data-cms-route="inicio">' +
             '<span class="cms-brand-mark">CCC</span>' +
-            '<span class="cms-brand-text">' +
-              '<strong>' + escapar(APP_NAME) + '</strong>' +
-              '<small>Gestión Curricular</small>' +
-            '</span>' +
+            '<span class="cms-brand-text"><strong>Curriculo</strong><small>Gestión Curricular</small></span>' +
           '</a>' +
-
-          '<div class="cms-links">' +
-            linksHTML +
-          '</div>' +
-
+          '<div class="cms-links">' + links + '</div>' +
           '<div class="cms-right">' +
             '<span class="cms-mode" id="cmsMode">Local</span>' +
             '<button class="cms-icon-btn" type="button" id="cmsBtnRecargar" title="Recargar pantalla">↻</button>' +
@@ -152,49 +92,21 @@ Función o funciones:
     );
   }
 
-  function montarMenu() {
-    if (document.getElementById(MENU_ID)) {
-      return;
-    }
-
-    document.body.classList.add(ROOT_CLASS);
-    document.body.insertAdjacentHTML("afterbegin", construirHTML());
-
-    conectarEventos();
-    actualizarModo();
-  }
-
-  function actualizarModo() {
-    var el = document.getElementById("cmsMode");
-
-    if (!el) return;
+  async function navegar(ruta, fallbackHref) {
+    var href = texto(fallbackHref);
 
     if (esElectron()) {
-      el.textContent = "Electron";
-      el.classList.add("cms-mode-electron");
-    } else {
-      el.textContent = "Navegador";
-      el.classList.remove("cms-mode-electron");
-    }
-  }
-
-  async function navegar(ruta, fallbackHref) {
-    var href = fallbackHref || "";
-
-    if (esElectron() && typeof window.CurriculoElectron.navigate === "function") {
       try {
         var resultado = await window.CurriculoElectron.navigate(ruta);
-
-        if (resultado === true) {
-          return true;
-        }
+        if (resultado === true || (resultado && resultado.ok === true)) return true;
+        console.warn("[MenuSuperior] Electron no confirmó la navegación:", resultado);
       } catch (error) {
-        console.warn("[MenuSuperior] No se pudo navegar con Electron:", error);
+        console.warn("[MenuSuperior] Falló la navegación IPC:", error);
       }
     }
 
     if (href) {
-      window.location.href = href;
+      window.location.assign(href);
       return true;
     }
 
@@ -203,65 +115,54 @@ Función o funciones:
 
   function conectarEventos() {
     var menu = document.getElementById(MENU_ID);
-
     if (!menu) return;
 
     menu.addEventListener("click", function (event) {
-      var routeElement = event.target.closest("[data-cms-route]");
-
-      if (!routeElement) return;
-
-      var ruta = routeElement.getAttribute("data-cms-route");
-      var href = routeElement.getAttribute("href");
+      var enlace = event.target.closest("[data-cms-route]");
+      if (!enlace) return;
 
       if (esElectron()) {
         event.preventDefault();
-        navegar(ruta, href);
+        navegar(enlace.getAttribute("data-cms-route"), enlace.getAttribute("href"));
       }
     });
 
-    var btnRecargar = document.getElementById("cmsBtnRecargar");
+    var recargar = document.getElementById("cmsBtnRecargar");
+    if (recargar) recargar.addEventListener("click", function () { window.location.reload(); });
+  }
 
-    if (btnRecargar) {
-      btnRecargar.addEventListener("click", function () {
-        window.location.reload();
-      });
-    }
+  function actualizarModo() {
+    var el = document.getElementById("cmsMode");
+    if (!el) return;
+    el.textContent = esElectron() ? "Electron" : "Navegador";
+    el.classList.toggle("cms-mode-electron", esElectron());
+  }
+
+  function montar() {
+    if (document.getElementById(MENU_ID)) return;
+    document.body.classList.add(ROOT_CLASS);
+    document.body.insertAdjacentHTML("afterbegin", construirHTML());
+    conectarEventos();
+    actualizarModo();
   }
 
   function marcarActivo(ruta) {
-    var actual = texto(ruta || obtenerPantallaActual()).toLowerCase();
-    var links = document.querySelectorAll(".cms-link");
-
-    links.forEach(function (link) {
-      var route = link.getAttribute("data-cms-route");
-
-      if (route === actual) {
-        link.classList.add("cms-link-active");
-      } else {
-        link.classList.remove("cms-link-active");
-      }
+    document.querySelectorAll(".cms-link").forEach(function (link) {
+      link.classList.toggle("cms-link-active", link.getAttribute("data-cms-route") === texto(ruta || pantallaActual()).toLowerCase());
     });
   }
 
-  function desmontarMenu() {
-    var menu = document.getElementById(MENU_ID);
-
-    if (menu && menu.parentNode) {
-      menu.parentNode.removeChild(menu);
-    }
-
-    document.body.classList.remove(ROOT_CLASS);
-  }
-
   window.CurriculoMenuSuperior = {
-    montar: montarMenu,
-    desmontar: desmontarMenu,
+    montar: montar,
     marcarActivo: marcarActivo,
-    obtenerPantallaActual: obtenerPantallaActual,
+    obtenerPantallaActual: pantallaActual,
     esElectron: esElectron,
     navegar: navegar
   };
 
-  document.addEventListener("DOMContentLoaded", montarMenu);
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", montar, { once: true });
+  } else {
+    montar();
+  }
 })(window, document);
