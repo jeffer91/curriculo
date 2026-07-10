@@ -4,15 +4,17 @@ Ruta o ubicación: /Curriculo/electron/main.js
 Función o funciones:
 - Crear la ventana principal de la app Curriculo en Electron.
 - Cargar las pantallas internas: Inicio, Subir ZIP, BDLocal y Comunicados.
-- Exponer IPC seguros para navegación interna y enlaces externos.
-- Generar PDF desde HTML usando printToPDF.
-- Guardar los PDF directamente en la carpeta Descargas sin pedir ubicación.
+- Exponer IPC seguros para navegación interna, enlaces externos y archivos.
+- Generar PDF desde HTML usando una ventana temporal y printToPDF.
+- Guardar y verificar los PDF directamente en la carpeta Descargas.
+- Mostrar en el Explorador de archivos el PDF generado.
 ========================================================= */
 
 "use strict";
 
 const path = require("path");
 const fs = require("fs");
+const { pathToFileURL } = require("url");
 const {
   app,
   BrowserWindow,
@@ -22,6 +24,7 @@ const {
 } = require("electron");
 
 const APP_NAME = "Curriculo";
+const PDF_BRIDGE_VERSION = "2.0.0";
 const ROOT_DIR = path.resolve(__dirname, "..");
 const PRELOAD_PATH = path.join(__dirname, "preload.js");
 
@@ -71,7 +74,7 @@ function crearVentanaPrincipal() {
   });
 
   mainWindow.once("ready-to-show", function () {
-    if (!mainWindow) return;
+    if (!mainWindow || mainWindow.isDestroyed()) return;
     mainWindow.show();
   });
 
@@ -79,11 +82,13 @@ function crearVentanaPrincipal() {
     mainWindow = null;
   });
 
-  mainWindow.loadFile(RUTAS.inicio);
+  mainWindow.loadFile(RUTAS.inicio).catch(function (error) {
+    console.error("[Curriculo] No se pudo abrir la pantalla inicial:", error);
+  });
 }
 
-function navegar(nombreRuta) {
-  if (!mainWindow) {
+async function navegar(nombreRuta) {
+  if (!mainWindow || mainWindow.isDestroyed()) {
     return {
       ok: false,
       mensaje: "La ventana principal no está disponible."
@@ -102,24 +107,35 @@ function navegar(nombreRuta) {
     };
   }
 
-  mainWindow.loadFile(rutaArchivo);
+  try {
+    await mainWindow.loadFile(rutaArchivo);
 
-  return {
-    ok: true,
-    ruta: clave,
-    archivo: rutaArchivo
-  };
+    return {
+      ok: true,
+      ruta: clave,
+      archivo: rutaArchivo
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      ruta: clave,
+      archivo: rutaArchivo,
+      mensaje: error && error.message ? error.message : "No se pudo abrir la pantalla."
+    };
+  }
 }
 
 function limpiarNombreArchivo(valor) {
   return String(valor || "archivo")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^\w\s.-]/g, " ")
+    .replace(/[<>:"/\\|?*\x00-\x1F]/g, " ")
+    .replace(/[^\w\s.()-]/g, " ")
     .replace(/\s+/g, " ")
     .trim()
     .replace(/\s/g, "_")
-    .slice(0, 140) || "archivo";
+    .replace(/\.+$/g, "")
+    .slice(0, 150) || "archivo";
 }
 
 function asegurarExtension(nombreArchivo, extension) {
@@ -152,61 +168,106 @@ function obtenerRutaUnica(carpeta, nombreArchivo) {
 }
 
 function insertarBaseHref(html, carpetaBase) {
-  const baseHref = "file:///" + carpetaBase.replace(/\\/g, "/").replace(/\/?$/, "/");
+  const baseHref = pathToFileURL(carpetaBase + path.sep).href;
 
   if (/<base\s/i.test(html)) {
     return html;
   }
 
-  if (/<head>/i.test(html)) {
-    return html.replace(/<head>/i, '<head><base href="' + baseHref + '">');
+  if (/<head[^>]*>/i.test(html)) {
+    return html.replace(/<head([^>]*)>/i, '<head$1><base href="' + baseHref + '">');
   }
 
   return '<base href="' + baseHref + '">' + html;
 }
 
-async function esperarImagenes(webContents) {
+function crearRutaTemporalHTML() {
+  const carpeta = path.join(app.getPath("temp"), "curriculo-pdf");
+  fs.mkdirSync(carpeta, { recursive: true });
+
+  const nombre = [
+    "comunicado",
+    Date.now().toString(36),
+    Math.random().toString(36).slice(2, 10)
+  ].join("_") + ".html";
+
+  return path.join(carpeta, nombre);
+}
+
+async function eliminarTemporalSeguro(rutaArchivo) {
+  if (!rutaArchivo) return;
+
+  try {
+    await fs.promises.unlink(rutaArchivo);
+  } catch (error) {
+    if (error && error.code !== "ENOENT") {
+      console.warn("[Curriculo PDF] No se pudo eliminar el HTML temporal:", error);
+    }
+  }
+}
+
+async function esperarDocumentoListo(webContents) {
   await webContents.executeJavaScript(`
-    new Promise(function(resolve) {
-      try {
-        var imgs = Array.prototype.slice.call(document.images || []);
-
-        if (!imgs.length) {
-          setTimeout(resolve, 350);
-          return;
-        }
-
-        var pendientes = imgs.length;
-
-        function listo() {
-          pendientes -= 1;
-
-          if (pendientes <= 0) {
-            setTimeout(resolve, 350);
-          }
-        }
-
-        imgs.forEach(function(img) {
-          if (img.complete) {
-            listo();
-          } else {
-            img.onload = listo;
-            img.onerror = listo;
-          }
+    (async function () {
+      function pausa(ms) {
+        return new Promise(function (resolve) {
+          setTimeout(resolve, ms);
         });
-
-        setTimeout(resolve, 2200);
-      } catch (error) {
-        setTimeout(resolve, 500);
       }
-    });
-  `);
+
+      try {
+        if (document.fonts && document.fonts.ready) {
+          await Promise.race([document.fonts.ready, pausa(3000)]);
+        }
+
+        var imagenes = Array.prototype.slice.call(document.images || []);
+
+        await Promise.all(imagenes.map(function (img) {
+          if (img.complete) return Promise.resolve();
+
+          return Promise.race([
+            new Promise(function (resolve) {
+              img.addEventListener("load", resolve, { once: true });
+              img.addEventListener("error", resolve, { once: true });
+            }),
+            pausa(3500)
+          ]);
+        }));
+
+        await pausa(250);
+        return {
+          ok: true,
+          imagenes: imagenes.length,
+          titulo: document.title || ""
+        };
+      } catch (error) {
+        await pausa(250);
+        return {
+          ok: false,
+          mensaje: error && error.message ? error.message : String(error)
+        };
+      }
+    })();
+  `, true);
+}
+
+function validarBufferPDF(buffer) {
+  if (!buffer || typeof buffer.length !== "number" || buffer.length < 100) {
+    throw new Error("Electron devolvió un PDF vacío o incompleto.");
+  }
+
+  const cabecera = Buffer.from(buffer).subarray(0, 5).toString("ascii");
+
+  if (cabecera !== "%PDF-") {
+    throw new Error("El archivo generado no tiene una cabecera PDF válida.");
+  }
 }
 
 async function guardarPDFEnDescargas(payload) {
   payload = payload || {};
 
   let pdfWindow = null;
+  let rutaTemporal = "";
 
   try {
     const htmlOriginal = String(payload.html || "").trim();
@@ -214,62 +275,91 @@ async function guardarPDFEnDescargas(payload) {
     if (!htmlOriginal) {
       return {
         ok: false,
+        codigo: "HTML_VACIO",
         mensaje: "No se recibió HTML para generar el PDF."
       };
     }
 
     const nombreArchivo = asegurarExtension(payload.nombreArchivo || "comunicado.pdf", ".pdf");
     const carpetaDescargas = app.getPath("downloads");
-    const rutaFinal = obtenerRutaUnica(carpetaDescargas, nombreArchivo);
 
+    await fs.promises.mkdir(carpetaDescargas, { recursive: true });
+
+    const rutaFinal = obtenerRutaUnica(carpetaDescargas, nombreArchivo);
     const carpetaBaseComunicados = path.join(ROOT_DIR, "comunicados");
     const htmlFinal = insertarBaseHref(htmlOriginal, carpetaBaseComunicados);
+
+    rutaTemporal = crearRutaTemporalHTML();
+    await fs.promises.writeFile(rutaTemporal, htmlFinal, "utf8");
 
     pdfWindow = new BrowserWindow({
       show: false,
       width: 1240,
       height: 1754,
       backgroundColor: "#ffffff",
+      autoHideMenuBar: true,
       webPreferences: {
         contextIsolation: true,
         nodeIntegration: false,
         sandbox: false,
-        webSecurity: false
+        webSecurity: false,
+        backgroundThrottling: false
       }
     });
 
-    await pdfWindow.loadURL(
-      "data:text/html;charset=utf-8," + encodeURIComponent(htmlFinal)
-    );
+    pdfWindow.webContents.setWindowOpenHandler(function () {
+      return { action: "deny" };
+    });
 
-    await esperarImagenes(pdfWindow.webContents);
+    await pdfWindow.loadFile(rutaTemporal);
+    await esperarDocumentoListo(pdfWindow.webContents);
 
     const buffer = await pdfWindow.webContents.printToPDF({
       printBackground: true,
       landscape: false,
       pageSize: "A4",
       preferCSSPageSize: true,
-      marginsType: 0
+      margins: {
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: 0
+      }
     });
 
-    fs.writeFileSync(rutaFinal, buffer);
+    validarBufferPDF(buffer);
+    await fs.promises.writeFile(rutaFinal, buffer);
+
+    const info = await fs.promises.stat(rutaFinal);
+
+    if (!info.isFile() || info.size < 100) {
+      throw new Error("El PDF fue creado, pero el archivo quedó vacío.");
+    }
 
     return {
       ok: true,
+      modo: "electron",
       nombreArchivo: path.basename(rutaFinal),
       ruta: rutaFinal,
       carpeta: carpetaDescargas,
-      mensaje: "PDF generado directamente en Descargas."
+      bytes: info.size,
+      bridgeVersion: PDF_BRIDGE_VERSION,
+      mensaje: "PDF generado y verificado correctamente en Descargas."
     };
   } catch (error) {
+    console.error("[Curriculo PDF] Error generando PDF:", error);
+
     return {
       ok: false,
+      codigo: error && error.code ? error.code : "ERROR_PDF",
       mensaje: error && error.message ? error.message : "Error generando PDF directo en Descargas."
     };
   } finally {
     if (pdfWindow && !pdfWindow.isDestroyed()) {
-      pdfWindow.close();
+      pdfWindow.destroy();
     }
+
+    await eliminarTemporalSeguro(rutaTemporal);
   }
 }
 
@@ -281,15 +371,20 @@ async function guardarArchivoEnDescargas(payload) {
     const extension = String(payload.extension || ".txt");
     const nombreArchivo = asegurarExtension(payload.nombreArchivo || "archivo" + extension, extension);
     const carpetaDescargas = app.getPath("downloads");
-    const rutaFinal = obtenerRutaUnica(carpetaDescargas, nombreArchivo);
 
-    fs.writeFileSync(rutaFinal, contenido, "utf8");
+    await fs.promises.mkdir(carpetaDescargas, { recursive: true });
+
+    const rutaFinal = obtenerRutaUnica(carpetaDescargas, nombreArchivo);
+    await fs.promises.writeFile(rutaFinal, contenido, "utf8");
+
+    const info = await fs.promises.stat(rutaFinal);
 
     return {
       ok: true,
       nombreArchivo: path.basename(rutaFinal),
       ruta: rutaFinal,
       carpeta: carpetaDescargas,
+      bytes: info.size,
       mensaje: "Archivo generado directamente en Descargas."
     };
   } catch (error) {
@@ -300,12 +395,23 @@ async function guardarArchivoEnDescargas(payload) {
   }
 }
 
+function registrarHandler(canal, handler) {
+  try {
+    ipcMain.removeHandler(canal);
+  } catch (error) {
+    // No había un handler anterior.
+  }
+
+  ipcMain.handle(canal, handler);
+}
+
 function configurarIPC() {
-  ipcMain.handle("curriculo:get-app-info", async function () {
+  registrarHandler("curriculo:get-app-info", async function () {
     return {
       ok: true,
       appName: APP_NAME,
       version: app.getVersion(),
+      bridgeVersion: PDF_BRIDGE_VERSION,
       rootDir: ROOT_DIR,
       downloadsDir: app.getPath("downloads"),
       isPackaged: app.isPackaged,
@@ -319,11 +425,11 @@ function configurarIPC() {
     };
   });
 
-  ipcMain.handle("curriculo:navigate", async function (_event, nombreRuta) {
-    return navegar(nombreRuta);
+  registrarHandler("curriculo:navigate", async function (_event, nombreRuta) {
+    return await navegar(nombreRuta);
   });
 
-  ipcMain.handle("curriculo:open-external", async function (_event, url) {
+  registrarHandler("curriculo:open-external", async function (_event, url) {
     const safeUrl = String(url || "").trim();
 
     if (!/^https?:\/\//i.test(safeUrl)) {
@@ -335,12 +441,10 @@ function configurarIPC() {
 
     await shell.openExternal(safeUrl);
 
-    return {
-      ok: true
-    };
+    return { ok: true };
   });
 
-  ipcMain.handle("curriculo:open-downloads", async function () {
+  registrarHandler("curriculo:open-downloads", async function () {
     const carpetaDescargas = app.getPath("downloads");
     const resultado = await shell.openPath(carpetaDescargas);
 
@@ -351,11 +455,44 @@ function configurarIPC() {
     };
   });
 
-  ipcMain.handle("curriculo:guardar-pdf-descargas", async function (_event, payload) {
+  registrarHandler("curriculo:show-item-in-folder", async function (_event, rutaArchivo) {
+    const ruta = String(rutaArchivo || "").trim();
+
+    if (!ruta || !path.isAbsolute(ruta) || !archivoExiste(ruta)) {
+      return {
+        ok: false,
+        mensaje: "El archivo no existe o la ruta no es válida."
+      };
+    }
+
+    shell.showItemInFolder(ruta);
+
+    return {
+      ok: true,
+      ruta: ruta
+    };
+  });
+
+  registrarHandler("curriculo:diagnostico-pdf", async function () {
+    return {
+      ok: true,
+      bridgeVersion: PDF_BRIDGE_VERSION,
+      electron: process.versions.electron,
+      chrome: process.versions.chrome,
+      node: process.versions.node,
+      downloadsDir: app.getPath("downloads"),
+      printToPDFDisponible: !!(
+        BrowserWindow &&
+        BrowserWindow.prototype
+      )
+    };
+  });
+
+  registrarHandler("curriculo:guardar-pdf-descargas", async function (_event, payload) {
     return await guardarPDFEnDescargas(payload);
   });
 
-  ipcMain.handle("curriculo:guardar-archivo-descargas", async function (_event, payload) {
+  registrarHandler("curriculo:guardar-archivo-descargas", async function (_event, payload) {
     return await guardarArchivoEnDescargas(payload);
   });
 }
@@ -365,30 +502,10 @@ function crearMenuNativo() {
     {
       label: "Archivo",
       submenu: [
-        {
-          label: "Inicio",
-          click: function () {
-            navegar("inicio");
-          }
-        },
-        {
-          label: "Subir ZIP",
-          click: function () {
-            navegar("subir");
-          }
-        },
-        {
-          label: "BDLocal",
-          click: function () {
-            navegar("bdlocal");
-          }
-        },
-        {
-          label: "Comunicados",
-          click: function () {
-            navegar("comunicados");
-          }
-        },
+        { label: "Inicio", click: function () { navegar("inicio"); } },
+        { label: "Subir ZIP", click: function () { navegar("subir"); } },
+        { label: "BDLocal", click: function () { navegar("bdlocal"); } },
+        { label: "Comunicados", click: function () { navegar("comunicados"); } },
         { type: "separator" },
         {
           label: "Abrir Descargas",
@@ -397,10 +514,7 @@ function crearMenuNativo() {
           }
         },
         { type: "separator" },
-        {
-          label: "Salir",
-          role: "quit"
-        }
+        { label: "Salir", role: "quit" }
       ]
     },
     {
@@ -431,12 +545,13 @@ function configurarSingleInstance() {
   }
 
   app.on("second-instance", function () {
-    if (!mainWindow) return;
+    if (!mainWindow || mainWindow.isDestroyed()) return;
 
     if (mainWindow.isMinimized()) {
       mainWindow.restore();
     }
 
+    mainWindow.show();
     mainWindow.focus();
   });
 
@@ -456,6 +571,9 @@ function configurarApp() {
         crearVentanaPrincipal();
       }
     });
+  }).catch(function (error) {
+    console.error("[Curriculo] Error iniciando Electron:", error);
+    app.quit();
   });
 
   app.on("window-all-closed", function () {
