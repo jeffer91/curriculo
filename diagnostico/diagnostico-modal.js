@@ -158,7 +158,9 @@ Función o funciones:
       if (!firma || (firma === ultimaFirmaVisual && Date.now() - ultimaFirmaVisualMs < 3000)) return;
       ultimaFirmaVisual = firma;
       ultimaFirmaVisualMs = Date.now();
-      if (!D.obtenerActual()) {
+      var ultimo = D.obtenerUltimo ? D.obtenerUltimo() : null;
+      var ultimoReciente = ultimo && ultimo.generadoEn && (Date.now() - Date.parse(ultimo.generadoEn) < 5000);
+      if (!D.obtenerActual() && !ultimoReciente) {
         D.reportar(new Error(texto(mensaje && mensaje.textContent) || texto(titulo && titulo.textContent)), {
           titulo: texto(titulo && titulo.textContent) || "Error mostrado por la aplicación",
           flujo: "Interfaz de " + window.location.pathname,
@@ -172,7 +174,6 @@ Función o funciones:
   }
 
   window.addEventListener("diagnostico:error", function (event) { mostrar(event.detail || {}); });
-  window.addEventListener("diagnostico:bloqueo", function (event) { mostrar(event.detail || {}); });
   document.addEventListener("DOMContentLoaded", function () {
     crear();
     observarErroresVisuales();
