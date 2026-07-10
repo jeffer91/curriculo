@@ -66,6 +66,8 @@ Función o funciones:
       '</section>'
     ].join("");
     document.body.appendChild(overlay);
+    var enSubcarpeta = /\/(subir|bdlocal|comunicados)\//.test(String(window.location.pathname || "").toLowerCase());
+    overlay.querySelector("#diagAbrirBD").href = enSubcarpeta ? "../bdlocal/bdlocal.html" : "bdlocal/bdlocal.html";
 
     overlay.querySelector("#diagCerrarX").addEventListener("click", cerrar);
     overlay.querySelector("#diagCerrar").addEventListener("click", cerrar);
