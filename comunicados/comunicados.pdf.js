@@ -2,12 +2,13 @@
 Nombre completo: comunicados.pdf.js
 Ruta o ubicación: /Curriculo/comunicados/comunicados.pdf.js
 Función o funciones:
-- Generar documento institucional desde HTML.
-- Enviar el HTML a Electron para convertirlo a PDF.
-- Guardar el PDF directamente en la carpeta Descargas.
-- Aplicar estilos institucionales al comunicado.
+- Construir el documento HTML institucional listo para PDF.
+- Enviar el HTML al puente seguro de Electron.
+- Guardar y verificar el PDF directamente en la carpeta Descargas.
 - Permitir generar un PDF individual por materia.
-- Permitir generar un solo documento con varios comunicados, uno por página.
+- Permitir generar un único PDF global con varios comunicados.
+- Ofrecer impresión del navegador como respaldo fuera de Electron.
+- Exponer diagnóstico del entorno de generación.
 ========================================================= */
 
 (function (window, document) {
@@ -34,11 +35,13 @@ Función o funciones:
     return texto(valor)
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^\w\s.-]/g, " ")
+      .replace(/[<>:"/\\|?*\x00-\x1F]/g, " ")
+      .replace(/[^\w\s.()-]/g, " ")
       .replace(/\s+/g, " ")
       .trim()
       .replace(/\s/g, "_")
-      .slice(0, 120) || "comunicado";
+      .replace(/\.+$/g, "")
+      .slice(0, 140) || "comunicado";
   }
 
   function fechaArchivo() {
@@ -49,7 +52,8 @@ Función o funciones:
       String(d.getMonth() + 1).padStart(2, "0"),
       String(d.getDate()).padStart(2, "0"),
       String(d.getHours()).padStart(2, "0"),
-      String(d.getMinutes()).padStart(2, "0")
+      String(d.getMinutes()).padStart(2, "0"),
+      String(d.getSeconds()).padStart(2, "0")
     ].join("");
   }
 
@@ -61,6 +65,42 @@ Función o funciones:
     }
 
     return nombre;
+  }
+
+  function electronDisponible() {
+    return !!(
+      window.CurriculoElectron &&
+      window.CurriculoElectron.isElectron === true &&
+      typeof window.CurriculoElectron.guardarPDFEnDescargas === "function"
+    );
+  }
+
+  async function diagnosticarEntorno() {
+    var resultado = {
+      ok: true,
+      electronDisponible: electronDisponible(),
+      bridgeVersion: window.CurriculoElectron
+        ? texto(window.CurriculoElectron.bridgeVersion || "")
+        : "",
+      userAgent: navigator.userAgent || ""
+    };
+
+    if (
+      electronDisponible() &&
+      typeof window.CurriculoElectron.diagnosticarPDF === "function"
+    ) {
+      var diagnostico = await window.CurriculoElectron.diagnosticarPDF();
+      resultado.electron = diagnostico || null;
+
+      if (!diagnostico || diagnostico.ok !== true) {
+        resultado.ok = false;
+        resultado.mensaje = diagnostico && diagnostico.mensaje
+          ? diagnostico.mensaje
+          : "El puente de PDF de Electron no respondió correctamente.";
+      }
+    }
+
+    return resultado;
   }
 
   function obtenerCSSPDF() {
@@ -83,6 +123,8 @@ Función o funciones:
         font-family: Arial, Helvetica, sans-serif;
         font-size: 12px;
         line-height: 1.45;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
       }
 
       body {
@@ -91,7 +133,7 @@ Función o funciones:
 
       .com-pdf-page {
         width: 100%;
-        min-height: 100vh;
+        min-height: 260mm;
         page-break-after: always;
         break-after: page;
         padding: 0;
@@ -258,14 +300,6 @@ Función o funciones:
         font-size: 11.5px;
       }
 
-      .com-pdf-watermark {
-        position: fixed;
-        right: 12mm;
-        bottom: 8mm;
-        color: #9ca3af;
-        font-size: 9px;
-      }
-
       @media print {
         html,
         body {
@@ -289,6 +323,7 @@ Función o funciones:
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>${escaparHTML(titulo)}</title>
   <style>${obtenerCSSPDF()}</style>
 </head>
@@ -298,18 +333,78 @@ Función o funciones:
 </html>`;
   }
 
+  function imprimirEnNavegador(htmlFinal, nombreArchivo) {
+    return new Promise(function (resolve, reject) {
+      try {
+        var iframe = document.createElement("iframe");
+        iframe.setAttribute("title", "Impresión de comunicado");
+        iframe.style.position = "fixed";
+        iframe.style.right = "0";
+        iframe.style.bottom = "0";
+        iframe.style.width = "1px";
+        iframe.style.height = "1px";
+        iframe.style.border = "0";
+        iframe.style.opacity = "0";
+        iframe.style.pointerEvents = "none";
+
+        document.body.appendChild(iframe);
+
+        var win = iframe.contentWindow;
+        var doc = win.document;
+
+        doc.open();
+        doc.write(htmlFinal);
+        doc.close();
+
+        setTimeout(function () {
+          try {
+            win.focus();
+            win.print();
+
+            setTimeout(function () {
+              if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+            }, 1200);
+
+            resolve({
+              ok: true,
+              modo: "navegador",
+              nombreArchivo: nombreArchivo,
+              mensaje: "Se abrió la ventana de impresión. Selecciona Guardar como PDF."
+            });
+          } catch (error) {
+            if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+            reject(error);
+          }
+        }, 500);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  async function mostrarArchivoGenerado(resultado) {
+    if (
+      !resultado ||
+      !resultado.ruta ||
+      !window.CurriculoElectron ||
+      typeof window.CurriculoElectron.mostrarArchivo !== "function"
+    ) {
+      return null;
+    }
+
+    try {
+      return await window.CurriculoElectron.mostrarArchivo(resultado.ruta);
+    } catch (error) {
+      console.warn("[ComunicadosCCC.PDF] No se pudo mostrar el PDF en el Explorador:", error);
+      return null;
+    }
+  }
+
   async function guardarHTMLComoPDF(htmlComunicados, opciones) {
     opciones = opciones || {};
 
-    if (!htmlComunicados) {
+    if (!texto(htmlComunicados)) {
       throw new Error("No se recibió contenido HTML para generar PDF.");
-    }
-
-    if (
-      !window.CurriculoElectron ||
-      typeof window.CurriculoElectron.guardarPDFEnDescargas !== "function"
-    ) {
-      throw new Error("La descarga directa a Descargas requiere ejecutar la app en Electron y tener actualizado electron/preload.js.");
     }
 
     var titulo = texto(opciones.titulo || "Comunicado institucional");
@@ -318,9 +413,21 @@ Función o funciones:
     );
 
     var htmlFinal = construirDocumentoHTML(htmlComunicados, {
-      titulo: titulo,
-      nombreArchivo: nombreArchivo
+      titulo: titulo
     });
+
+    if (!electronDisponible()) {
+      return await imprimirEnNavegador(htmlFinal, nombreArchivo);
+    }
+
+    var diagnostico = await diagnosticarEntorno();
+
+    if (!diagnostico.ok) {
+      throw new Error(
+        diagnostico.mensaje ||
+        "El puente de PDF de Electron no está disponible. Cierra y vuelve a abrir la aplicación."
+      );
+    }
 
     var resultado = await window.CurriculoElectron.guardarPDFEnDescargas({
       html: htmlFinal,
@@ -336,6 +443,14 @@ Función o funciones:
       );
     }
 
+    if (!resultado.nombreArchivo || !resultado.ruta || Number(resultado.bytes || 0) < 100) {
+      throw new Error("Electron respondió, pero no confirmó un PDF válido en el disco.");
+    }
+
+    if (opciones.mostrarArchivo !== false) {
+      await mostrarArchivoGenerado(resultado);
+    }
+
     return resultado;
   }
 
@@ -348,12 +463,14 @@ Función o funciones:
 
     var nombre = limpiarNombreArchivo(
       opciones.nombreArchivo ||
-      documento.numeroComunicado + "_" + documento.nombreAsignatura
+      (documento.numeroComunicado || "COMUNICADO") + "_" +
+      (documento.nombreAsignatura || "ASIGNATURA")
     );
 
     return await guardarHTMLComoPDF(documento.html, {
       titulo: "Comunicado " + (documento.numeroComunicado || ""),
-      nombreArchivo: nombre + "_" + fechaArchivo() + ".pdf"
+      nombreArchivo: nombre + "_" + fechaArchivo() + ".pdf",
+      mostrarArchivo: opciones.mostrarArchivo !== false
     });
   }
 
@@ -365,13 +482,13 @@ Función o funciones:
     }
 
     var nombre = limpiarNombreArchivo(
-      opciones.nombreArchivo ||
-      "comunicados_institucionales"
+      opciones.nombreArchivo || "comunicados_institucionales"
     );
 
     return await guardarHTMLComoPDF(resultadoMultiple.html, {
-      titulo: "Comunicados institucionales",
-      nombreArchivo: nombre + "_" + fechaArchivo() + ".pdf"
+      titulo: opciones.titulo || "Comunicados institucionales",
+      nombreArchivo: nombre + "_" + fechaArchivo() + ".pdf",
+      mostrarArchivo: opciones.mostrarArchivo !== false
     });
   }
 
@@ -381,6 +498,9 @@ Función o funciones:
     guardarHTMLComoPDF: guardarHTMLComoPDF,
     generarPDFDocumento: generarPDFDocumento,
     generarPDFMultiple: generarPDFMultiple,
-    limpiarNombreArchivo: limpiarNombreArchivo
+    limpiarNombreArchivo: limpiarNombreArchivo,
+    electronDisponible: electronDisponible,
+    diagnosticarEntorno: diagnosticarEntorno,
+    mostrarArchivoGenerado: mostrarArchivoGenerado
   };
 })(window, document);
