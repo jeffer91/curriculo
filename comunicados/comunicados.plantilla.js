@@ -3,10 +3,11 @@ Nombre completo: comunicados.plantilla.js
 Ruta o ubicación: /Curriculo/comunicados/comunicados.plantilla.js
 Función o funciones:
 - Organizar la información de PEA Base, PEA Unidades y PEA Actividades.
-- Construir el contenido institucional del comunicado por materia.
-- Preparar HTML imprimible para convertirlo luego a PDF.
-- Usar formato institucional tipo COMUNICADO con número, fecha, unidad responsable y nota.
-- Bloquear generación cuando la materia no tenga los 3 PEA obligatorios.
+- Construir el comunicado institucional por materia con estructura PARA, DE, ASUNTO y FECHA.
+- Mantener el logo institucional original sin filtros, recoloración ni recortes.
+- Preparar HTML imprimible para PDF individual o global.
+- Usar el código institucional COM-ITSQMET-UGPA-AÑO-MES-0X.
+- Bloquear la generación cuando la materia no tenga los tres PEA obligatorios.
 ========================================================= */
 
 (function (window) {
@@ -21,7 +22,9 @@ Función o funciones:
     ciudad: "Quito, D.M.",
     nota: "Nota: Cualquier inquietud por favor acercarse a la Unidad de Gestión Pedagógica Académica.",
     titulo: "COMUNICADO",
-    logoSrc: "../assets/logo-itsqmet-comunicado.png"
+    logoSrc: "../assets/logo-itsqmet-comunicado.png",
+    institucion: "INSTITUTO SUPERIOR TECNOLÓGICO QUITO METROPOLITANO",
+    sigla: "ITSQMET"
   };
 
   function texto(valor) {
@@ -76,7 +79,6 @@ Función o funciones:
     var camposDirectos = peaBase.campos || {};
     var camposDatos = peaBase.datos && peaBase.datos.campos ? peaBase.datos.campos : {};
     var camposHojas = {};
-
     var hojas = peaBase.hojas || {};
 
     Object.keys(hojas).forEach(function (nombreHoja) {
@@ -100,26 +102,29 @@ Función o funciones:
     var keys = Object.keys(campos);
 
     for (var i = 0; i < candidatos.length; i += 1) {
-      var cand = normalizar(candidatos[i]);
+      var candidatoExacto = normalizar(candidatos[i]);
 
       for (var j = 0; j < keys.length; j += 1) {
         var key = keys[j];
 
-        if (normalizar(key) === cand && texto(campos[key])) {
+        if (normalizar(key) === candidatoExacto && texto(campos[key])) {
           return texto(campos[key]);
         }
       }
     }
 
     for (var c = 0; c < candidatos.length; c += 1) {
-      var cand2 = normalizar(candidatos[c]);
+      var candidatoParcial = normalizar(candidatos[c]);
 
       for (var k = 0; k < keys.length; k += 1) {
-        var key2 = keys[k];
-        var keyNorm = normalizar(key2);
+        var keyParcial = keys[k];
+        var keyNormalizada = normalizar(keyParcial);
 
-        if ((keyNorm.includes(cand2) || cand2.includes(keyNorm)) && texto(campos[key2])) {
-          return texto(campos[key2]);
+        if (
+          (keyNormalizada.includes(candidatoParcial) || candidatoParcial.includes(keyNormalizada)) &&
+          texto(campos[keyParcial])
+        ) {
+          return texto(campos[keyParcial]);
         }
       }
     }
@@ -138,9 +143,12 @@ Función o funciones:
 
       for (var j = 0; j < keys.length; j += 1) {
         var key = keys[j];
-        var keyNorm = normalizar(key);
+        var keyNormalizada = normalizar(key);
 
-        if ((keyNorm === candidato || keyNorm.includes(candidato) || candidato.includes(keyNorm)) && texto(fila[key])) {
+        if (
+          (keyNormalizada === candidato || keyNormalizada.includes(candidato) || candidato.includes(keyNormalizada)) &&
+          texto(fila[key])
+        ) {
           return texto(fila[key]);
         }
       }
@@ -150,10 +158,10 @@ Función o funciones:
   }
 
   function ordenarPorUnidad(a, b) {
-    var ua = Number(a.unidadNumero || 0);
-    var ub = Number(b.unidadNumero || 0);
+    var unidadA = Number(a.unidadNumero || 0);
+    var unidadB = Number(b.unidadNumero || 0);
 
-    if (ua !== ub) return ua - ub;
+    if (unidadA !== unidadB) return unidadA - unidadB;
 
     return texto(a.temaDetectado || a.actividadDetectada || "").localeCompare(
       texto(b.temaDetectado || b.actividadDetectada || ""),
@@ -259,7 +267,6 @@ Función o funciones:
 
   function prepararDatosMateria(detalle, reserva, config) {
     config = Object.assign({}, CONFIG_DEFAULT, config || {});
-
     detalle = detalle || {};
     reserva = reserva || {};
 
@@ -336,6 +343,9 @@ Función o funciones:
       );
     }
 
+    var nombreCarrera = carrera.nombre || "Carrera no registrada";
+    var nombreNivel = nivel.nombre || "Nivel no registrado";
+
     return {
       config: config,
       numeroComunicado: reserva.numero || "",
@@ -349,8 +359,8 @@ Función o funciones:
       nivelId: nivel.id || "",
       codigo: codigo,
       nombreAsignatura: nombreAsignatura,
-      carrera: carrera.nombre || "",
-      nivel: nivel.nombre || "",
+      carrera: nombreCarrera,
+      nivel: nombreNivel,
       descripcion: descripcion || "No se registra descripción de la asignatura en la información procesada.",
       objetivo: objetivo || "No se registra objetivo de la asignatura en la información procesada.",
       horas: horas,
@@ -358,9 +368,22 @@ Función o funciones:
       unidades: unidades,
       actividades: actividades,
       actividadesPorUnidad: agruparActividadesPorUnidad(actividades),
+      para: "COORDINACIÓN DE LA CARRERA " + nombreCarrera + " Y DOCENTES DE LA ASIGNATURA " + nombreAsignatura,
+      de: config.unidadResponsable,
+      asunto: "SOCIALIZACIÓN DE LA PLANIFICACIÓN CURRICULAR DE LA ASIGNATURA " + nombreAsignatura,
       archivos: detalle.archivos || [],
       generadoEn: new Date().toISOString()
     };
+  }
+
+  function renderFilaEncabezado(etiqueta, valor) {
+    return (
+      '<tr class="com-pdf-routing-row">' +
+        '<th scope="row">' + escapar(etiqueta) + '</th>' +
+        '<td class="com-pdf-routing-colon">:</td>' +
+        '<td class="com-pdf-routing-value">' + escapar(valor || "No registrado") + '</td>' +
+      '</tr>'
+    );
   }
 
   function renderDatosGenerales(data) {
@@ -386,39 +409,6 @@ Función o funciones:
           }).join("") +
         "</tbody>" +
       "</table>"
-    );
-  }
-
-  function renderUnidades(data) {
-    if (!data.unidades.length) {
-      return '<p class="com-pdf-muted">No se registran unidades procesadas.</p>';
-    }
-
-    return (
-      '<div class="com-pdf-unidades">' +
-        data.unidades.map(function (unidad, index) {
-          var numero = unidad.unidadNumero || index + 1;
-          var actividades = data.actividadesPorUnidad[String(Number(numero || 0))] || [];
-
-          return (
-            '<section class="com-pdf-unidad">' +
-              '<h4>Unidad ' + escapar(numero) + ': ' + escapar(unidad.tituloUnidad || unidad.tema || "") + '</h4>' +
-              '<p><strong>Contenido / tema:</strong> ' + escapar(unidad.tema || "No registrado") + '</p>' +
-              (
-                unidad.subtema
-                  ? '<p><strong>Subtema:</strong> ' + escapar(unidad.subtema) + '</p>'
-                  : ''
-              ) +
-              (
-                unidad.resultado
-                  ? '<p><strong>Resultado de aprendizaje:</strong> ' + escapar(unidad.resultado) + '</p>'
-                  : ''
-              ) +
-              renderActividadesUnidad(actividades) +
-            '</section>'
-          );
-        }).join("") +
-      '</div>'
     );
   }
 
@@ -453,23 +443,74 @@ Función o funciones:
     );
   }
 
+  function renderUnidades(data) {
+    if (!data.unidades.length) {
+      return '<p class="com-pdf-muted">No se registran unidades procesadas.</p>';
+    }
+
+    return (
+      '<div class="com-pdf-unidades">' +
+        data.unidades.map(function (unidad, index) {
+          var numero = unidad.unidadNumero || index + 1;
+          var actividades = data.actividadesPorUnidad[String(Number(numero || 0))] || [];
+
+          return (
+            '<section class="com-pdf-unidad">' +
+              '<h3>Unidad ' + escapar(numero) + ': ' + escapar(unidad.tituloUnidad || unidad.tema || "") + '</h3>' +
+              '<p><strong>Contenido / tema:</strong> ' + escapar(unidad.tema || "No registrado") + '</p>' +
+              (
+                unidad.subtema
+                  ? '<p><strong>Subtema:</strong> ' + escapar(unidad.subtema) + '</p>'
+                  : ''
+              ) +
+              (
+                unidad.resultado
+                  ? '<p><strong>Resultado de aprendizaje:</strong> ' + escapar(unidad.resultado) + '</p>'
+                  : ''
+              ) +
+              renderActividadesUnidad(actividades) +
+            '</section>'
+          );
+        }).join("") +
+      '</div>'
+    );
+  }
+
   function generarHTMLComunicado(data) {
+    var notaLimpia = texto(data.nota).replace(/^Nota:\s*/i, "");
+
     return (
       '<article class="com-pdf-page" data-materia-id="' + escapar(data.materiaId) + '">' +
         '<header class="com-pdf-header">' +
-          '<img class="com-pdf-logo" src="' + escapar(data.config.logoSrc) + '" alt="ITSQMET" onerror="this.style.display=\'none\'" />' +
+          '<img class="com-pdf-logo" src="' + escapar(data.config.logoSrc) + '" alt="ITSQMET" />' +
         '</header>' +
 
-        '<h1 class="com-pdf-title">' + escapar(data.config.titulo) + '</h1>' +
+        '<div class="com-pdf-document-number">' +
+          '<strong>Comunicado No.</strong> ' +
+          '<span>' + escapar(data.numeroComunicado) + '</span>' +
+        '</div>' +
+
+        '<table class="com-pdf-routing" aria-label="Datos institucionales del comunicado">' +
+          '<tbody>' +
+            renderFilaEncabezado("PARA", data.para) +
+            renderFilaEncabezado("DE", data.de) +
+            renderFilaEncabezado("ASUNTO", data.asunto) +
+            renderFilaEncabezado("FECHA", data.fechaTexto) +
+          '</tbody>' +
+        '</table>' +
 
         '<section class="com-pdf-body">' +
-          '<p>Estimados colaboradores,</p>' +
+          '<p>Estimados coordinadores y docentes:</p>' +
 
           '<p>' +
-            'Como parte del proceso institucional de gestión curricular, se comunica el detalle académico ' +
-            'correspondiente a la asignatura <strong>' + escapar(data.nombreAsignatura) + '</strong>, ' +
-            'perteneciente a la carrera <strong>' + escapar(data.carrera) + '</strong>, ' +
-            'conforme a la información registrada en los documentos PEA procesados en la base local.' +
+            'Por medio del presente se pone en su conocimiento la información curricular correspondiente a la asignatura ' +
+            '<strong>' + escapar(data.nombreAsignatura) + '</strong>, perteneciente a la carrera ' +
+            '<strong>' + escapar(data.carrera) + '</strong> y al ' +
+            '<strong>' + escapar(data.nivel) + '</strong>, conforme a los documentos PEA registrados y validados en el sistema institucional.' +
+          '</p>' +
+
+          '<p>' +
+            'La información que se detalla a continuación deberá ser considerada para la planificación, organización y desarrollo de las actividades académicas de la asignatura durante el período correspondiente.' +
           '</p>' +
 
           '<h2>Datos generales de la asignatura</h2>' +
@@ -483,17 +524,25 @@ Función o funciones:
 
           '<h2>Unidades, contenidos y actividades</h2>' +
           renderUnidades(data) +
+
+          '<p class="com-pdf-closing">' +
+            'Se solicita revisar la información presentada y aplicar la planificación curricular establecida. Cualquier observación deberá ser comunicada oportunamente a la Unidad de Gestión Pedagógica Académica.' +
+          '</p>' +
+        '</section>' +
+
+        '<section class="com-pdf-signature">' +
+          '<p>Atentamente,</p>' +
+          '<div class="com-pdf-signature-space"></div>' +
+          '<strong>' + escapar(data.unidadResponsable) + '</strong>' +
+          '<span>' + escapar(data.config.sigla || "ITSQMET") + '</span>' +
         '</section>' +
 
         '<footer class="com-pdf-footer">' +
-          '<div class="com-pdf-unidad-responsable">' + escapar(data.unidadResponsable) + '</div>' +
-
-          '<div class="com-pdf-meta">' +
-            '<p>' + escapar(data.ciudad) + ', ' + escapar(data.fechaTexto) + '</p>' +
-            '<p>Comunicado No. <span>' + escapar(data.numeroComunicado) + '</span></p>' +
-          '</div>' +
-
-          '<p class="com-pdf-nota"><strong>Nota:</strong> ' + escapar(data.nota.replace(/^Nota:\s*/i, "")) + '</p>' +
+          (notaLimpia ? '<p class="com-pdf-nota"><strong>Nota:</strong> ' + escapar(notaLimpia) + '</p>' : '') +
+          '<div class="com-pdf-footer-line"></div>' +
+          '<p class="com-pdf-footer-institution">' +
+            escapar(data.config.institucion || "INSTITUTO SUPERIOR TECNOLÓGICO QUITO METROPOLITANO") +
+          '</p>' +
         '</footer>' +
       '</article>'
     );
@@ -524,8 +573,8 @@ Función o funciones:
     return {
       total: documentos.length,
       documentos: documentos,
-      html: documentos.map(function (doc) {
-        return doc.html;
+      html: documentos.map(function (documento) {
+        return documento.html;
       }).join("")
     };
   }
