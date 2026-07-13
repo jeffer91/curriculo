@@ -114,7 +114,8 @@ Función o funciones:
       tieneContenidoBinario: false,
       contenidoBinario: null,
       datosProcesados: archivo.datosProcesados || archivo.datos || null,
-      errorLectura: archivo.errorLectura || "",
+      errorExcel: archivo.errorExcel || archivo.errorLectura || "",
+      errorLectura: archivo.errorLectura || archivo.errorExcel || "",
       creadoEn: archivo.creadoEn || fechaISO(),
       actualizadoEn: fechaISO()
     };
@@ -164,6 +165,7 @@ Función o funciones:
       }),
       resumenValidacion: Object.assign({}, paquete.resumenValidacion || {}),
       diagnostico: Object.assign({}, paquete.diagnostico || {}),
+      diagnosticoExcel: Object.assign({}, paquete.diagnosticoExcel || {}),
       zip: Object.assign({}, paquete.zip || {}),
       origen: "subir",
       preparadoEn: fechaISO()
