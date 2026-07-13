@@ -1,11 +1,12 @@
 /* =========================================================
 Nombre completo: subir.main.js
-Ruta o ubicación: /gestion-curricular-ccc/subir/subir.main.js
+Ruta o ubicación: /Curriculo/subir/subir.main.js
 Función o funciones:
 - Controlar la pantalla principal de subida ZIP.
 - Gestionar selección de archivo, drag and drop, análisis, validación e importación.
 - Coordinar ZIP, detector de estructura, detector de archivos, lectura Excel, validador, preview y BDLocal.
-- Cargar dinámicamente subir.excel.js si todavía no fue agregado al HTML.
+- Bloquear la importación cuando la lectura global de Excel falle o no genere datos procesados.
+- Permitir importación con observaciones solo cuando exista información curricular recuperable.
 - Mantener la carpeta subir independiente de bdlocal, comunicándose solo por subir.conexion-bdlocal.js.
 ========================================================= */
 
@@ -219,6 +220,101 @@ Función o funciones:
     NS.Preview.limpiarPreview();
   }
 
+  function esExcelCurricular(archivo) {
+    var extension = texto(archivo && archivo.extension).toLowerCase();
+    return !!archivo && archivo.esExcel !== false &&
+      ["xlsx", "xls", "xlsm", "csv"].indexOf(extension) !== -1;
+  }
+
+  function tieneDatosProcesados(archivo) {
+    var datos = archivo && archivo.datosProcesados;
+    return !!datos && typeof datos === "object" &&
+      !Array.isArray(datos) && Object.keys(datos).length > 0;
+  }
+
+  function aplicarControlLectura(paqueteClasificado, paqueteLeido, errorGeneral) {
+    var paquete = Object.assign({}, paqueteLeido || paqueteClasificado || {});
+    var detectados = (paqueteClasificado.archivos || []).filter(esExcelCurricular);
+    var resultados = (paquete.archivos || []).filter(esExcelCurricular);
+    var conBinario = detectados.filter(function (archivo) {
+      return !!archivo.contenidoBinario || archivo.tieneContenidoBinario === true;
+    });
+    var leidos = resultados.filter(function (archivo) {
+      return archivo.excelLeido === true && !archivo.errorExcel && !archivo.errorLectura;
+    });
+    var conDatos = leidos.filter(tieneDatosProcesados);
+    var errores = resultados.filter(function (archivo) {
+      return !!(archivo.errorExcel || archivo.errorLectura);
+    });
+    var motivos = [];
+
+    if (detectados.length > 0 && conBinario.length === 0) {
+      motivos.push("Los Excel fueron detectados, pero no se pudo extraer su contenido del ZIP.");
+    }
+
+    if (detectados.length > 0 && leidos.length === 0) {
+      motivos.push("Ningún Excel curricular pudo leerse correctamente.");
+    }
+
+    if (leidos.length > 0 && conDatos.length === 0) {
+      motivos.push("Los Excel se abrieron, pero no produjeron información curricular procesada.");
+    }
+
+    if (errorGeneral) {
+      motivos.push("La lectura general de Excel falló: " + (errorGeneral.message || errorGeneral));
+    }
+
+    var control = {
+      generadoEn: new Date().toISOString(),
+      totalExcelDetectados: detectados.length,
+      totalExcelConBinario: conBinario.length,
+      totalExcelLeidos: leidos.length,
+      totalConDatosProcesados: conDatos.length,
+      totalErroresExcel: errores.length,
+      lecturaParcial: detectados.length > 0 &&
+        (leidos.length < detectados.length || conDatos.length < leidos.length),
+      tieneDatosRecuperables: conDatos.length > 0,
+      bloqueaImportacion: motivos.length > 0,
+      motivosBloqueo: motivos
+    };
+
+    var advertencias = Array.isArray(paquete.advertencias)
+      ? paquete.advertencias.slice()
+      : [];
+
+    if (control.bloqueaImportacion) {
+      advertencias.push({
+        tipo: "lectura_excel_total_fallida",
+        severidad: "critico",
+        bloqueaImportacion: true,
+        mensaje: "No se obtuvo contenido curricular válido de los Excel. La importación fue bloqueada.",
+        detalle: control
+      });
+    } else if (control.lecturaParcial) {
+      advertencias.push({
+        tipo: "lectura_excel_parcial",
+        severidad: "advertencia",
+        bloqueaImportacion: false,
+        mensaje: "Algunos Excel no pudieron leerse o no generaron datos. Solo se permitirá importar con observaciones.",
+        detalle: control
+      });
+    }
+
+    return Object.assign({}, paquete, {
+      advertencias: advertencias,
+      diagnosticoExcel: Object.assign({}, paquete.diagnosticoExcel || {}, {
+        generadoEn: control.generadoEn,
+        totalExcelDetectados: control.totalExcelDetectados,
+        totalExcelConBinario: control.totalExcelConBinario,
+        totalExcelLeidos: control.totalExcelLeidos,
+        totalConDatosProcesados: control.totalConDatosProcesados,
+        totalErroresExcel: control.totalErroresExcel,
+        error: errorGeneral ? (errorGeneral.message || texto(errorGeneral)) : "",
+        controlLectura: control
+      })
+    });
+  }
+
   async function enriquecerConExcel(paqueteClasificado) {
     try {
       var Excel = await asegurarExcelDisponible();
@@ -228,35 +324,37 @@ Función o funciones:
         mensaje: "Leyendo contenido interno de los Excel..."
       });
 
-      return await Excel.enriquecerPaqueteConExcel(paqueteClasificado, {
+      var paqueteLeido = await Excel.enriquecerPaqueteConExcel(paqueteClasificado, {
         maxFilasPorHoja: 3000,
         onProgress: function (data) {
           NS.Preview.pintarProgreso(data);
         }
       });
+
+      return aplicarControlLectura(paqueteClasificado, paqueteLeido, null);
     } catch (error) {
-      console.warn("[SubirCCC.Main] No se pudo leer Excel internamente:", error);
-
-      var advertencias = Array.isArray(paqueteClasificado.advertencias)
-        ? paqueteClasificado.advertencias.slice()
-        : [];
-
-      advertencias.push({
-        tipo: "xlsx_no_disponible",
-        severidad: "advertencia",
-        mensaje: "No se pudo leer internamente los Excel. Se importará la clasificación de archivos.",
-        error: error.message
-      });
-
-      return Object.assign({}, paqueteClasificado, {
-        advertencias: advertencias,
-        diagnosticoExcel: {
-          generadoEn: new Date().toISOString(),
-          totalExcelLeidos: 0,
-          error: error.message
-        }
-      });
+      console.error("[SubirCCC.Main] Falló la lectura general de Excel:", error);
+      return aplicarControlLectura(paqueteClasificado, paqueteClasificado, error);
     }
+  }
+
+  function mensajeErrorAnalisis(error) {
+    var mensaje = texto(error && error.message) || "No se pudo procesar el archivo.";
+    var normalizado = mensaje.toLowerCase();
+
+    if (normalizado.indexOf("jszip") !== -1) {
+      return "No se pudo abrir el ZIP porque JSZip no está disponible. Ejecuta npm install y vuelve a iniciar la aplicación.";
+    }
+
+    if (
+      normalizado.indexOf("central directory") !== -1 ||
+      normalizado.indexOf("corrupt") !== -1 ||
+      normalizado.indexOf("can't find end") !== -1
+    ) {
+      return "El archivo ZIP parece estar dañado o no tiene una estructura ZIP válida.";
+    }
+
+    return mensaje;
   }
 
   async function analizarZIP() {
@@ -266,6 +364,11 @@ Función o funciones:
       NS.Preview.pintarEstado("error", "No hay ZIP", "Selecciona un archivo ZIP antes de analizar.");
       return;
     }
+
+    estado.paqueteDetectado = null;
+    estado.paqueteConExcel = null;
+    estado.paqueteValidado = null;
+    mostrar("accionesImportacion", false);
 
     try {
       setProcesando(true);
@@ -286,12 +389,11 @@ Función o funciones:
       estado.paqueteDetectado = paqueteClasificado;
 
       var paqueteConExcel = await enriquecerConExcel(paqueteClasificado);
-
       estado.paqueteConExcel = paqueteConExcel;
 
       NS.Preview.pintarProgreso({
         porcentaje: 94,
-        mensaje: "Validando materias y archivos obligatorios..."
+        mensaje: "Validando materias, lectura y archivos obligatorios..."
       });
 
       var paqueteValidado = NS.Validador.validarPaquete(paqueteConExcel, {
@@ -312,22 +414,32 @@ Función o funciones:
       NS.Preview.pintarPaquete(paqueteValidado);
     } catch (error) {
       console.error(error);
+      estado.paqueteDetectado = null;
+      estado.paqueteConExcel = null;
+      estado.paqueteValidado = null;
       NS.Preview.ocultarProgreso();
-      NS.Preview.pintarEstado("error", "Error al analizar ZIP", error.message || "No se pudo procesar el archivo.");
+      NS.Preview.pintarEstado("error", "Error al analizar ZIP", mensajeErrorAnalisis(error));
     } finally {
       setProcesando(false);
 
       var btnImportar = $("btnImportar");
       var btnImportarObservaciones = $("btnImportarObservaciones");
+      var resumen = estado.paqueteValidado
+        ? estado.paqueteValidado.resumenValidacion || {}
+        : {};
+      var control = estado.paqueteValidado && estado.paqueteValidado.diagnosticoExcel
+        ? estado.paqueteValidado.diagnosticoExcel.controlLectura || {}
+        : {};
+      var bloqueado = !estado.paqueteValidado ||
+        resumen.bloqueaImportacion === true ||
+        control.bloqueaImportacion === true;
 
-      if (btnImportar && estado.paqueteValidado) {
-        var resumen = estado.paqueteValidado.resumenValidacion || {};
-        btnImportar.disabled = resumen.bloqueaImportacion === true || resumen.requiereRevision === true;
+      if (btnImportar) {
+        btnImportar.disabled = bloqueado || resumen.requiereRevision === true;
       }
 
-      if (btnImportarObservaciones && estado.paqueteValidado) {
-        var r = estado.paqueteValidado.resumenValidacion || {};
-        btnImportarObservaciones.disabled = r.bloqueaImportacion === true;
+      if (btnImportarObservaciones) {
+        btnImportarObservaciones.disabled = bloqueado;
       }
     }
   }
@@ -337,6 +449,29 @@ Función o funciones:
 
     if (!estado.paqueteValidado) {
       NS.Preview.pintarEstado("error", "No hay paquete validado", "Primero analiza un ZIP.");
+      return;
+    }
+
+    var control = estado.paqueteValidado.diagnosticoExcel
+      ? estado.paqueteValidado.diagnosticoExcel.controlLectura || {}
+      : {};
+
+    if (control.bloqueaImportacion === true) {
+      NS.Preview.pintarEstado(
+        "error",
+        "Importación bloqueada",
+        control.motivosBloqueo && control.motivosBloqueo.length
+          ? control.motivosBloqueo.join(" ")
+          : "La lectura de los Excel no produjo contenido curricular válido."
+      );
+      return;
+    }
+
+    if (
+      Number(control.totalExcelDetectados || 0) > 0 &&
+      Number(control.totalConDatosProcesados || 0) === 0
+    ) {
+      NS.Preview.pintarEstado("error", "Importación bloqueada", "No existe contenido Excel procesado para guardar en BDLocal.");
       return;
     }
 
@@ -355,7 +490,8 @@ Función o funciones:
     if (resumen.requiereRevision && importarConRevision === true) {
       var confirma = window.confirm(
         "El ZIP tiene observaciones.\n\n" +
-        "Se importarán las materias completas e incompletas para que puedas revisarlas en BDLocal.\n\n" +
+        "Se importará únicamente la información curricular que pudo leerse y validarse.\n\n" +
+        "Las materias o archivos con errores quedarán señalados para revisión en BDLocal.\n\n" +
         "¿Deseas continuar?"
       );
 
@@ -537,6 +673,7 @@ Función o funciones:
     limpiarTodo: limpiarTodo,
     setArchivo: setArchivo,
     asegurarExcelDisponible: asegurarExcelDisponible,
+    aplicarControlLectura: aplicarControlLectura,
     getEstado: function () {
       return Object.assign({}, estado);
     }
