@@ -7,6 +7,7 @@ Función o funciones:
 - Cargar el menú superior reutilizable.
 - Permitir ingresar a la pantalla de subida ZIP.
 - Permitir ingresar a la pantalla de Base Local y Comunicados institucionales.
+- Navegar una sola vez tanto en navegador como en Electron.
 ========================================================= -->
 <!DOCTYPE html>
 <html lang="es">
@@ -389,28 +390,53 @@ Función o funciones:
     (function () {
       "use strict";
 
+      var navegacionEnCurso = false;
+
+      function esElectronDisponible() {
+        return !!(
+          window.CurriculoElectron &&
+          window.CurriculoElectron.isElectron === true &&
+          typeof window.CurriculoElectron.navigate === "function"
+        );
+      }
+
+      function navegacionConfirmada(resultado) {
+        return resultado === true || !!(resultado && resultado.ok === true);
+      }
+
+      function usarRespaldo(href) {
+        if (href) window.location.assign(href);
+      }
+
       document.addEventListener("click", async function (event) {
         var card = event.target.closest("[data-home-route]");
 
-        if (!card) return;
-
-        if (window.CurriculoElectron && window.CurriculoElectron.isElectron) {
+        if (!card || !esElectronDisponible()) return;
+        if (event.defaultPrevented || event.button !== 0) return;
+        if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+        if (navegacionEnCurso) {
           event.preventDefault();
+          return;
+        }
 
-          var ruta = card.getAttribute("data-home-route");
-          var href = card.getAttribute("href");
+        event.preventDefault();
+        navegacionEnCurso = true;
 
-          try {
-            var resultado = await window.CurriculoElectron.navigate(ruta);
+        var ruta = card.getAttribute("data-home-route");
+        var href = card.getAttribute("href");
 
-            if (resultado !== true && href) {
-              window.location.href = href;
-            }
-          } catch (error) {
-            if (href) {
-              window.location.href = href;
-            }
-          }
+        try {
+          var resultado = await window.CurriculoElectron.navigate(ruta);
+
+          if (navegacionConfirmada(resultado)) return;
+
+          console.warn("[Inicio] Electron no confirmó la navegación:", resultado);
+          usarRespaldo(href);
+        } catch (error) {
+          console.warn("[Inicio] Falló la navegación IPC:", error);
+          usarRespaldo(href);
+        } finally {
+          navegacionEnCurso = false;
         }
       });
     })();
