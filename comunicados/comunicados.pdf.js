@@ -3,8 +3,9 @@ Nombre completo: comunicados.pdf.js
 Ruta o ubicación: /Curriculo/comunicados/comunicados.pdf.js
 Función o funciones:
 - Construir el HTML A4 del comunicado institucional.
-- Aplicar un diseño sobrio en negro, basado en el formato institucional.
-- Mantener todos los contenidos y permitir que continúen entre páginas.
+- Generar una portada independiente como primera hoja de cada comunicado.
+- Iniciar el contenido técnico del CCC desde la segunda hoja.
+- Ocultar el campo Código en el PDF sin modificar la pantalla ni la BDLocal.
 - Generar PDF individual o global con Electron.
 - Usar la impresión del navegador como respaldo.
 ========================================================= */
@@ -97,6 +98,160 @@ Función o funciones:
     return resultado;
   }
 
+  function fechaValida(valor) {
+    if (valor instanceof Date && !Number.isNaN(valor.getTime())) return valor;
+
+    if (texto(valor)) {
+      var fecha = new Date(valor);
+      if (!Number.isNaN(fecha.getTime())) return fecha;
+    }
+
+    return null;
+  }
+
+  function fechaLargaEspanol(valor) {
+    var fecha = fechaValida(valor) || new Date();
+    var meses = [
+      "enero", "febrero", "marzo", "abril", "mayo", "junio",
+      "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
+    ];
+
+    return fecha.getDate() + " de " + meses[fecha.getMonth()] + " de " + fecha.getFullYear();
+  }
+
+  function periodoAcademicoPredeterminado(valorFecha) {
+    var fecha = fechaValida(valorFecha) || new Date();
+    var anio = fecha.getFullYear();
+    var mes = fecha.getMonth() + 1;
+
+    if (mes >= 4 && mes <= 9) {
+      return "ABRIL " + anio + " – SEPTIEMBRE " + anio;
+    }
+
+    if (mes >= 10) {
+      return "OCTUBRE " + anio + " – MARZO " + (anio + 1);
+    }
+
+    return "OCTUBRE " + (anio - 1) + " – MARZO " + anio;
+  }
+
+  function obtenerFechaEmision(data) {
+    data = data || {};
+
+    return (
+      fechaValida(data.fechaEmision) ||
+      fechaValida(data.fechaSeleccionada) ||
+      fechaValida(data.generadoEn) ||
+      new Date()
+    );
+  }
+
+  function obtenerPeriodoAcademico(data) {
+    data = data || {};
+    var config = data.config || {};
+
+    return texto(
+      data.periodoAcademico ||
+      data.periodo ||
+      config.periodoAcademico ||
+      config.periodo ||
+      periodoAcademicoPredeterminado(obtenerFechaEmision(data))
+    );
+  }
+
+  function numeroPortada(data) {
+    data = data || {};
+
+    var numeroFijo = texto(data.numeroFijo || "01").replace(/-+$/g, "");
+    var codigo = texto(data.numeroComunicado || "").replace(/^Comunicado\s+No\.\s*/i, "");
+
+    if (!codigo) return "Comunicado No. " + numeroFijo;
+    if (codigo.indexOf(numeroFijo + "-") === 0) return "Comunicado No. " + codigo;
+
+    return "Comunicado No. " + numeroFijo + "-" + codigo;
+  }
+
+  function construirPortada(data) {
+    data = data || {};
+
+    var nombreAsignatura = texto(data.nombreAsignatura || "Asignatura sin nombre");
+    var periodo = obtenerPeriodoAcademico(data);
+    var fechaEmision = texto(data.fechaEmisionTexto) || fechaLargaEspanol(obtenerFechaEmision(data));
+    var logoSrc = texto(data.logoSrc || "../assets/logo-itsqmet-comunicado-oficial.svg");
+
+    return (
+      '<article class="com-pdf-portada com-pdf-page">' +
+        '<div class="com-portada-logo-wrap">' +
+          '<img class="com-portada-logo" src="' + escaparHTML(logoSrc) + '" alt="ITSQMET" />' +
+        "</div>" +
+        '<p class="com-portada-numero">' + escaparHTML(numeroPortada(data)) + "</p>" +
+        '<section class="com-portada-datos">' +
+          '<p><strong>PARA:</strong> AUTORIDADES, COORDINADORES DE CARRERA Y DOCENTES</p>' +
+          '<p><strong>DE:</strong> MSC. JEFFERSON VILLARREAL<br>' +
+            '<span>UNIDAD DE GESTIÓN DE PROCESOS ACADÉMICOS</span></p>' +
+          '<p><strong>ASUNTO:</strong> NOTIFICACIÓN DE DISPONIBILIDAD DEL DOCUMENTO DE CONSTRUCCIÓN CURRICULAR CONTINUA (CCC) EN SISACAD PARA LA ELABORACIÓN DEL PEA</p>' +
+          '<p><strong>FECHA:</strong> ' + escaparHTML(fechaEmision).toUpperCase() + "</p>" +
+        "</section>" +
+        '<section class="com-portada-cuerpo">' +
+          '<p>Estimadas autoridades, coordinadores de carrera y docentes:</p>' +
+          '<p>Me dirijo a ustedes en esta oportunidad para informarles que el documento de Construcción Curricular Continua (CCC) correspondiente a la asignatura de <strong>' +
+            escaparHTML(nombreAsignatura) +
+            '</strong> ya se encuentra oficialmente subido y disponible en la plataforma institucional SISACAD.</p>' +
+          '<p>Esta notificación tiene como propósito habilitar a los coordinadores y docentes responsables para que, a partir de este momento, puedan proceder con la elaboración del Plan de Estudio de la Asignatura (PEA) correspondiente al período académico <strong>' +
+            escaparHTML(periodo) +
+            '</strong>, tomando como base los lineamientos y contenidos establecidos en el respectivo CCC.</p>' +
+          '<p>Agradezco de antemano su valiosa colaboración y compromiso con el cumplimiento de los procesos de planificación académica. Quedo a su entera disposición para cualquier consulta o soporte técnico que puedan requerir durante este proceso.</p>' +
+        "</section>" +
+        '<section class="com-portada-firma">' +
+          "<p>Atentamente,</p>" +
+          "<strong>MSC. JEFFERSON VILLARREAL</strong>" +
+          "<span>GESTOR DE PROCESOS ACADÉMICOS</span>" +
+          "<span>ITSQMET</span>" +
+        "</section>" +
+      "</article>"
+    );
+  }
+
+  function ocultarCodigoEnHTML(html) {
+    var resultado = texto(html);
+
+    resultado = resultado.replace(
+      /<p>\s*<strong>\s*C[oó]digo\s*<\/strong>\s*<span>[\s\S]*?<\/span>\s*<\/p>/gi,
+      ""
+    );
+
+    resultado = resultado.replace(
+      /class="com-pdf-resumen(?![^\"]*com-pdf-resumen-sin-codigo)([^\"]*)"/g,
+      'class="com-pdf-resumen com-pdf-resumen-sin-codigo$1"'
+    );
+
+    return resultado;
+  }
+
+  function prepararHTMLDocumento(documento) {
+    if (!documento || !documento.html) {
+      throw new Error("No se recibió un documento válido para generar PDF.");
+    }
+
+    return construirPortada(documento.data || documento) + ocultarCodigoEnHTML(documento.html);
+  }
+
+  function prepararHTMLMultiple(resultadoMultiple) {
+    var documentos = resultadoMultiple && Array.isArray(resultadoMultiple.documentos)
+      ? resultadoMultiple.documentos
+      : [];
+
+    if (documentos.length) {
+      return documentos.map(prepararHTMLDocumento).join("");
+    }
+
+    if (resultadoMultiple && resultadoMultiple.html) {
+      return ocultarCodigoEnHTML(resultadoMultiple.html);
+    }
+
+    throw new Error("No se recibió un documento múltiple válido para generar PDF.");
+  }
+
   function obtenerCSSPDF() {
     return `
       @page {
@@ -137,6 +292,83 @@ Función o funciones:
         break-after: auto;
       }
 
+      .com-pdf-portada {
+        min-height: 267mm;
+        display: flex;
+        flex-direction: column;
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      .com-portada-logo-wrap {
+        min-height: 21mm;
+        display: flex;
+        align-items: flex-start;
+        justify-content: flex-start;
+        margin: 0 0 4mm 0;
+      }
+
+      .com-portada-logo {
+        display: block;
+        width: 54mm;
+        max-width: 54mm;
+        max-height: 21mm;
+        object-fit: contain;
+        object-position: left top;
+      }
+
+      .com-portada-numero {
+        margin: 0 0 6mm 0;
+        padding: 0 0 3mm 0;
+        border-bottom: 1px solid #000000;
+        text-align: center;
+        font-size: 10.5pt;
+        line-height: 1.3;
+        font-weight: 700;
+      }
+
+      .com-portada-datos {
+        margin: 0 0 6mm 0;
+      }
+
+      .com-portada-datos p {
+        margin: 0 0 2.5mm 0;
+        text-align: justify;
+      }
+
+      .com-portada-datos strong {
+        display: inline-block;
+        min-width: 18mm;
+      }
+
+      .com-portada-datos span {
+        display: inline-block;
+        margin: 1mm 0 0 18.5mm;
+        font-weight: 700;
+      }
+
+      .com-portada-cuerpo p {
+        margin: 0 0 4mm 0;
+        text-align: justify;
+      }
+
+      .com-portada-firma {
+        margin-top: auto;
+        padding-top: 4mm;
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      .com-portada-firma p {
+        margin: 0 0 10mm 0;
+      }
+
+      .com-portada-firma strong,
+      .com-portada-firma span {
+        display: block;
+        line-height: 1.35;
+      }
+
       .com-pdf-header {
         width: 100%;
         margin: 0 0 7mm 0;
@@ -162,9 +394,6 @@ Función o funciones:
         padding: 0;
         object-fit: contain;
         object-position: left top;
-        opacity: 1;
-        filter: none;
-        transform: none;
       }
 
       .com-pdf-numero {
@@ -173,7 +402,6 @@ Función o funciones:
         font-size: 10.8pt;
         line-height: 1.25;
         font-weight: 700;
-        color: #000000;
       }
 
       .com-pdf-body {
@@ -194,6 +422,10 @@ Función o funciones:
         border: 1px solid #000000;
       }
 
+      .com-pdf-resumen.com-pdf-resumen-sin-codigo {
+        grid-template-columns: 1.15fr 1.55fr 0.8fr;
+      }
+
       .com-pdf-resumen p {
         min-height: 16mm;
         padding: 3mm 3.5mm;
@@ -202,11 +434,19 @@ Función o funciones:
         text-align: left;
       }
 
-      .com-pdf-resumen p:nth-child(2n) {
+      .com-pdf-resumen.com-pdf-resumen-sin-codigo p {
+        border-bottom: 0;
+      }
+
+      .com-pdf-resumen.com-pdf-resumen-sin-codigo p:last-child {
         border-right: 0;
       }
 
-      .com-pdf-resumen p:nth-last-child(-n + 2) {
+      .com-pdf-resumen:not(.com-pdf-resumen-sin-codigo) p:nth-child(2n) {
+        border-right: 0;
+      }
+
+      .com-pdf-resumen:not(.com-pdf-resumen-sin-codigo) p:nth-last-child(-n + 2) {
         border-bottom: 0;
       }
 
@@ -624,17 +864,14 @@ Función o funciones:
   async function generarPDFDocumento(documento, opciones) {
     opciones = opciones || {};
 
-    if (!documento || !documento.html) {
-      throw new Error("No se recibió un documento válido para generar PDF.");
-    }
-
+    var htmlDocumento = prepararHTMLDocumento(documento);
     var nombre = limpiarNombreArchivo(
       opciones.nombreArchivo ||
       (documento.numeroComunicado || "COMUNICADO") + "_" +
       (documento.nombreAsignatura || "ASIGNATURA")
     );
 
-    return await guardarHTMLComoPDF(documento.html, {
+    return await guardarHTMLComoPDF(htmlDocumento, {
       titulo: "Comunicado " + (documento.numeroComunicado || ""),
       nombreArchivo: nombre + "_" + fechaArchivo() + ".pdf",
       mostrarArchivo: opciones.mostrarArchivo !== false,
@@ -645,15 +882,12 @@ Función o funciones:
   async function generarPDFMultiple(resultadoMultiple, opciones) {
     opciones = opciones || {};
 
-    if (!resultadoMultiple || !resultadoMultiple.html) {
-      throw new Error("No se recibió un documento múltiple válido para generar PDF.");
-    }
-
+    var htmlMultiple = prepararHTMLMultiple(resultadoMultiple);
     var nombre = limpiarNombreArchivo(
       opciones.nombreArchivo || "comunicados_institucionales"
     );
 
-    return await guardarHTMLComoPDF(resultadoMultiple.html, {
+    return await guardarHTMLComoPDF(htmlMultiple, {
       titulo: opciones.titulo || "Comunicados institucionales",
       nombreArchivo: nombre + "_" + fechaArchivo() + ".pdf",
       mostrarArchivo: opciones.mostrarArchivo !== false,
@@ -664,6 +898,10 @@ Función o funciones:
   NS.PDF = {
     obtenerCSSPDF: obtenerCSSPDF,
     construirDocumentoHTML: construirDocumentoHTML,
+    construirPortada: construirPortada,
+    ocultarCodigoEnHTML: ocultarCodigoEnHTML,
+    prepararHTMLDocumento: prepararHTMLDocumento,
+    prepararHTMLMultiple: prepararHTMLMultiple,
     guardarHTMLComoPDF: guardarHTMLComoPDF,
     generarPDFDocumento: generarPDFDocumento,
     generarPDFMultiple: generarPDFMultiple,
