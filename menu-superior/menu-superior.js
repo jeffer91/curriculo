@@ -6,12 +6,13 @@ Función o funciones:
 - Navegar de forma segura en navegador y Electron.
 - Incorporar el módulo Depuraciones mediante navegación local directa.
 - Cargar automáticamente diagnóstico global e inteligencia BDLocal.
+- Activar la apertura no bloqueante del detalle de materias en BDLocal.
 ========================================================= */
 (function(window,document){
   "use strict";
   var MENU_ID="curriculoMenuSuperior";
   var ROOT_CLASS="cms-menu-mounted";
-  var VERSION_RECURSOS="20260716-1";
+  var VERSION_RECURSOS="20260716-2";
   var LINKS=[
     {id:"inicio",label:"Inicio",shortLabel:"Inicio",root:"index.html",child:"../index.html",icon:"⌂"},
     {id:"subir",label:"Subir ZIP",shortLabel:"Subir",root:"subir/subir.html",child:"../subir/subir.html",icon:"ZIP"},
@@ -61,10 +62,14 @@ Función o funciones:
     if(!window.BDLocalCCC||!window.BDLocalCCC.Core||window.BDLocalCCC.Inteligencia||document.querySelector('script[data-bdlocal-inteligencia="true"]'))return;
     var script=document.createElement("script");script.src=rutaDesdeRaiz("bdlocal/bdlocal.inteligencia.js?v="+VERSION_RECURSOS);script.dataset.bdlocalInteligencia="true";script.async=false;script.addEventListener("error",function(){console.error("[MenuSuperior] No se pudo cargar bdlocal.inteligencia.js.");});document.head.appendChild(script);
   }
+  function cargarDetalleRapidoBDLocal(){
+    if(pantallaActual()!=="bdlocal"||document.querySelector('script[data-bdlocal-detalle-rapido="true"]'))return;
+    cargarScript(rutaDesdeRaiz("bdlocal/bdlocal.detalle-rapido.js?v="+VERSION_RECURSOS),"data-bdlocal-detalle-rapido");
+  }
   function montar(){
     cargarDiagnosticoGlobal();
-    if(document.getElementById(MENU_ID)){cargarInteligenciaBDLocal();return;}
-    document.body.classList.add(ROOT_CLASS);document.body.insertAdjacentHTML("afterbegin",construirHTML());conectarEventos();actualizarModo();cargarInteligenciaBDLocal();
+    if(document.getElementById(MENU_ID)){cargarInteligenciaBDLocal();cargarDetalleRapidoBDLocal();return;}
+    document.body.classList.add(ROOT_CLASS);document.body.insertAdjacentHTML("afterbegin",construirHTML());conectarEventos();actualizarModo();cargarInteligenciaBDLocal();cargarDetalleRapidoBDLocal();
   }
   function marcarActivo(ruta){document.querySelectorAll(".cms-link").forEach(function(link){var id=link.getAttribute("data-cms-route")||(/depuraciones/.test(link.getAttribute("href")||"")?"depuraciones":"");link.classList.toggle("cms-link-active",id===texto(ruta||pantallaActual()).toLowerCase());});}
   window.CurriculoMenuSuperior={montar:montar,marcarActivo:marcarActivo,obtenerPantallaActual:pantallaActual,esElectron:esElectron,navegar:navegar,cargarDiagnosticoGlobal:cargarDiagnosticoGlobal};
