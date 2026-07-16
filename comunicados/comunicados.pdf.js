@@ -347,6 +347,21 @@ Función o funciones:
         font-weight: 700;
       }
 
+      .com-pdf-portada .com-portada-datos .com-meta-contenido {
+        padding-left: 18.5mm !important;
+        font-weight: 400 !important;
+      }
+
+      .com-pdf-portada .com-portada-datos .com-meta-contenido,
+      .com-pdf-portada .com-portada-datos .com-meta-contenido * {
+        font-weight: 400 !important;
+      }
+
+      .com-pdf-portada .com-portada-datos .com-meta-contenido > span {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+      }
+
       .com-portada-cuerpo p {
         margin: 0 0 4mm 0;
         text-align: justify;
