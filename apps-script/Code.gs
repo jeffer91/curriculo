@@ -274,7 +274,7 @@ function ejecutar_(request) {
 
 function doGet(e) {
   try {
-    return json_(ejecut_(e && e.parameter || {}));
+    return json_(ejecutar_(e && e.parameter || {}));
   } catch (error) {
     return json_({ ok: false, mensaje: error && error.message ? error.message : String(error) });
   }
@@ -282,7 +282,7 @@ function doGet(e) {
 
 function doPost(e) {
   try {
-    return json_(ejecut_(leerRequest_(e)));
+    return json_(ejecutar_(leerRequest_(e)));
   } catch (error) {
     return json_({ ok: false, mensaje: error && error.message ? error.message : String(error) });
   }
