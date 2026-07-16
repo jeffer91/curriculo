@@ -6,6 +6,7 @@ Funciones:
 - Configurar y probar el endpoint de Google Apps Script.
 - Ejecutar comparación y sincronización manual de registros de prueba.
 - Configurar pruebas de sincronización automática.
+- Verificar versiones e integridad antes de operar.
 ========================================================= -->
 <!DOCTYPE html>
 <html lang="es">
@@ -13,8 +14,8 @@ Funciones:
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sincronización | Gestión Curricular</title>
-  <link rel="stylesheet" href="../menu-superior/menu-superior.css?v=20260716-3" />
-  <link rel="stylesheet" href="./sincronizacion.css?v=20260716-1" />
+  <link rel="stylesheet" href="../menu-superior/menu-superior.css?v=20260716-4" />
+  <link rel="stylesheet" href="./sincronizacion.css?v=20260716-2" />
 </head>
 <body>
   <div class="sync-page">
@@ -217,12 +218,15 @@ Funciones:
     </main>
   </div>
 
-  <script src="../menu-superior/menu-superior.js?v=20260716-3"></script>
+  <script src="../menu-superior/menu-superior.js?v=20260716-4"></script>
   <script src="../bdlocal/bdlocal.schema.js?v=20260713-7"></script>
   <script src="../bdlocal/bdlocal.core.js?v=20260713-7"></script>
   <script src="../sync/sync.storage.js?v=20260716-1"></script>
-  <script src="../sync/sync.versiones.js?v=20260716-1"></script>
+  <script src="../sync/sync.versiones.js?v=20260716-2"></script>
+  <script src="../sync/sync.version-history.js?v=20260716-1"></script>
   <script src="../sync/sync.client.js?v=20260716-1"></script>
+  <script src="../sync/sync.selftest.js?v=20260716-1"></script>
   <script src="./sincronizacion.main.js?v=20260716-1"></script>
+  <script src="./sincronizacion.integridad.js?v=20260716-1"></script>
 </body>
 </html>
