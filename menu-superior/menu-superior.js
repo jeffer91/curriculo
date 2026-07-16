@@ -4,7 +4,7 @@ Ruta o ubicación: /Curriculo/menu-superior/menu-superior.js
 Función o funciones:
 - Crear un menú superior reutilizable en todas las pantallas.
 - Navegar de forma segura en navegador y Electron.
-- Incorporar el módulo Depuraciones mediante navegación local directa.
+- Incorporar los módulos Sincronización y Depuraciones mediante navegación local directa.
 - Cargar automáticamente diagnóstico global e inteligencia BDLocal.
 - Activar la revisión y edición segura del detalle de materias en BDLocal.
 ========================================================= */
@@ -12,20 +12,21 @@ Función o funciones:
   "use strict";
   var MENU_ID="curriculoMenuSuperior";
   var ROOT_CLASS="cms-menu-mounted";
-  var VERSION_RECURSOS="20260716-3";
+  var VERSION_RECURSOS="20260716-4";
   var LINKS=[
     {id:"inicio",label:"Inicio",shortLabel:"Inicio",root:"index.html",child:"../index.html",icon:"⌂"},
     {id:"subir",label:"Subir ZIP",shortLabel:"Subir",root:"subir/subir.html",child:"../subir/subir.html",icon:"ZIP"},
     {id:"bdlocal",label:"BDLocal",shortLabel:"BD",root:"bdlocal/bdlocal.html",child:"../bdlocal/bdlocal.html",icon:"BD"},
+    {id:"sincronizacion",label:"Sincronización",shortLabel:"Sync",root:"sincronizacion/sincronizacion.html",child:"../sincronizacion/sincronizacion.html",icon:"SYNC",native:true},
     {id:"depuraciones",label:"Depuraciones",shortLabel:"Dep.",root:"depuraciones/depuraciones.html",child:"../depuraciones/depuraciones.html",icon:"DEP",native:true},
     {id:"comunicados",label:"Comunicados",shortLabel:"Com.",root:"comunicados/comunicados.html",child:"../comunicados/comunicados.html",icon:"COM"}
   ];
   function texto(v){return String(v===null||typeof v==="undefined"?"":v).trim();}
   function escapar(v){return texto(v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");}
   function pathActual(){return String(window.location.pathname||"").replace(/\\/g,"/").toLowerCase();}
-  function estaEnSubcarpeta(){return /\/(subir|bdlocal|comunicados|depuraciones|menu-superior)\//.test(pathActual());}
+  function estaEnSubcarpeta(){return /\/(subir|bdlocal|sincronizacion|comunicados|depuraciones|menu-superior)\//.test(pathActual());}
   function rutaDesdeRaiz(ruta){return(estaEnSubcarpeta()?"../":"")+ruta;}
-  function pantallaActual(){var p=pathActual();if(p.indexOf("/subir/")!==-1)return"subir";if(p.indexOf("/bdlocal/")!==-1)return"bdlocal";if(p.indexOf("/depuraciones/")!==-1)return"depuraciones";if(p.indexOf("/comunicados/")!==-1)return"comunicados";return"inicio";}
+  function pantallaActual(){var p=pathActual();if(p.indexOf("/subir/")!==-1)return"subir";if(p.indexOf("/bdlocal/")!==-1)return"bdlocal";if(p.indexOf("/sincronizacion/")!==-1)return"sincronizacion";if(p.indexOf("/depuraciones/")!==-1)return"depuraciones";if(p.indexOf("/comunicados/")!==-1)return"comunicados";return"inicio";}
   function hrefDe(link){return estaEnSubcarpeta()?link.child:link.root;}
   function esElectron(){return!!(window.CurriculoElectron&&window.CurriculoElectron.isElectron===true&&typeof window.CurriculoElectron.navigate==="function");}
   function construirHTML(){
@@ -71,7 +72,7 @@ Función o funciones:
     if(document.getElementById(MENU_ID)){cargarInteligenciaBDLocal();cargarDetalleRapidoBDLocal();return;}
     document.body.classList.add(ROOT_CLASS);document.body.insertAdjacentHTML("afterbegin",construirHTML());conectarEventos();actualizarModo();cargarInteligenciaBDLocal();cargarDetalleRapidoBDLocal();
   }
-  function marcarActivo(ruta){document.querySelectorAll(".cms-link").forEach(function(link){var id=link.getAttribute("data-cms-route")||(/depuraciones/.test(link.getAttribute("href")||"")?"depuraciones":"");link.classList.toggle("cms-link-active",id===texto(ruta||pantallaActual()).toLowerCase());});}
+  function marcarActivo(ruta){document.querySelectorAll(".cms-link").forEach(function(link){var href=link.getAttribute("href")||"";var id=link.getAttribute("data-cms-route")||(/sincronizacion/.test(href)?"sincronizacion":/depuraciones/.test(href)?"depuraciones":"");link.classList.toggle("cms-link-active",id===texto(ruta||pantallaActual()).toLowerCase());});}
   window.CurriculoMenuSuperior={montar:montar,marcarActivo:marcarActivo,obtenerPantallaActual:pantallaActual,esElectron:esElectron,navegar:navegar,cargarDiagnosticoGlobal:cargarDiagnosticoGlobal};
   cargarDiagnosticoGlobal();
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",montar,{once:true});else montar();
