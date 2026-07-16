@@ -5,6 +5,7 @@ Funciones:
 - Verificar módulos, elementos obligatorios, IndexedDB y fetch.
 - Ejecutar las pruebas internas del comparador.
 - Mostrar errores inesperados sin dejar la pantalla aparentemente congelada.
+- Bloquear acciones solo cuando existe un error interno estructural.
 ========================================================= */
 (function (window, document) {
   "use strict";
@@ -26,7 +27,7 @@ Funciones:
     return String(valor === null || typeof valor === "undefined" ? "" : valor).trim();
   }
 
-  function mostrarError(titulo, mensaje) {
+  function mostrarError(titulo, mensaje, bloquear) {
     var contenedor = document.getElementById("estadoPrincipal");
     var tituloEl = document.getElementById("estadoTitulo");
     var mensajeEl = document.getElementById("estadoMensaje");
@@ -35,10 +36,12 @@ Funciones:
     if (tituloEl) tituloEl.textContent = titulo || "Error interno";
     if (mensajeEl) mensajeEl.textContent = mensaje || "La pantalla detectó un problema inesperado.";
 
-    ["btnProbarConexion", "btnComparar", "btnSincronizar"].forEach(function (id) {
-      var boton = document.getElementById(id);
-      if (boton) boton.disabled = true;
-    });
+    if (bloquear) {
+      ["btnProbarConexion", "btnComparar", "btnSincronizar"].forEach(function (id) {
+        var boton = document.getElementById(id);
+        if (boton) boton.disabled = true;
+      });
+    }
   }
 
   function verificar() {
@@ -76,7 +79,7 @@ Funciones:
 
     if (!resultado.ok) {
       console.error("[Sincronizacion.Integridad]", problemas);
-      mostrarError("Error interno de sincronización", problemas.join(" "));
+      mostrarError("Error interno de sincronización", problemas.join(" "), true);
     } else {
       console.info("[Sincronizacion.Integridad] Pantalla verificada correctamente.");
     }
@@ -90,7 +93,7 @@ Funciones:
     if (!mensaje) return;
 
     console.error("[Sincronizacion] Promesa no controlada:", motivo);
-    mostrarError("Operación de sincronización interrumpida", mensaje);
+    mostrarError("Operación de sincronización interrumpida", mensaje, false);
     event.preventDefault();
   });
 
@@ -100,7 +103,7 @@ Funciones:
 
     var mensaje = texto(event && event.message) || "Error inesperado en la pantalla de sincronización.";
     console.error("[Sincronizacion] Error global:", event && event.error || mensaje);
-    mostrarError("Error en la pantalla de sincronización", mensaje);
+    mostrarError("Error en la pantalla de sincronización", mensaje, false);
   });
 
   if (document.readyState === "loading") {
