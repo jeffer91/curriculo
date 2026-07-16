@@ -1,0 +1,228 @@
+<!-- =========================================================
+Nombre completo: sincronizacion.html
+Ruta: /Curriculo/sincronizacion/sincronizacion.html
+Funciones:
+- Mostrar el estado de la conexión entre BDLocal y Google Sheets.
+- Configurar y probar el endpoint de Google Apps Script.
+- Ejecutar comparación y sincronización manual de registros de prueba.
+- Configurar pruebas de sincronización automática.
+========================================================= -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sincronización | Gestión Curricular</title>
+  <link rel="stylesheet" href="../menu-superior/menu-superior.css?v=20260716-3" />
+  <link rel="stylesheet" href="./sincronizacion.css?v=20260716-1" />
+</head>
+<body>
+  <div class="sync-page">
+    <header class="sync-header">
+      <div>
+        <p class="sync-eyebrow">Gestión Curricular CCC</p>
+        <h1>Sincronización</h1>
+        <p class="sync-subtitle">Pruebas de conexión, comparación y actualización entre BDLocal y Google Sheets.</p>
+      </div>
+      <div class="sync-header-actions">
+        <span id="badgeEntorno" class="sync-environment">PRUEBAS</span>
+        <button id="btnRecargarEstado" class="sync-btn sync-btn-light" type="button">Actualizar estado</button>
+      </div>
+    </header>
+
+    <main>
+      <section id="estadoPrincipal" class="sync-status sync-status-neutral">
+        <span class="sync-status-dot"></span>
+        <div>
+          <strong id="estadoTitulo">Preparando sincronización...</strong>
+          <span id="estadoMensaje">Leyendo la configuración y la base local.</span>
+        </div>
+      </section>
+
+      <section class="sync-kpi-grid" aria-label="Estado de sincronización">
+        <article class="sync-kpi"><span>Conexión</span><strong id="kpiConexion">Sin configurar</strong><small id="kpiConexionDetalle">Google Sheets</small></article>
+        <article class="sync-kpi"><span>BDLocal</span><strong id="kpiLocal">0</strong><small>Materias registradas</small></article>
+        <article class="sync-kpi"><span>Google Sheets</span><strong id="kpiRemoto">0</strong><small>Registros de prueba</small></article>
+        <article class="sync-kpi sync-kpi-ok"><span>Sincronizados</span><strong id="kpiSincronizados">0</strong><small>Sin diferencias</small></article>
+        <article class="sync-kpi sync-kpi-warn"><span>Pendientes</span><strong id="kpiPendientes">0</strong><small>Esperando sincronización</small></article>
+        <article class="sync-kpi sync-kpi-error"><span>Conflictos</span><strong id="kpiConflictos">0</strong><small>Requieren revisión</small></article>
+        <article class="sync-kpi"><span>Última sincronización</span><strong id="kpiUltima">Nunca</strong><small id="kpiUltimaDetalle">Sin ejecuciones</small></article>
+      </section>
+
+      <section class="sync-grid sync-grid-config">
+        <article class="sync-panel">
+          <div class="sync-panel-head">
+            <div>
+              <p class="sync-section-number">1</p>
+              <h2>Conexión con Google Sheets</h2>
+              <p>Configura el endpoint de prueba sin modificar la información curricular.</p>
+            </div>
+          </div>
+
+          <form id="formConfiguracion" class="sync-form">
+            <label>
+              Entorno
+              <select id="campoEntorno">
+                <option value="pruebas">Pruebas</option>
+                <option value="produccion" disabled>Producción — se habilitará después</option>
+              </select>
+            </label>
+
+            <label class="sync-form-wide">
+              URL del Google Apps Script
+              <input id="campoEndpoint" type="url" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off" />
+              <small>No se guarda ninguna clave en GitHub.</small>
+            </label>
+
+            <label class="sync-form-wide">
+              ID del Google Sheets
+              <input id="campoSpreadsheetId" type="text" placeholder="ID del archivo de Google Sheets" autocomplete="off" />
+            </label>
+
+            <label>
+              Nombre del dispositivo
+              <input id="campoDispositivo" type="text" placeholder="equipo_jefferson" autocomplete="off" />
+            </label>
+
+            <label>
+              Token de prueba
+              <input id="campoToken" type="password" placeholder="Opcional" autocomplete="new-password" />
+            </label>
+
+            <div class="sync-form-actions sync-form-wide">
+              <button id="btnGuardarConfig" class="sync-btn sync-btn-primary" type="submit">Guardar configuración</button>
+              <button id="btnProbarConexion" class="sync-btn sync-btn-light" type="button">Probar conexión</button>
+              <button id="btnAbrirSheets" class="sync-btn sync-btn-light" type="button">Abrir Google Sheets</button>
+            </div>
+          </form>
+        </article>
+
+        <article class="sync-panel sync-panel-test">
+          <div class="sync-panel-head">
+            <div>
+              <p class="sync-section-number">2</p>
+              <h2>Registro local de prueba</h2>
+              <p>Permite comprobar versiones sin tocar materias, unidades o bibliografía.</p>
+            </div>
+          </div>
+
+          <div class="sync-test-box">
+            <div class="sync-test-summary">
+              <span>Hoja utilizada</span>
+              <strong>99_SYNC_TEST</strong>
+            </div>
+            <label>
+              Valor de prueba
+              <input id="campoValorPrueba" type="text" placeholder="Escribe un dato para probar" />
+            </label>
+            <div class="sync-test-version">
+              <span>Versión local actual</span>
+              <strong id="versionPruebaLocal">0</strong>
+            </div>
+            <button id="btnGuardarPruebaLocal" class="sync-btn sync-btn-secondary" type="button">Guardar nueva versión local</button>
+          </div>
+        </article>
+      </section>
+
+      <section class="sync-panel">
+        <div class="sync-panel-head sync-panel-head-actions">
+          <div>
+            <p class="sync-section-number">3</p>
+            <h2>Sincronización manual</h2>
+            <p>Primero compara. Después decide qué versión debe actualizar a la otra.</p>
+          </div>
+          <div class="sync-actions-row">
+            <button id="btnComparar" class="sync-btn sync-btn-light" type="button">Comparar bases</button>
+            <button id="btnSincronizar" class="sync-btn sync-btn-primary" type="button">Sincronizar ahora</button>
+          </div>
+        </div>
+
+        <div class="sync-direction-grid">
+          <div><span>BDLocal → Sheets</span><strong id="resumenLocalRemoto">0</strong></div>
+          <div><span>Sheets → BDLocal</span><strong id="resumenRemotoLocal">0</strong></div>
+          <div><span>Sin cambios</span><strong id="resumenIguales">0</strong></div>
+          <div><span>Conflictos</span><strong id="resumenConflictos">0</strong></div>
+        </div>
+
+        <div class="sync-table-wrap">
+          <table class="sync-table">
+            <thead>
+              <tr>
+                <th>Registro</th>
+                <th>BDLocal</th>
+                <th>Google Sheets</th>
+                <th>Resultado</th>
+              </tr>
+            </thead>
+            <tbody id="tablaComparacion">
+              <tr><td colspan="4" class="sync-empty">Todavía no se han comparado las bases.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="sync-grid sync-grid-bottom">
+        <article class="sync-panel">
+          <div class="sync-panel-head">
+            <div>
+              <p class="sync-section-number">4</p>
+              <h2>Sincronización automática</h2>
+              <p>Durante esta etapa funciona como prueba mientras esta pantalla permanezca abierta.</p>
+            </div>
+            <label class="sync-switch">
+              <input id="campoAutomatica" type="checkbox" />
+              <span></span>
+            </label>
+          </div>
+
+          <div class="sync-auto-options">
+            <label><input id="campoAlIniciar" type="checkbox" /> Sincronizar al abrir esta pantalla</label>
+            <label><input id="campoAlReconectar" type="checkbox" /> Sincronizar cuando regrese internet</label>
+            <label>
+              Intervalo
+              <select id="campoIntervalo">
+                <option value="5">Cada 5 minutos</option>
+                <option value="15">Cada 15 minutos</option>
+                <option value="30">Cada 30 minutos</option>
+                <option value="60">Cada 60 minutos</option>
+              </select>
+            </label>
+            <button id="btnGuardarAutomatica" class="sync-btn sync-btn-light" type="button">Guardar automatización</button>
+          </div>
+        </article>
+
+        <article class="sync-panel">
+          <div class="sync-panel-head">
+            <div>
+              <p class="sync-section-number">5</p>
+              <h2>Pendientes y conflictos</h2>
+              <p>Los problemas se conservan para revisarlos; no se sobrescriben en silencio.</p>
+            </div>
+          </div>
+          <div id="listaPendientes" class="sync-list"><p class="sync-muted">Sin pendientes registrados.</p></div>
+        </article>
+      </section>
+
+      <section class="sync-panel">
+        <div class="sync-panel-head">
+          <div>
+            <p class="sync-section-number">6</p>
+            <h2>Historial</h2>
+            <p>Últimas pruebas de conexión, comparación y sincronización.</p>
+          </div>
+          <button id="btnLimpiarHistorial" class="sync-btn sync-btn-danger-light" type="button">Limpiar historial</button>
+        </div>
+        <div id="listaHistorial" class="sync-history"><p class="sync-muted">Todavía no hay ejecuciones.</p></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="../menu-superior/menu-superior.js?v=20260716-3"></script>
+  <script src="../bdlocal/bdlocal.schema.js?v=20260713-7"></script>
+  <script src="../bdlocal/bdlocal.core.js?v=20260713-7"></script>
+  <script src="../sync/sync.storage.js?v=20260716-1"></script>
+  <script src="../sync/sync.versiones.js?v=20260716-1"></script>
+  <script src="../sync/sync.client.js?v=20260716-1"></script>
+  <script src="./sincronizacion.main.js?v=20260716-1"></script>
+</body>
+</html>
