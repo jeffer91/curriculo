@@ -6,13 +6,13 @@ Función o funciones:
 - Navegar de forma segura en navegador y Electron.
 - Incorporar el módulo Depuraciones mediante navegación local directa.
 - Cargar automáticamente diagnóstico global e inteligencia BDLocal.
-- Activar la apertura no bloqueante del detalle de materias en BDLocal.
+- Activar la revisión y edición segura del detalle de materias en BDLocal.
 ========================================================= */
 (function(window,document){
   "use strict";
   var MENU_ID="curriculoMenuSuperior";
   var ROOT_CLASS="cms-menu-mounted";
-  var VERSION_RECURSOS="20260716-2";
+  var VERSION_RECURSOS="20260716-3";
   var LINKS=[
     {id:"inicio",label:"Inicio",shortLabel:"Inicio",root:"index.html",child:"../index.html",icon:"⌂"},
     {id:"subir",label:"Subir ZIP",shortLabel:"Subir",root:"subir/subir.html",child:"../subir/subir.html",icon:"ZIP"},
