@@ -1,0 +1,130 @@
+<!-- =========================================================
+Nombre completo: depuraciones.html
+Ruta: /Curriculo/depuraciones/depuraciones.html
+Funciones:
+- Analizar numeración, verbos, repeticiones y versiones de las materias.
+- Permitir correcciones aprobadas únicamente sobre BDLocal.
+- Mostrar historial de cambios sin modificar ZIP ni Excel originales.
+========================================================= -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Depuraciones | Curriculo</title>
+  <link rel="stylesheet" href="../menu-superior/menu-superior.css?v=20260716-1" />
+  <link rel="stylesheet" href="./depuraciones.css?v=20260716-1" />
+</head>
+<body>
+  <main class="dep-page">
+    <header class="dep-hero">
+      <div>
+        <p class="dep-eyebrow">Control de calidad curricular</p>
+        <h1>Depuraciones</h1>
+        <p class="dep-subtitle">
+          Revisa numeración, verbos rectores, repeticiones y cambios entre versiones.
+          Las correcciones aprobadas se guardan únicamente en BDLocal.
+        </p>
+      </div>
+      <div class="dep-hero-note">
+        <strong>Trabajo seguro</strong>
+        <span>No modifica los ZIP ni los archivos Excel originales.</span>
+      </div>
+    </header>
+
+    <section id="depEstado" class="dep-status dep-status-neutral" aria-live="polite">
+      <span class="dep-status-dot"></span>
+      <div><strong>Inicializando</strong><span>Conectando con BDLocal.</span></div>
+    </section>
+
+    <section class="dep-panel dep-filtros">
+      <div class="dep-field">
+        <label for="depCarrera">Carrera</label>
+        <select id="depCarrera"><option value="">Cargando carreras...</option></select>
+      </div>
+      <div class="dep-field">
+        <label for="depMateria">Materia</label>
+        <select id="depMateria" disabled><option value="">Selecciona una carrera</option></select>
+      </div>
+      <div class="dep-actions">
+        <button id="btnAnalizarMateria" class="dep-btn dep-btn-primary" type="button" disabled>Analizar materia</button>
+        <button id="btnAnalizarCarrera" class="dep-btn dep-btn-light" type="button" disabled>Analizar carrera</button>
+      </div>
+    </section>
+
+    <section id="depMateriaInfo" class="dep-materia-info dep-hidden"></section>
+
+    <section class="dep-stats" aria-label="Resumen de la depuración">
+      <article><span>Hallazgos</span><strong id="statHallazgos">0</strong></article>
+      <article class="dep-stat-error"><span>Errores</span><strong id="statErrores">0</strong></article>
+      <article class="dep-stat-warn"><span>Advertencias</span><strong id="statAdvertencias">0</strong></article>
+      <article class="dep-stat-ok"><span>Correctos</span><strong id="statCorrectos">0</strong></article>
+      <article><span>Versión</span><strong id="statVersion">—</strong></article>
+    </section>
+
+    <nav class="dep-tabs" aria-label="Resultados de depuración">
+      <button class="dep-tab dep-tab-active" type="button" data-tab="resumen">Resumen</button>
+      <button class="dep-tab" type="button" data-tab="numeracion">Numeración</button>
+      <button class="dep-tab" type="button" data-tab="verbos">Competencias y resultados</button>
+      <button class="dep-tab" type="button" data-tab="duplicados">Repeticiones</button>
+      <button class="dep-tab" type="button" data-tab="versiones">Versiones</button>
+    </nav>
+
+    <section id="tabResumen" class="dep-tab-panel dep-tab-panel-active">
+      <div class="dep-panel-head">
+        <div><h2>Resumen general</h2><p>Selecciona una materia y ejecuta el análisis.</p></div>
+      </div>
+      <div id="depResumen" class="dep-empty">Aún no se ha ejecutado una depuración.</div>
+    </section>
+
+    <section id="tabNumeracion" class="dep-tab-panel">
+      <div class="dep-panel-head"><div><h2>Numeración de componentes</h2><p>Orden, continuidad, padres, duplicados y profundidad.</p></div></div>
+      <div id="listaNumeracion" class="dep-lista"><div class="dep-empty">Sin análisis.</div></div>
+    </section>
+
+    <section id="tabVerbos" class="dep-tab-panel">
+      <div class="dep-panel-head"><div><h2>Competencias y resultados</h2><p>Primer verbo, forma gramatical, observabilidad y nivel de Bloom.</p></div></div>
+      <div id="listaVerbos" class="dep-lista"><div class="dep-empty">Sin análisis.</div></div>
+    </section>
+
+    <section id="tabDuplicados" class="dep-tab-panel">
+      <div class="dep-panel-head"><div><h2>Repeticiones y duplicados</h2><p>Coincidencias exactas y posibles repeticiones dentro de la materia.</p></div></div>
+      <div id="listaDuplicados" class="dep-lista"><div class="dep-empty">Sin análisis.</div></div>
+    </section>
+
+    <section id="tabVersiones" class="dep-tab-panel">
+      <div class="dep-panel-head">
+        <div><h2>Historial de versiones</h2><p>Cada cambio semántico conserva una copia anterior y un resumen de diferencias.</p></div>
+        <button id="btnRecargarVersiones" class="dep-btn dep-btn-light" type="button" disabled>Recargar historial</button>
+      </div>
+      <div id="listaVersiones" class="dep-lista"><div class="dep-empty">Selecciona una materia.</div></div>
+    </section>
+  </main>
+
+  <div id="depModal" class="dep-modal dep-hidden" role="dialog" aria-modal="true" aria-labelledby="depModalTitulo">
+    <div class="dep-modal-card">
+      <button id="depModalCerrar" class="dep-modal-close" type="button" aria-label="Cerrar">×</button>
+      <h2 id="depModalTitulo">Editar en BDLocal</h2>
+      <p id="depModalAyuda"></p>
+      <textarea id="depModalTexto" rows="8"></textarea>
+      <div class="dep-modal-actions">
+        <button id="depModalCancelar" class="dep-btn dep-btn-light" type="button">Cancelar</button>
+        <button id="depModalGuardar" class="dep-btn dep-btn-primary" type="button">Guardar corrección</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../menu-superior/menu-superior.js?v=20260716-1"></script>
+  <script src="../bdlocal/bdlocal.schema.js?v=20260716-1"></script>
+  <script src="../bdlocal/bdlocal.core.js?v=20260716-1"></script>
+  <script src="../bdlocal/bdlocal.api.js?v=20260716-1"></script>
+  <script src="../bdlocal/bdlocal.consultas.js?v=20260716-1"></script>
+  <script src="./depuraciones.reglas.js?v=20260716-1"></script>
+  <script src="./depuraciones.bdlocal.js?v=20260716-1"></script>
+  <script src="./depuraciones.numeracion.js?v=20260716-1"></script>
+  <script src="./depuraciones.verbos.js?v=20260716-1"></script>
+  <script src="./depuraciones.duplicados.js?v=20260716-1"></script>
+  <script src="./depuraciones.versiones.js?v=20260716-1"></script>
+  <script src="./depuraciones.main.js?v=20260716-1"></script>
+</body>
+</html>
