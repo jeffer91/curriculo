@@ -1,0 +1,47 @@
+name: Verificar sincronización
+
+on:
+  push:
+    paths:
+      - "sincronizacion/**"
+      - "sync/**"
+      - "apps-script/**"
+      - "scripts/sync-rules.test.js"
+      - ".github/workflows/sync-check.yml"
+  pull_request:
+    paths:
+      - "sincronizacion/**"
+      - "sync/**"
+      - "apps-script/**"
+      - "scripts/sync-rules.test.js"
+      - ".github/workflows/sync-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  comprobar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Verificar sintaxis JavaScript
+        run: |
+          node --check sync/sync.storage.js
+          node --check sync/sync.versiones.js
+          node --check sync/sync.version-history.js
+          node --check sync/sync.client.js
+          node --check sync/sync.selftest.js
+          node --check sincronizacion/sincronizacion.controlador.js
+          node --check sincronizacion/sincronizacion.integridad.js
+
+      - name: Verificar sintaxis Apps Script
+        run: |
+          cp apps-script/Code.gs /tmp/Code.js
+          node --check /tmp/Code.js
+
+      - name: Probar reglas de versión
+        run: node scripts/sync-rules.test.js
