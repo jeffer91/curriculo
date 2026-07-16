@@ -1,12 +1,12 @@
 /* =========================================================
 Nombre completo: bdlocal.schema.js
-Ruta o ubicación: /gestion-curricular-ccc/bdlocal/bdlocal.schema.js
+Ruta o ubicación: /Curriculo/bdlocal/bdlocal.schema.js
 Función o funciones:
 - Definir el nombre, versión y estructura oficial de la base IndexedDB.
 - Declarar tablas e índices para Gestión Curricular CCC.
-- Preparar almacenamiento de carreras, matrices, niveles, materias y archivos PEA.
-- Preparar almacenamiento de datos procesados desde Excel: PEA Base, PEA Unidades y PEA Actividades.
-- Centralizar estados, tipos de archivos PEA y utilidades base de normalización.
+- Preparar almacenamiento de carreras, materias y archivos PEA.
+- Incorporar depuraciones, hallazgos, versiones y cambios curriculares.
+- Centralizar estados, tipos y utilidades de normalización.
 ========================================================= */
 
 (function (window) {
@@ -15,9 +15,8 @@ Función o funciones:
   window.BDLocalCCC = window.BDLocalCCC || {};
 
   var NS = window.BDLocalCCC;
-
   var DB_NAME = "BD_GESTION_CURRICULAR_CCC";
-  var DB_VERSION = 2;
+  var DB_VERSION = 3;
 
   var ESTADOS_VALIDACION = Object.freeze({
     COMPLETO: "completo",
@@ -52,7 +51,11 @@ Función o funciones:
     PEA_UNIDADES: "pea_unidades",
     PEA_ACTIVIDADES: "pea_actividades",
     VALIDACIONES: "validaciones",
-    LOGS_IMPORTACION: "logs_importacion"
+    LOGS_IMPORTACION: "logs_importacion",
+    DEPURACION_EJECUCIONES: "depuracion_ejecuciones",
+    DEPURACION_HALLAZGOS: "depuracion_hallazgos",
+    MATERIA_VERSIONES: "materia_versiones",
+    MATERIA_CAMBIOS: "materia_cambios"
   });
 
   var STORE_DEFINITIONS = [
@@ -204,6 +207,50 @@ Función o funciones:
         { name: "nivel", keyPath: "nivel", options: { unique: false } },
         { name: "creadoEn", keyPath: "creadoEn", options: { unique: false } }
       ]
+    },
+    {
+      name: STORES.DEPURACION_EJECUCIONES,
+      options: { keyPath: "id" },
+      indexes: [
+        { name: "materiaId", keyPath: "materiaId", options: { unique: false } },
+        { name: "carreraId", keyPath: "carreraId", options: { unique: false } },
+        { name: "estado", keyPath: "estado", options: { unique: false } },
+        { name: "creadoEn", keyPath: "creadoEn", options: { unique: false } }
+      ]
+    },
+    {
+      name: STORES.DEPURACION_HALLAZGOS,
+      options: { keyPath: "id" },
+      indexes: [
+        { name: "ejecucionId", keyPath: "ejecucionId", options: { unique: false } },
+        { name: "materiaId", keyPath: "materiaId", options: { unique: false } },
+        { name: "tipo", keyPath: "tipo", options: { unique: false } },
+        { name: "severidad", keyPath: "severidad", options: { unique: false } },
+        { name: "estado", keyPath: "estado", options: { unique: false } },
+        { name: "creadoEn", keyPath: "creadoEn", options: { unique: false } }
+      ]
+    },
+    {
+      name: STORES.MATERIA_VERSIONES,
+      options: { keyPath: "id" },
+      indexes: [
+        { name: "materiaId", keyPath: "materiaId", options: { unique: false } },
+        { name: "carreraId", keyPath: "carreraId", options: { unique: false } },
+        { name: "version", keyPath: "version", options: { unique: false } },
+        { name: "hashSemantico", keyPath: "hashSemantico", options: { unique: false } },
+        { name: "creadoEn", keyPath: "creadoEn", options: { unique: false } }
+      ]
+    },
+    {
+      name: STORES.MATERIA_CAMBIOS,
+      options: { keyPath: "id" },
+      indexes: [
+        { name: "materiaId", keyPath: "materiaId", options: { unique: false } },
+        { name: "versionNueva", keyPath: "versionNueva", options: { unique: false } },
+        { name: "tipoCambio", keyPath: "tipoCambio", options: { unique: false } },
+        { name: "seccion", keyPath: "seccion", options: { unique: false } },
+        { name: "creadoEn", keyPath: "creadoEn", options: { unique: false } }
+      ]
     }
   ];
 
@@ -231,7 +278,6 @@ Función o funciones:
       .replace(/\./g, "")
       .replace(/\s+/g, "_")
       .replace(/[^a-z0-9_]/g, "");
-
     return limpio || "sin_nombre";
   }
 
@@ -259,11 +305,7 @@ Función o funciones:
 
   function crearIdMateria(carreraId, nivelId, codigo, nombreMateria) {
     var codigoLimpio = normalizarCodigo(codigo || "");
-
-    if (codigoLimpio) {
-      return "materia_" + slug(carreraId) + "_" + slug(codigoLimpio);
-    }
-
+    if (codigoLimpio) return "materia_" + slug(carreraId) + "_" + slug(codigoLimpio);
     return "materia_" + slug(carreraId) + "_" + slug(nivelId) + "_" + slug(nombreMateria);
   }
 
@@ -285,7 +327,6 @@ Función o funciones:
     ESTADOS_VALIDACION: ESTADOS_VALIDACION,
     TIPOS_PEA: TIPOS_PEA,
     SEVERIDADES: SEVERIDADES,
-
     normalizarTexto: normalizarTexto,
     normalizarCodigo: normalizarCodigo,
     slug: slug,
