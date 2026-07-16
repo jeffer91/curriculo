@@ -2,8 +2,9 @@
 Nombre completo: sync.client.js
 Ruta: /Curriculo/sync/sync.client.js
 Funciones:
-- Probar la conexión con el endpoint de Google Apps Script.
-- Enviar solicitudes de comparación y sincronización.
+- Validar que la conexión use un Web App de Google Apps Script.
+- Probar, listar, comparar y sincronizar mediante solicitudes POST.
+- Evitar exponer el token en la URL.
 - Aplicar timeout y devolver errores claros sin modificar BDLocal.
 ========================================================= */
 (function (window) {
@@ -17,9 +18,32 @@ Funciones:
   }
 
   function validarEndpoint(endpoint) {
-    var url = texto(endpoint);
-    if (!/^https:\/\//i.test(url)) throw new Error("El endpoint debe comenzar con https://");
-    return url;
+    var valor = texto(endpoint);
+    var url;
+
+    if (!valor) throw new Error("Falta la URL del Google Apps Script.");
+
+    try {
+      url = new URL(valor);
+    } catch (error) {
+      throw new Error("La URL del Google Apps Script no es válida.");
+    }
+
+    if (url.protocol !== "https:") {
+      throw new Error("El endpoint debe utilizar https://");
+    }
+
+    if (url.hostname !== "script.google.com") {
+      throw new Error("El endpoint debe pertenecer a script.google.com.");
+    }
+
+    if (!/^\/macros\/s\/[^/]+\/(exec|dev)\/?$/i.test(url.pathname)) {
+      throw new Error("La URL debe corresponder a una implementación Web App terminada en /exec o /dev.");
+    }
+
+    url.search = "";
+    url.hash = "";
+    return url.toString();
   }
 
   function conTimeout(promesa, ms) {
@@ -29,7 +53,7 @@ Funciones:
         if (finalizada) return;
         finalizada = true;
         reject(new Error("La conexión superó el tiempo máximo de espera."));
-      }, Number(ms || 20000));
+      }, Number(ms || 25000));
 
       Promise.resolve(promesa).then(function (resultado) {
         if (finalizada) return;
@@ -46,14 +70,22 @@ Funciones:
   }
 
   async function fetchJSON(url, opciones) {
-    var respuesta = await conTimeout(window.fetch(url, opciones || {}), 25000);
+    var respuesta;
+
+    try {
+      respuesta = await conTimeout(window.fetch(url, opciones || {}), 25000);
+    } catch (errorFetch) {
+      if (!navigator.onLine) throw new Error("No hay conexión a internet.");
+      throw new Error("No se pudo contactar Google Apps Script: " + (errorFetch.message || errorFetch));
+    }
+
     var textoRespuesta = await respuesta.text();
     var datos;
 
     try {
       datos = textoRespuesta ? JSON.parse(textoRespuesta) : {};
     } catch (errorJSON) {
-      throw new Error("El endpoint respondió, pero no devolvió JSON válido.");
+      throw new Error("El endpoint respondió, pero no devolvió JSON válido. Revisa la implementación y los permisos.");
     }
 
     if (!respuesta.ok || datos.ok === false) {
@@ -73,17 +105,6 @@ Funciones:
     return Object.assign(base, extras || {});
   }
 
-  async function get(config, accion, extras) {
-    var endpoint = validarEndpoint(config && config.endpoint);
-    var params = parametros(config, Object.assign({ action: accion }, extras || {}));
-    var query = Object.keys(params).filter(function (clave) {
-      return params[clave] !== "" && params[clave] !== null && typeof params[clave] !== "undefined";
-    }).map(function (clave) {
-      return encodeURIComponent(clave) + "=" + encodeURIComponent(String(params[clave]));
-    }).join("&");
-    return await fetchJSON(endpoint + (endpoint.indexOf("?") === -1 ? "?" : "&") + query, { method: "GET", cache: "no-store" });
-  }
-
   async function post(config, accion, payload) {
     var endpoint = validarEndpoint(config && config.endpoint);
     var body = parametros(config, {
@@ -96,16 +117,19 @@ Funciones:
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify(body),
-      cache: "no-store"
+      cache: "no-store",
+      credentials: "omit",
+      redirect: "follow",
+      referrerPolicy: "no-referrer"
     });
   }
 
   async function probarConexion(config) {
-    return await get(config, "ping");
+    return await post(config, "ping", {});
   }
 
   async function listarPruebas(config) {
-    return await get(config, "listar_test");
+    return await post(config, "listar_test", {});
   }
 
   async function compararPruebas(config, registros) {
@@ -122,7 +146,6 @@ Funciones:
     listarPruebas: listarPruebas,
     compararPruebas: compararPruebas,
     sincronizarPruebas: sincronizarPruebas,
-    get: get,
     post: post
   };
 })(window);
