@@ -324,8 +324,20 @@ Funciones:
   }
 
   function fusionarAdvertenciasComoValidaciones(paquete, validaciones) {
+    var regeneradasPorMateria = {
+      materia_incompleta: true,
+      archivos_duplicados: true,
+      archivos_no_identificados: true,
+      excel_con_error_lectura: true,
+      excel_no_leido: true
+    };
+
     arr(paquete.advertencias).forEach(function (advertencia) {
-      if (advertencia.tipo === "archivos_baja_confianza") return;
+      if (
+        advertencia.tipo === "archivos_baja_confianza" ||
+        regeneradasPorMateria[advertencia.tipo]
+      ) return;
+
       validaciones.push(crearValidacion({
         tipo: advertencia.tipo || "advertencia_previa",
         severidad: advertencia.severidad || "advertencia",
@@ -358,13 +370,17 @@ Funciones:
     }
   }
 
-  function detalleArchivos(archivos) {
+  function detalleArchivos(archivos, estado, motivo) {
     return arr(archivos).map(function (archivo) {
       return {
         archivoId: archivo.id || "",
         nombreArchivo: archivo.nombreArchivo || "",
         tipo: nombreTipo(archivo.tipo),
+        tipoCodigo: archivo.tipo || "",
         rutaOriginal: archivo.rutaOriginal || "",
+        estado: estado || (archivo.excelLeido === true ? "leido" : "no_leido"),
+        motivo: motivo || "",
+        excelLeido: archivo.excelLeido === true,
         error: archivo.errorExcel || archivo.errorLectura || ""
       };
     });
@@ -374,10 +390,20 @@ Funciones:
     var porMateria = agruparArchivosPorMateria(paquete.archivos);
     return arr(paquete.materias).map(function (materia) {
       var evaluacion = evaluarMateria(materia, porMateria[materia.id] || []);
+      var carrera = arr(paquete.carreras).find(function (item) {
+        return item.id === materia.carreraId;
+      }) || {};
+      var nivel = arr(paquete.niveles).find(function (item) {
+        return item.id === materia.nivelId;
+      }) || {};
       var base = {
         carreraId: materia.carreraId,
         nivelId: materia.nivelId,
-        materiaId: materia.id
+        materiaId: materia.id,
+        carrera: carrera.nombre || "",
+        nivel: nivel.nombre || "",
+        codigoMateria: materia.codigo || "",
+        materia: materia.nombre || ""
       };
       function agregar(data) {
         validaciones.push(crearValidacion(Object.assign({}, base, data)));
@@ -403,22 +429,38 @@ Funciones:
       if (evaluacion.noIdentificados.length) agregar({
         tipo: "archivos_no_identificados", severidad: "advertencia",
         mensaje: "Hay archivos dentro de una materia que no pudieron clasificarse automáticamente.",
-        detalle: detalleArchivos(evaluacion.noIdentificados)
+        detalle: detalleArchivos(
+          evaluacion.noIdentificados,
+          "no_identificado",
+          "No se pudo determinar si corresponde a PEA Base, Unidades o Actividades."
+        )
       });
       if (evaluacion.erroresLectura.length) agregar({
         tipo: "error_lectura_excel", severidad: "error",
         mensaje: "Hay Excel clasificados que no pudieron leerse internamente.",
-        detalle: detalleArchivos(evaluacion.erroresLectura)
+        detalle: detalleArchivos(
+          evaluacion.erroresLectura,
+          "error_lectura",
+          "El lector de Excel devolvió un error al abrir el archivo."
+        )
       });
       if (evaluacion.noLeidos.length) agregar({
         tipo: "excel_no_procesado", severidad: "error",
         mensaje: "Hay Excel curriculares detectados que no quedaron marcados como leídos.",
-        detalle: detalleArchivos(evaluacion.noLeidos)
+        detalle: detalleArchivos(
+          evaluacion.noLeidos,
+          "no_leido",
+          "El archivo fue detectado dentro del ZIP, pero no fue procesado."
+        )
       });
       if (evaluacion.contenidoVacio.length) agregar({
         tipo: "excel_sin_contenido_curricular", severidad: "error",
         mensaje: "Hay Excel leídos que no produjeron registros curriculares útiles.",
-        detalle: detalleArchivos(evaluacion.contenidoVacio)
+        detalle: detalleArchivos(
+          evaluacion.contenidoVacio,
+          "sin_contenido_curricular",
+          "El archivo se abrió, pero no contiene registros curriculares reconocibles."
+        )
       });
       if (evaluacion.observacionesContenido.length) agregar({
         tipo: "contenido_base_incompleto", severidad: "advertencia",

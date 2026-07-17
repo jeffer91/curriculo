@@ -97,6 +97,247 @@ Función o funciones:
     return "No identificado";
   }
 
+  function arr(valor) {
+    if (Array.isArray(valor)) return valor;
+    if (valor === null || typeof valor === "undefined") return [];
+    return [valor];
+  }
+
+  function obtenerMateria(paquete, materiaId) {
+    return (paquete.materias || []).find(function (materia) {
+      return materia.id === materiaId;
+    }) || null;
+  }
+
+  function obtenerArchivo(paquete, archivoId) {
+    if (!archivoId) return null;
+
+    return (paquete.archivos || []).find(function (archivo) {
+      return archivo.id === archivoId;
+    }) || null;
+  }
+
+  function nombreObservacion(tipo) {
+    var nombres = {
+      lectura_excel_parcial: "Lectura parcial de archivos Excel",
+      lectura_excel_total_fallida: "No se pudo leer el contenido curricular",
+      materia_incompleta: "Faltan archivos PEA obligatorios",
+      contenido_pea_invalido: "PEA sin contenido curricular válido",
+      archivos_duplicados: "Archivos PEA duplicados",
+      archivos_no_identificados: "Archivos sin clasificar",
+      error_lectura_excel: "Error al leer un Excel",
+      excel_no_procesado: "Excel detectado, pero no procesado",
+      excel_sin_contenido_curricular: "Excel sin contenido curricular reconocido",
+      contenido_base_incompleto: "PEA Base con campos incompletos",
+      carrera_baja_confianza: "Carrera detectada con baja confianza",
+      nivel_baja_confianza: "Nivel detectado con baja confianza"
+    };
+
+    if (nombres[tipo]) return nombres[tipo];
+
+    var limpio = texto(tipo || "Observación").replace(/_/g, " ");
+    return limpio.charAt(0).toUpperCase() + limpio.slice(1);
+  }
+
+  function nombreEstadoArchivo(estado) {
+    var estados = {
+      correcto: "Leído correctamente",
+      leido: "Leído correctamente",
+      error_lectura: "Error de lectura",
+      no_leido: "No procesado",
+      sin_contenido_binario: "No extraído del ZIP",
+      sin_datos: "Sin datos procesados",
+      sin_contenido_curricular: "Sin contenido curricular",
+      no_identificado: "Tipo de PEA no identificado"
+    };
+
+    return estados[estado] || texto(estado || "Requiere revisión").replace(/_/g, " ");
+  }
+
+  function tipoPEAVisible(item) {
+    item = item || {};
+
+    var codigo = item.tipoCodigo || item.tipoPEA || "";
+    if (!codigo && /^pea_/.test(texto(item.tipo))) codigo = item.tipo;
+    if (codigo) return nombreTipo(codigo);
+
+    return item.tipoPEALabel || item.tipoLabel || item.tipo || "No identificado";
+  }
+
+  function detallesArchivoValidacion(paquete, validacion) {
+    var detalle = validacion && validacion.detalle;
+    var candidatos = [];
+
+    if (Array.isArray(detalle)) {
+      candidatos = detalle.filter(function (item) {
+        return item && (item.archivoId || item.nombreArchivo || item.rutaOriginal);
+      });
+    } else if (detalle && Array.isArray(detalle.archivosProblema)) {
+      candidatos = detalle.archivosProblema;
+    }
+
+    if (!candidatos.length && validacion && (
+      validacion.archivoId || validacion.nombreArchivo || validacion.rutaOriginal
+    )) {
+      candidatos = [validacion];
+    }
+
+    return candidatos.map(function (item) {
+      var original = obtenerArchivo(paquete, item.archivoId);
+      return Object.assign({}, original || {}, item || {});
+    });
+  }
+
+  function contextoValidacion(paquete, validacion) {
+    var detallesArchivo = detallesArchivoValidacion(paquete, validacion);
+    var archivo = detallesArchivo[0] || {};
+    var materiaId = validacion.materiaId || archivo.materiaId || "";
+    var materia = obtenerMateria(paquete, materiaId) || {};
+    var carreraId = validacion.carreraId || materia.carreraId || archivo.carreraId || "";
+    var nivelId = validacion.nivelId || materia.nivelId || archivo.nivelId || "";
+    var carrera = obtenerCarrera(paquete, carreraId) || {};
+    var nivel = obtenerNivel(paquete, nivelId) || {};
+
+    return {
+      carrera: validacion.carrera || carrera.nombre || "",
+      nivel: validacion.nivel || nivel.nombre || "",
+      codigo: validacion.codigoMateria || materia.codigo || "",
+      materia: validacion.materia || materia.nombre || ""
+    };
+  }
+
+  function renderContextoValidacion(contexto) {
+    var ubicacion = [contexto.carrera, contexto.nivel].filter(Boolean).join(" · ");
+    var materia = [contexto.codigo, contexto.materia].filter(Boolean).join(" · ");
+
+    if (!ubicacion && !materia) return "";
+
+    return (
+      '<div class="subir-validation-context">' +
+        (materia ? '<strong>' + escapar(materia) + '</strong>' : "") +
+        (ubicacion ? '<span>' + escapar(ubicacion) + '</span>' : "") +
+      '</div>'
+    );
+  }
+
+  function renderResumenLectura(validacion) {
+    var detalle = validacion && validacion.detalle;
+
+    if (!detalle || ["lectura_excel_parcial", "lectura_excel_total_fallida"].indexOf(validacion.tipo) === -1) {
+      return "";
+    }
+
+    return (
+      '<div class="subir-validation-stats">' +
+        '<div><strong>' + escapar(detalle.totalExcelDetectados || 0) + '</strong><span>Detectados</span></div>' +
+        '<div><strong>' + escapar(detalle.totalExcelLeidos || 0) + '</strong><span>Leídos</span></div>' +
+        '<div><strong>' + escapar(detalle.totalErroresExcel || 0) + '</strong><span>Con error</span></div>' +
+        '<div><strong>' + escapar(detalle.totalSinDatos || 0) + '</strong><span>Sin datos</span></div>' +
+      '</div>'
+    );
+  }
+
+  function renderDetallesGenerales(validacion) {
+    var detalle = validacion && validacion.detalle;
+    var bloques = [];
+
+    if (!detalle) return "";
+
+    if (!Array.isArray(detalle)) {
+      if (arr(detalle.faltantes).length) {
+        bloques.push("Faltan: " + arr(detalle.faltantes).join(", "));
+      }
+      if (arr(detalle.tiposSinContenido).length) {
+        bloques.push("Sin contenido válido: " + arr(detalle.tiposSinContenido).join(", "));
+      }
+    }
+
+    if (Array.isArray(detalle)) {
+      detalle.forEach(function (item) {
+        if (item && Array.isArray(item.archivos)) {
+          bloques.push((item.tipo || "PEA duplicado") + ": " + item.archivos.join(", "));
+        }
+        arr(item && item.observaciones).forEach(function (observacion) {
+          bloques.push(observacion);
+        });
+      });
+    }
+
+    if (!bloques.length) return "";
+
+    return '<ul class="subir-validation-notes">' + bloques.map(function (bloque) {
+      return '<li>' + escapar(bloque) + '</li>';
+    }).join("") + '</ul>';
+  }
+
+  function renderArchivosValidacion(paquete, validacion) {
+    var archivos = detallesArchivoValidacion(paquete, validacion);
+
+    // La alerta global muestra únicamente el resumen. Los archivos se detallan
+    // en las observaciones específicas de cada materia para evitar duplicados.
+    if (["lectura_excel_parcial", "lectura_excel_total_fallida"].indexOf(validacion.tipo) !== -1) {
+      return "";
+    }
+
+    if (!archivos.length) return "";
+
+    return '<div class="subir-validation-files">' + archivos.map(function (archivo) {
+      var error = texto(archivo.errorTecnico || archivo.error || archivo.errorExcel || archivo.errorLectura);
+      var motivo = texto(archivo.motivo);
+      var estado = nombreEstadoArchivo(archivo.estado || (error ? "error_lectura" : ""));
+
+      return (
+        '<div class="subir-validation-file">' +
+          '<div class="subir-validation-file-head">' +
+            '<strong>' + escapar(archivo.nombreArchivo || "Archivo no identificado") + '</strong>' +
+            '<span>' + escapar(estado) + '</span>' +
+          '</div>' +
+          '<p><b>Tipo:</b> ' + escapar(tipoPEAVisible(archivo)) + '</p>' +
+          (motivo ? '<p><b>Motivo:</b> ' + escapar(motivo) + '</p>' : "") +
+          (archivo.rutaOriginal ? '<p><b>Ruta:</b> ' + escapar(archivo.rutaOriginal) + '</p>' : "") +
+          (error ? '<details><summary>Ver detalle técnico</summary><code>' + escapar(error) + '</code></details>' : "") +
+        '</div>'
+      );
+    }).join("") + '</div>';
+  }
+
+  function renderTarjetaValidacion(paquete, validacion) {
+    var contexto = contextoValidacion(paquete, validacion);
+
+    return (
+      '<article class="subir-validation subir-validation-' + claseEstado(validacion.severidad) + '">' +
+        '<div class="subir-validation-main">' +
+          '<div class="subir-validation-title">' +
+            '<strong>' + escapar(nombreObservacion(validacion.tipo)) + '</strong>' +
+          '</div>' +
+          renderContextoValidacion(contexto) +
+          '<p class="subir-validation-message">' + escapar(validacion.mensaje || "") + '</p>' +
+          renderResumenLectura(validacion) +
+          renderDetallesGenerales(validacion) +
+          renderArchivosValidacion(paquete, validacion) +
+        '</div>' +
+        badge(validacion.severidad || "info", validacion.severidad || "info") +
+      '</article>'
+    );
+  }
+
+  function estadoLecturaArchivo(archivo) {
+    var error = texto(archivo && (archivo.errorExcel || archivo.errorLectura));
+    var datos = archivo && archivo.datosProcesados;
+    var tieneDatos = Array.isArray(datos)
+      ? datos.length > 0
+      : !!datos && typeof datos === "object" && Object.keys(datos).length > 0;
+
+    if (error) return { texto: "Error de lectura", clase: "error", error: error };
+    if (archivo && archivo.excelLeido === true && tieneDatos) {
+      return { texto: "Leído correctamente", clase: "ok", error: "" };
+    }
+    if (archivo && archivo.excelLeido === true) {
+      return { texto: "Leído sin contenido útil", clase: "warn", error: "" };
+    }
+    return { texto: "No procesado", clase: "warn", error: "" };
+  }
+
   function agruparArchivosPorMateria(archivos) {
     var mapa = {};
 
@@ -313,17 +554,15 @@ Función o funciones:
       return;
     }
 
-    cont.innerHTML = validaciones.slice(0, 80).map(function (validacion) {
-      return (
-        '<div class="subir-validation subir-validation-' + claseEstado(validacion.severidad) + '">' +
-          '<div>' +
-            '<strong>' + escapar(validacion.tipo || "validacion") + '</strong>' +
-            '<span>' + escapar(validacion.mensaje || "") + '</span>' +
-          '</div>' +
-          badge(validacion.severidad || "info", validacion.severidad || "info") +
-        '</div>'
-      );
-    }).join("");
+    cont.innerHTML = (
+      '<div class="subir-validation-count">' +
+        '<strong>' + escapar(validaciones.length) + ' observación' + (validaciones.length === 1 ? "" : "es") + '</strong>' +
+        '<span>Se muestra la materia, el Excel afectado y la causa detectada.</span>' +
+      '</div>' +
+      validaciones.slice(0, 80).map(function (validacion) {
+        return renderTarjetaValidacion(paquete, validacion);
+      }).join("")
+    );
   }
 
   function pintarCarrerasYNiveles(paquete) {
@@ -409,11 +648,13 @@ Función o funciones:
       (
         archivos.length
           ? '<div class="subir-file-list">' + archivos.map(function (archivo) {
+              var lectura = estadoLecturaArchivo(archivo);
               return (
                 '<div class="subir-file-item">' +
                   '<strong>' + escapar(archivo.nombreArchivo || "") + '</strong>' +
-                  '<span>' + escapar(nombreTipo(archivo.tipo)) + ' · ' + escapar(archivo.confianza || 0) + '% · ' + escapar(archivo.estado || "") + '</span>' +
+                  '<span>' + escapar(nombreTipo(archivo.tipo)) + ' · ' + escapar(archivo.confianza || 0) + '% · ' + escapar(lectura.texto) + '</span>' +
                   '<small>' + escapar(archivo.rutaOriginal || "") + '</small>' +
+                  (lectura.error ? '<small class="subir-file-error">' + escapar(lectura.error) + '</small>' : "") +
                 '</div>'
               );
             }).join("") + '</div>'
@@ -423,14 +664,8 @@ Función o funciones:
       '<h3>Observaciones de esta materia</h3>' +
       (
         validaciones.length
-          ? '<div class="subir-file-list">' + validaciones.map(function (validacion) {
-              return (
-                '<div class="subir-file-item">' +
-                  '<strong>' + escapar(validacion.tipo || "") + '</strong>' +
-                  '<span>' + escapar(validacion.severidad || "") + '</span>' +
-                  '<small>' + escapar(validacion.mensaje || "") + '</small>' +
-                '</div>'
-              );
+          ? '<div class="subir-validations">' + validaciones.map(function (validacion) {
+              return renderTarjetaValidacion(paquete, validacion);
             }).join("") + '</div>'
           : '<p class="subir-muted">Sin observaciones para esta materia.</p>'
       );

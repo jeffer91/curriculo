@@ -596,7 +596,12 @@ Función o funciones:
       } catch (error) {
         errores.push({
           archivoId: archivo.id,
+          carreraId: archivo.carreraId || "",
+          nivelId: archivo.nivelId || "",
+          materiaId: archivo.materiaId || "",
           nombreArchivo: archivo.nombreArchivo,
+          tipo: archivo.tipo || "",
+          tipoLabel: archivo.tipoLabel || "",
           rutaOriginal: archivo.rutaOriginal,
           error: error.message
         });
@@ -617,7 +622,12 @@ Función o funciones:
         severidad: "advertencia",
         mensaje: "No se pudo leer internamente un Excel.",
         archivoId: error.archivoId,
+        carreraId: error.carreraId,
+        nivelId: error.nivelId,
+        materiaId: error.materiaId,
         nombreArchivo: error.nombreArchivo,
+        tipoPEA: error.tipo,
+        tipoPEALabel: error.tipoLabel,
         rutaOriginal: error.rutaOriginal,
         error: error.error
       });

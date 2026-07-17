@@ -618,6 +618,184 @@ button:disabled {
   background: var(--subir-soft);
 }
 
+.subir-validation-main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.subir-validation-count {
+  padding: 12px 14px;
+  border: 1px solid var(--subir-border);
+  border-radius: var(--subir-radius-md);
+  background: #ffffff;
+}
+
+.subir-validation-count strong,
+.subir-validation-count span {
+  display: block;
+}
+
+.subir-validation-count span {
+  margin-top: 3px;
+  color: var(--subir-muted);
+  font-size: 13px;
+}
+
+.subir-validation-title strong {
+  font-size: 15px;
+}
+
+.subir-validation-context {
+  margin: 8px 0;
+  padding: 9px 10px;
+  border: 1px solid rgba(24, 79, 144, 0.16);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.subir-validation-context strong,
+.subir-validation-context span {
+  display: block;
+}
+
+.subir-validation-context strong {
+  margin-bottom: 2px;
+  color: var(--subir-text);
+}
+
+.subir-validation-context span {
+  color: var(--subir-muted);
+  font-size: 12px;
+}
+
+.subir-validation-message {
+  margin: 5px 0 0;
+  color: var(--subir-text);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.subir-validation-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.subir-validation-stats div {
+  padding: 8px;
+  border: 1px solid rgba(24, 79, 144, 0.14);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.78);
+  text-align: center;
+}
+
+.subir-validation-stats strong,
+.subir-validation-stats span {
+  display: block;
+}
+
+.subir-validation-stats strong {
+  color: var(--subir-text);
+  font-size: 16px;
+}
+
+.subir-validation-stats span {
+  margin-top: 2px;
+  color: var(--subir-muted);
+  font-size: 11px;
+}
+
+.subir-validation-notes {
+  margin: 9px 0 0;
+  padding-left: 19px;
+  color: var(--subir-text);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.subir-validation-files {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.subir-validation-file {
+  padding: 10px;
+  border: 1px solid rgba(24, 79, 144, 0.16);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.subir-validation-file-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.subir-validation-file-head strong {
+  color: var(--subir-text);
+  word-break: break-word;
+}
+
+.subir-validation-file-head span {
+  flex: 0 0 auto;
+  color: var(--subir-primary);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.subir-validation-file p {
+  margin: 5px 0 0;
+  color: var(--subir-text);
+  font-size: 12px;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.subir-validation-file details {
+  margin-top: 7px;
+  font-size: 12px;
+}
+
+.subir-validation-file summary {
+  color: var(--subir-primary);
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.subir-validation-file code {
+  display: block;
+  margin-top: 6px;
+  padding: 8px;
+  border-radius: 8px;
+  background: #fff1f0;
+  color: var(--subir-error);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.subir-validation > .subir-badge {
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+.subir-validation > .subir-badge-ok {
+  color: var(--subir-ok);
+  background: var(--subir-ok-soft);
+}
+
+.subir-validation > .subir-badge-error {
+  color: var(--subir-error);
+  background: var(--subir-error-soft);
+}
+
+.subir-validation > .subir-badge-warn {
+  color: var(--subir-warn);
+  background: var(--subir-warn-soft);
+}
+
 .subir-validation strong {
   display: block;
   margin-bottom: 4px;
@@ -749,6 +927,15 @@ button:disabled {
   line-height: 1.35;
 }
 
+.subir-file-item .subir-file-error {
+  margin-top: 6px;
+  padding: 7px 8px;
+  border-radius: 8px;
+  background: var(--subir-error-soft);
+  color: var(--subir-error);
+  font-weight: 700;
+}
+
 @media (max-width: 1180px) {
   .subir-grid-cards {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -761,6 +948,17 @@ button:disabled {
   .subir-upload-actions {
     grid-column: 1 / -1;
     justify-content: flex-start;
+  }
+}
+
+@media (max-width: 720px) {
+  .subir-validation-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .subir-validation,
+  .subir-validation-file-head {
+    flex-direction: column;
   }
 }
 

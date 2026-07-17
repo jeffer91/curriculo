@@ -228,8 +228,55 @@ Función o funciones:
 
   function tieneDatosProcesados(archivo) {
     var datos = archivo && archivo.datosProcesados;
-    return !!datos && typeof datos === "object" &&
-      !Array.isArray(datos) && Object.keys(datos).length > 0;
+
+    if (!datos || typeof datos !== "object") return false;
+
+    // PEA Unidades y PEA Actividades se procesan como arreglos. Antes se
+    // rechazaban aquí y una carga correcta terminaba marcada como parcial.
+    if (Array.isArray(datos)) return datos.length > 0;
+
+    return Object.keys(datos).length > 0;
+  }
+
+  function diagnosticarArchivoLeido(archivo) {
+    archivo = archivo || {};
+
+    var error = texto(archivo.errorExcel || archivo.errorLectura);
+    var tieneBinario = !!archivo.contenidoBinario || archivo.tieneContenidoBinario === true;
+    var leido = archivo.excelLeido === true;
+    var tieneDatos = tieneDatosProcesados(archivo);
+    var estado = "correcto";
+    var motivo = "El Excel fue leído y produjo información curricular.";
+
+    if (error) {
+      estado = "error_lectura";
+      motivo = "No se pudo leer el contenido interno del Excel.";
+    } else if (!tieneBinario) {
+      estado = "sin_contenido_binario";
+      motivo = "El archivo fue detectado, pero no se pudo extraer desde el ZIP.";
+    } else if (!leido) {
+      estado = "no_leido";
+      motivo = "El archivo fue detectado, pero no quedó marcado como leído.";
+    } else if (!tieneDatos) {
+      estado = "sin_datos";
+      motivo = "El Excel se abrió, pero no produjo información curricular procesada.";
+    }
+
+    return {
+      archivoId: archivo.id || "",
+      carreraId: archivo.carreraId || "",
+      nivelId: archivo.nivelId || "",
+      materiaId: archivo.materiaId || "",
+      nombreArchivo: archivo.nombreArchivo || archivo.nombre || "",
+      tipo: archivo.tipo || "",
+      rutaOriginal: archivo.rutaOriginal || archivo.ruta || "",
+      estado: estado,
+      motivo: motivo,
+      errorTecnico: error,
+      excelLeido: leido,
+      tieneContenidoBinario: tieneBinario,
+      tieneDatosProcesados: tieneDatos
+    };
   }
 
   function aplicarControlLectura(paqueteClasificado, paqueteLeido, errorGeneral) {
@@ -245,6 +292,10 @@ Función o funciones:
     var conDatos = leidos.filter(tieneDatosProcesados);
     var errores = resultados.filter(function (archivo) {
       return !!(archivo.errorExcel || archivo.errorLectura);
+    });
+    var diagnosticoArchivos = resultados.map(diagnosticarArchivoLeido);
+    var archivosProblema = diagnosticoArchivos.filter(function (archivo) {
+      return archivo.estado !== "correcto";
     });
     var motivos = [];
 
@@ -271,11 +322,20 @@ Función o funciones:
       totalExcelLeidos: leidos.length,
       totalConDatosProcesados: conDatos.length,
       totalErroresExcel: errores.length,
+      totalNoLeidos: diagnosticoArchivos.filter(function (archivo) {
+        return archivo.estado === "no_leido" || archivo.estado === "sin_contenido_binario";
+      }).length,
+      totalSinDatos: diagnosticoArchivos.filter(function (archivo) {
+        return archivo.estado === "sin_datos";
+      }).length,
+      totalProblemas: archivosProblema.length,
       lecturaParcial: detectados.length > 0 &&
         (leidos.length < detectados.length || conDatos.length < leidos.length),
       tieneDatosRecuperables: conDatos.length > 0,
       bloqueaImportacion: motivos.length > 0,
-      motivosBloqueo: motivos
+      motivosBloqueo: motivos,
+      archivos: diagnosticoArchivos,
+      archivosProblema: archivosProblema
     };
 
     var advertencias = Array.isArray(paquete.advertencias)
@@ -295,7 +355,8 @@ Función o funciones:
         tipo: "lectura_excel_parcial",
         severidad: "advertencia",
         bloqueaImportacion: false,
-        mensaje: "Algunos Excel no pudieron leerse o no generaron datos. Solo se permitirá importar con observaciones.",
+        mensaje: archivosProblema.length + " de " + detectados.length +
+          " Excel requieren revisión. Consulta el detalle por materia y archivo.",
         detalle: control
       });
     }
@@ -309,6 +370,11 @@ Función o funciones:
         totalExcelLeidos: control.totalExcelLeidos,
         totalConDatosProcesados: control.totalConDatosProcesados,
         totalErroresExcel: control.totalErroresExcel,
+        totalNoLeidos: control.totalNoLeidos,
+        totalSinDatos: control.totalSinDatos,
+        totalProblemas: control.totalProblemas,
+        archivos: control.archivos,
+        archivosProblema: control.archivosProblema,
         error: errorGeneral ? (errorGeneral.message || texto(errorGeneral)) : "",
         controlLectura: control
       })
