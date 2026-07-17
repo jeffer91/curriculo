@@ -22,8 +22,9 @@
     "dev": "electron . --devtools",
     "electron": "electron .",
     "reset": "electron . --reset-local-data",
-    "test": "node scripts/sync-rules.test.js && node scripts/subir-observaciones.test.js",
-    "test:subir": "node scripts/subir-observaciones.test.js"
+    "test": "node scripts/sync-rules.test.js && node scripts/subir-observaciones.test.js && node scripts/comunicados-zip.test.js",
+    "test:subir": "node scripts/subir-observaciones.test.js",
+    "test:comunicados": "node scripts/comunicados-zip.test.js"
   },
   "dependencies": {
     "jszip": "3.10.1",

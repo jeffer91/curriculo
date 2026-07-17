@@ -7,6 +7,7 @@ Función o funciones:
 - Permitir consultar información y diagnóstico del puente de PDF.
 - Permitir abrir enlaces externos y la carpeta Descargas.
 - Permitir guardar PDF directamente en Descargas desde Comunicados.
+- Permitir guardar lotes de comunicados como PDF independientes dentro de un ZIP.
 - Permitir mostrar el PDF generado en el Explorador de archivos.
 - Mantener nodeIntegration apagado para mayor seguridad.
 ========================================================= */
@@ -15,7 +16,7 @@ Función o funciones:
 
 const { contextBridge, ipcRenderer } = require("electron");
 
-const BRIDGE_VERSION = "2.0.0";
+const BRIDGE_VERSION = "2.1.0";
 
 const RUTAS_PERMITIDAS = Object.freeze({
   inicio: true,
@@ -45,6 +46,27 @@ function normalizarPayloadPDF(payload) {
     html: textoSeguro(payload.html),
     titulo: textoSeguro(payload.titulo || "Comunicado institucional"),
     nombreArchivo: textoSeguro(payload.nombreArchivo || "comunicado.pdf")
+  };
+}
+
+function normalizarPayloadComunicadosZIP(payload) {
+  payload = payload || {};
+
+  const documentos = Array.isArray(payload.documentos)
+    ? payload.documentos.slice(0, 500)
+    : [];
+
+  return {
+    nombreArchivo: textoSeguro(payload.nombreArchivo || "Comunicados.zip"),
+    documentos: documentos.map(function (documento) {
+      documento = documento || {};
+
+      return {
+        html: textoSeguro(documento.html),
+        titulo: textoSeguro(documento.titulo || "Comunicado institucional"),
+        nombreArchivo: textoSeguro(documento.nombreArchivo || "Comunicado.pdf")
+      };
+    })
   };
 }
 
@@ -102,6 +124,13 @@ contextBridge.exposeInMainWorld("CurriculoElectron", {
     return await invocar(
       "curriculo:guardar-pdf-descargas",
       normalizarPayloadPDF(payload)
+    );
+  },
+
+  guardarComunicadosZIP: async function (payload) {
+    return await invocar(
+      "curriculo:guardar-comunicados-zip",
+      normalizarPayloadComunicadosZIP(payload)
     );
   },
 

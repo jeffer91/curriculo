@@ -6,10 +6,10 @@ Función o funciones:
 - Cargar carreras y materias completas desde BDLocal.
 - Permitir editar nombres institucionales de materias.
 - Generar un PDF individual por materia.
-- Generar un único PDF global con las materias seleccionadas.
-- Generar un único PDF global con todas las materias completas.
+- Generar un ZIP con un PDF independiente por cada materia seleccionada.
+- Generar un ZIP con un PDF independiente por cada materia completa.
 - Confirmar que Electron guardó un PDF válido y mostrarlo en el Explorador.
-- Registrar la numeración institucional únicamente después de guardar el PDF.
+- Registrar la numeración institucional únicamente después de guardar el PDF o ZIP.
 ========================================================= */
 
 (function (window, document) {
@@ -111,9 +111,8 @@ Función o funciones:
     requireModulo("ComunicadosCCC.Contador", NS.Contador, "registrarNumeroManual");
     requireModulo("ComunicadosCCC.Contador", NS.Contador, "formatearNumeroComunicado");
     requireModulo("ComunicadosCCC.Plantilla", NS.Plantilla, "generarDocumento");
-    requireModulo("ComunicadosCCC.Plantilla", NS.Plantilla, "generarDocumentoMultiple");
     requireModulo("ComunicadosCCC.PDF", NS.PDF, "generarPDFDocumento");
-    requireModulo("ComunicadosCCC.PDF", NS.PDF, "generarPDFMultiple");
+    requireModulo("ComunicadosCCC.PDF", NS.PDF, "generarZIPDocumentos");
   }
 
   function obtenerFechaSeleccionada() {
@@ -471,7 +470,6 @@ Función o funciones:
       );
 
       var resultadoPDF = await NS.PDF.generarPDFDocumento(documento, {
-        nombreArchivo: reserva.numero + "_" + documento.nombreAsignatura,
         mostrarArchivo: true
       });
 
@@ -507,11 +505,11 @@ Función o funciones:
     var seleccionadas = obtenerMateriasSeleccionadas();
 
     if (!seleccionadas.length) {
-      pintarEstado("warn", "Sin selección", "Selecciona al menos una materia para generar el PDF global.");
+      pintarEstado("warn", "Sin selección", "Selecciona al menos una materia para generar el ZIP.");
       return;
     }
 
-    await generarPDFGlobal(seleccionadas, "seleccionadas");
+    await generarLoteZIP(seleccionadas, "seleccionadas");
   }
 
   async function generarTodas() {
@@ -521,21 +519,21 @@ Función o funciones:
     }
 
     var confirmar = window.confirm(
-      "Se generará un único PDF global con un comunicado por cada materia completa.\n\n" +
+      "Se generará un ZIP con un PDF independiente por cada materia completa.\n\n" +
       "Total: " + estado.materias.length + " comunicado(s).\n\n" +
       "¿Deseas continuar?"
     );
 
     if (!confirmar) return;
 
-    await generarPDFGlobal(estado.materias, "todas");
+    await generarLoteZIP(estado.materias, "todas");
   }
 
-  async function generarPDFGlobal(materias, tipoLote) {
+  async function generarLoteZIP(materias, tipoLote) {
     materias = Array.isArray(materias) ? materias : [];
 
     if (!materias.length) {
-      pintarEstado("warn", "Sin materias", "No hay materias para generar el PDF global.");
+      pintarEstado("warn", "Sin materias", "No hay materias para generar el ZIP.");
       return;
     }
 
@@ -546,7 +544,7 @@ Función o funciones:
       var config = obtenerConfigPlantilla();
       var siguiente = await NS.Contador.obtenerSiguienteNumero(fecha);
       var primeraSecuencia = Number(siguiente.secuencia || 1);
-      var items = [];
+      var documentos = [];
       var reservas = [];
 
       for (var i = 0; i < materias.length; i += 1) {
@@ -554,7 +552,7 @@ Función o funciones:
 
         pintarEstado(
           "neutral",
-          "Preparando PDF global",
+          "Preparando comunicados",
           "Procesando " + (i + 1) + " de " + materias.length + ": " + (materia.nombreMostrar || materia.nombre || "materia")
         );
 
@@ -568,52 +566,55 @@ Función o funciones:
         });
 
         reservas.push(reserva);
-        items.push({
-          detalle: detalle,
-          reserva: reserva
-        });
+        documentos.push(
+          NS.Plantilla.generarDocumento(detalle, reserva, config)
+        );
       }
 
       pintarEstado(
         "neutral",
-        "Generando PDF global",
-        "Creando un documento con " + items.length + " comunicado(s)."
+        "Generando ZIP",
+        "Creando " + documentos.length + " PDF independiente(s) y comprimiéndolos."
       );
 
-      var resultadoMultiple = NS.Plantilla.generarDocumentoMultiple(items, config);
       var carreraNombre = estado.carreraActual ? estado.carreraActual.nombre : "carrera";
       var nombreArchivo = [
-        "COMUNICADOS",
+        "Comunicados",
         tipoLote === "todas" ? "TODAS" : "SELECCIONADAS",
         carreraNombre
-      ].join("_");
+      ].join(" ");
 
-      var resultadoPDF = await NS.PDF.generarPDFMultiple(resultadoMultiple, {
+      var resultadoZIP = await NS.PDF.generarZIPDocumentos(documentos, {
         nombreArchivo: nombreArchivo,
-        titulo: "Comunicados institucionales - " + carreraNombre,
         mostrarArchivo: true
       });
 
-      reservas.forEach(function (reserva) {
-        reserva.archivoPDF = resultadoPDF.nombreArchivo || "";
+      var archivosGenerados = Array.isArray(resultadoZIP.archivos)
+        ? resultadoZIP.archivos
+        : [];
+
+      reservas.forEach(function (reserva, index) {
+        reserva.archivoPDF = archivosGenerados[index]
+          ? archivosGenerados[index].nombreArchivo || ""
+          : "";
       });
 
       var erroresRegistro = await registrarReservasConfirmadas(fecha, reservas);
 
       pintarEstado(
         erroresRegistro.length ? "warn" : "ok",
-        erroresRegistro.length ? "PDF global generado con observaciones" : "PDF global generado",
+        erroresRegistro.length ? "ZIP generado con observaciones" : "ZIP generado",
         describirResultadoPDF(
-          resultadoPDF,
-          "Se guardó un PDF global con " + materias.length + " comunicado(s)"
+          resultadoZIP,
+          "Se guardó un ZIP con " + materias.length + " PDF independiente(s)"
         ) +
           (erroresRegistro.length
             ? " No se registraron " + erroresRegistro.length + " número(s) en el contador."
             : "")
       );
     } catch (error) {
-      console.error("[ComunicadosCCC.Main] Error generando PDF global:", error);
-      pintarEstado("error", "No se pudo generar el PDF global", error.message || "Error generando comunicados.");
+      console.error("[ComunicadosCCC.Main] Error generando ZIP de comunicados:", error);
+      pintarEstado("error", "No se pudo generar el ZIP", error.message || "Error generando comunicados.");
     } finally {
       setCargando(false);
     }
@@ -742,7 +743,8 @@ Función o funciones:
     generarMateria: generarMateria,
     generarSeleccionadas: generarSeleccionadas,
     generarTodas: generarTodas,
-    generarPDFGlobal: generarPDFGlobal,
+    generarLoteZIP: generarLoteZIP,
+    generarPDFGlobal: generarLoteZIP,
     getEstado: function () {
       return Object.assign({}, estado);
     }

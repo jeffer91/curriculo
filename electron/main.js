@@ -7,6 +7,7 @@ Función o funciones:
 - Exponer IPC seguros para navegación interna, enlaces externos y archivos.
 - Generar PDF desde HTML usando una ventana temporal y printToPDF.
 - Guardar y verificar los PDF directamente en la carpeta Descargas.
+- Generar un ZIP con un PDF independiente por cada comunicado del lote.
 - Mostrar en el Explorador de archivos el PDF generado.
 ========================================================= */
 
@@ -14,6 +15,7 @@ Función o funciones:
 
 const path = require("path");
 const fs = require("fs");
+const JSZip = require("jszip");
 const { pathToFileURL } = require("url");
 const {
   app,
@@ -24,7 +26,7 @@ const {
 } = require("electron");
 
 const APP_NAME = "Curriculo";
-const PDF_BRIDGE_VERSION = "2.0.0";
+const PDF_BRIDGE_VERSION = "2.1.0";
 const ROOT_DIR = path.resolve(__dirname, "..");
 const PRELOAD_PATH = path.join(__dirname, "preload.js");
 
@@ -127,15 +129,12 @@ async function navegar(nombreRuta) {
 
 function limpiarNombreArchivo(valor) {
   return String(valor || "archivo")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .normalize("NFC")
     .replace(/[<>:"/\\|?*\x00-\x1F]/g, " ")
-    .replace(/[^\w\s.()-]/g, " ")
     .replace(/\s+/g, " ")
     .trim()
-    .replace(/\s/g, "_")
-    .replace(/\.+$/g, "")
-    .slice(0, 150) || "archivo";
+    .replace(/[. ]+$/g, "")
+    .slice(0, 180) || "archivo";
 }
 
 function asegurarExtension(nombreArchivo, extension) {
@@ -263,7 +262,7 @@ function validarBufferPDF(buffer) {
   }
 }
 
-async function guardarPDFEnDescargas(payload) {
+async function generarBufferPDFDesdeHTML(payload) {
   payload = payload || {};
 
   let pdfWindow = null;
@@ -273,19 +272,11 @@ async function guardarPDFEnDescargas(payload) {
     const htmlOriginal = String(payload.html || "").trim();
 
     if (!htmlOriginal) {
-      return {
-        ok: false,
-        codigo: "HTML_VACIO",
-        mensaje: "No se recibió HTML para generar el PDF."
-      };
+      const error = new Error("No se recibió HTML para generar el PDF.");
+      error.code = "HTML_VACIO";
+      throw error;
     }
 
-    const nombreArchivo = asegurarExtension(payload.nombreArchivo || "comunicado.pdf", ".pdf");
-    const carpetaDescargas = app.getPath("downloads");
-
-    await fs.promises.mkdir(carpetaDescargas, { recursive: true });
-
-    const rutaFinal = obtenerRutaUnica(carpetaDescargas, nombreArchivo);
     const carpetaBaseComunicados = path.join(ROOT_DIR, "comunicados");
     const htmlFinal = insertarBaseHref(htmlOriginal, carpetaBaseComunicados);
 
@@ -328,6 +319,27 @@ async function guardarPDFEnDescargas(payload) {
     });
 
     validarBufferPDF(buffer);
+    return Buffer.from(buffer);
+  } finally {
+    if (pdfWindow && !pdfWindow.isDestroyed()) {
+      pdfWindow.destroy();
+    }
+
+    await eliminarTemporalSeguro(rutaTemporal);
+  }
+}
+
+async function guardarPDFEnDescargas(payload) {
+  payload = payload || {};
+
+  try {
+    const nombreArchivo = asegurarExtension(payload.nombreArchivo || "comunicado.pdf", ".pdf");
+    const carpetaDescargas = app.getPath("downloads");
+
+    await fs.promises.mkdir(carpetaDescargas, { recursive: true });
+
+    const rutaFinal = obtenerRutaUnica(carpetaDescargas, nombreArchivo);
+    const buffer = await generarBufferPDFDesdeHTML(payload);
     await fs.promises.writeFile(rutaFinal, buffer);
 
     const info = await fs.promises.stat(rutaFinal);
@@ -354,12 +366,97 @@ async function guardarPDFEnDescargas(payload) {
       codigo: error && error.code ? error.code : "ERROR_PDF",
       mensaje: error && error.message ? error.message : "Error generando PDF directo en Descargas."
     };
-  } finally {
-    if (pdfWindow && !pdfWindow.isDestroyed()) {
-      pdfWindow.destroy();
+  }
+}
+
+async function guardarComunicadosZIP(payload) {
+  payload = payload || {};
+
+  try {
+    const documentos = Array.isArray(payload.documentos) ? payload.documentos : [];
+
+    if (!documentos.length) {
+      return {
+        ok: false,
+        codigo: "LOTE_VACIO",
+        mensaje: "No se recibieron comunicados para generar el ZIP."
+      };
     }
 
-    await eliminarTemporalSeguro(rutaTemporal);
+    const carpetaDescargas = app.getPath("downloads");
+    const nombreZIP = asegurarExtension(payload.nombreArchivo || "Comunicados.zip", ".zip");
+    const rutaFinal = obtenerRutaUnica(carpetaDescargas, nombreZIP);
+    const zip = new JSZip();
+    const archivos = [];
+
+    await fs.promises.mkdir(carpetaDescargas, { recursive: true });
+
+    for (let i = 0; i < documentos.length; i += 1) {
+      const documento = documentos[i] || {};
+      const nombrePDF = asegurarExtension(
+        documento.nombreArchivo || "Comunicado " + (i + 1) + ".pdf",
+        ".pdf"
+      );
+
+      try {
+        const bufferPDF = await generarBufferPDFDesdeHTML(documento);
+        zip.file(nombrePDF, bufferPDF, { binary: true });
+        archivos.push({
+          nombreArchivo: nombrePDF,
+          bytes: bufferPDF.length
+        });
+      } catch (error) {
+        const errorLote = new Error(
+          "No se pudo generar " + nombrePDF + ": " +
+          (error && error.message ? error.message : "error desconocido")
+        );
+        errorLote.code = "ERROR_PDF_LOTE";
+        throw errorLote;
+      }
+    }
+
+    const bufferZIP = await zip.generateAsync({
+      type: "nodebuffer",
+      compression: "DEFLATE",
+      compressionOptions: { level: 6 }
+    });
+
+    if (
+      !bufferZIP ||
+      bufferZIP.length < 100 ||
+      bufferZIP.subarray(0, 2).toString("ascii") !== "PK"
+    ) {
+      throw new Error("El archivo ZIP generado está vacío o no es válido.");
+    }
+
+    await fs.promises.writeFile(rutaFinal, bufferZIP);
+
+    const info = await fs.promises.stat(rutaFinal);
+
+    if (!info.isFile() || info.size < 100) {
+      throw new Error("El ZIP fue creado, pero el archivo quedó vacío.");
+    }
+
+    return {
+      ok: true,
+      modo: "electron",
+      nombreArchivo: path.basename(rutaFinal),
+      ruta: rutaFinal,
+      carpeta: carpetaDescargas,
+      bytes: info.size,
+      cantidad: archivos.length,
+      archivos: archivos,
+      bridgeVersion: PDF_BRIDGE_VERSION,
+      mensaje: "ZIP generado con un PDF independiente por comunicado."
+    };
+  } catch (error) {
+    console.error("[Curriculo PDF] Error generando ZIP de comunicados:", error);
+
+    return {
+      ok: false,
+      codigo: error && error.code ? error.code : "ERROR_ZIP_COMUNICADOS",
+      mensaje: error && error.message ? error.message : "Error generando ZIP de comunicados."
+    };
   }
 }
 
@@ -490,6 +587,10 @@ function configurarIPC() {
 
   registrarHandler("curriculo:guardar-pdf-descargas", async function (_event, payload) {
     return await guardarPDFEnDescargas(payload);
+  });
+
+  registrarHandler("curriculo:guardar-comunicados-zip", async function (_event, payload) {
+    return await guardarComunicadosZIP(payload);
   });
 
   registrarHandler("curriculo:guardar-archivo-descargas", async function (_event, payload) {

@@ -41,12 +41,11 @@ Funciones:
     }
 
     return texto(valor)
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
+      .normalize("NFC")
       .replace(/[<>:"/\\|?*\x00-\x1F]/g, " ")
       .replace(/\s+/g, " ")
       .trim()
-      .replace(/\s/g, "_") || "comunicado";
+      .replace(/[. ]+$/g, "") || "comunicado";
   }
 
   function fechaArchivo() {
@@ -241,6 +240,34 @@ Funciones:
     return cssPortada() + construirPortada(data) + tecnico;
   }
 
+  function nombreArchivoComunicado(documento) {
+    documento = documento || {};
+
+    var data = documento.data || documento;
+    var partes = [
+      "Comunicado No. 01",
+      texto(documento.numeroComunicado || data.numeroComunicado),
+      texto(documento.nombreAsignatura || data.nombreAsignatura || "Materia")
+    ].filter(function (parte) {
+      return !!texto(parte);
+    });
+
+    return limpiarNombre(partes.join(" ")) + ".pdf";
+  }
+
+  function construirHTMLFinalDocumento(documento) {
+    if (typeof PDF.construirDocumentoHTML !== "function") {
+      throw new Error("No está disponible el constructor final de PDF.");
+    }
+
+    return PDF.construirDocumentoHTML(
+      prepararDocumento(documento),
+      {
+        titulo: "Comunicado " + texto(documento && documento.numeroComunicado)
+      }
+    );
+  }
+
   function prepararMultiple(resultado) {
     var documentos = resultado && Array.isArray(resultado.documentos)
       ? resultado.documentos
@@ -260,18 +287,70 @@ Funciones:
 
   PDF.generarPDFDocumento = async function (documento, opciones) {
     opciones = opciones || {};
-    var nombre = limpiarNombre(
-      opciones.nombreArchivo ||
-      (documento.numeroComunicado || "COMUNICADO") + "_" +
-      (documento.nombreAsignatura || "ASIGNATURA")
-    );
+    var nombre = nombreArchivoComunicado(documento);
 
     return await guardarHTMLComoPDF(prepararDocumento(documento), {
       titulo: "Comunicado " + (documento.numeroComunicado || ""),
-      nombreArchivo: nombre + "_" + fechaArchivo() + ".pdf",
+      nombreArchivo: nombre,
       mostrarArchivo: opciones.mostrarArchivo !== false,
       permitirFallbackNavegador: opciones.permitirFallbackNavegador !== false
     });
+  };
+
+  PDF.generarZIPDocumentos = async function (documentos, opciones) {
+    opciones = opciones || {};
+    documentos = Array.isArray(documentos) ? documentos : [];
+
+    if (!documentos.length) {
+      throw new Error("No se recibieron comunicados para generar el ZIP.");
+    }
+
+    if (
+      !window.CurriculoElectron ||
+      typeof window.CurriculoElectron.guardarComunicadosZIP !== "function"
+    ) {
+      throw new Error("La generación del ZIP está disponible al ejecutar la aplicación en Electron.");
+    }
+
+    var archivos = documentos.map(function (documento) {
+      return {
+        html: construirHTMLFinalDocumento(documento),
+        titulo: "Comunicado " + texto(documento.numeroComunicado),
+        nombreArchivo: nombreArchivoComunicado(documento)
+      };
+    });
+
+    var nombreZIP = limpiarNombre(opciones.nombreArchivo || "Comunicados") + ".zip";
+    var resultado = await window.CurriculoElectron.guardarComunicadosZIP({
+      nombreArchivo: nombreZIP,
+      documentos: archivos
+    });
+
+    if (!resultado || resultado.ok !== true) {
+      throw new Error(
+        resultado && resultado.mensaje
+          ? resultado.mensaje
+          : "No se pudo guardar el ZIP de comunicados."
+      );
+    }
+
+    if (
+      !resultado.nombreArchivo ||
+      !resultado.ruta ||
+      Number(resultado.bytes || 0) < 100 ||
+      Number(resultado.cantidad || 0) !== documentos.length
+    ) {
+      throw new Error("Electron no confirmó un ZIP completo y válido.");
+    }
+
+    if (
+      opciones.mostrarArchivo !== false &&
+      typeof PDF.mostrarArchivoGenerado === "function"
+    ) {
+      await PDF.mostrarArchivoGenerado(resultado);
+    }
+
+    return resultado;
   };
 
   PDF.generarPDFMultiple = async function (resultado, opciones) {
@@ -287,6 +366,9 @@ Funciones:
   };
 
   PDF.construirPortadaFinal = construirPortada;
+  PDF.prepararDocumentoFinal = prepararDocumento;
+  PDF.construirHTMLFinalDocumento = construirHTMLFinalDocumento;
+  PDF.nombreArchivoComunicado = nombreArchivoComunicado;
   PDF.__portadaFinalV3 = true;
 
   console.info("[ComunicadosCCC.PortadaFinal] Corrección final de portada activa.");

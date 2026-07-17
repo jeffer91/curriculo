@@ -32,15 +32,12 @@ Función o funciones:
 
   function limpiarNombreArchivo(valor) {
     return texto(valor)
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
+      .normalize("NFC")
       .replace(/[<>:"/\\|?*\x00-\x1F]/g, " ")
-      .replace(/[^\w\s.()-]/g, " ")
       .replace(/\s+/g, " ")
       .trim()
-      .replace(/\s/g, "_")
-      .replace(/\.+$/g, "")
-      .slice(0, 140) || "comunicado";
+      .replace(/[. ]+$/g, "")
+      .slice(0, 180) || "comunicado";
   }
 
   function fechaArchivo() {
