@@ -211,14 +211,20 @@ Funciones:
     var input = $("inputZip");
     if (!input) return false;
 
-    paqueteActual = null;
-    actualizarPanel(null);
-
     // El navegador conserva una copia del archivo seleccionado. Se limpia el
     // valor para que también permita escoger nuevamente el mismo nombre.
     input.value = "";
     if (typeof input.click === "function") input.click();
     return true;
+  }
+
+  function limpiarResultadoAnterior() {
+    paqueteActual = null;
+    if (NS.Preview && typeof NS.Preview.limpiarPreview === "function") {
+      NS.Preview.limpiarPreview();
+    } else {
+      actualizarPanel(null);
+    }
   }
 
   function conectarEventos() {
@@ -242,10 +248,10 @@ Funciones:
     });
 
     var input = $("inputZip");
-    if (input) input.addEventListener("change", function () {
-      paqueteActual = null;
-      actualizarPanel(null);
-    });
+    if (input) input.addEventListener("change", limpiarResultadoAnterior);
+
+    var dropZone = $("dropZone");
+    if (dropZone) dropZone.addEventListener("drop", limpiarResultadoAnterior);
   }
 
   function instalar() {
