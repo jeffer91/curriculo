@@ -1,0 +1,71 @@
+/* =========================================================
+Nombre completo: subir.estados.css
+Ruta o ubicación: /Curriculo/subir/subir.estados.css
+Funciones:
+- Adaptar las tarjetas para mostrar Completa, Advertencia y Error.
+- Diferenciar visualmente las filas según el estado clasificado.
+- Resaltar inconsistencias entre el total de materias y los contadores.
+========================================================= */
+
+.subir-grid-cards {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.subir-card-error {
+  background: linear-gradient(180deg, #ffffff 0%, var(--subir-error-soft) 100%);
+}
+
+.subir-card-error strong {
+  color: var(--subir-error);
+}
+
+.subir-card-warn strong {
+  color: var(--subir-warn);
+}
+
+.subir-card-ok strong {
+  color: var(--subir-ok);
+}
+
+#resumenEstadosMaterias.subir-state-summary-error {
+  outline: 2px solid var(--subir-error);
+  outline-offset: 3px;
+}
+
+.subir-table tbody tr.subir-row-completa {
+  box-shadow: inset 4px 0 0 var(--subir-ok);
+}
+
+.subir-table tbody tr.subir-row-advertencia {
+  box-shadow: inset 4px 0 0 var(--subir-warn);
+}
+
+.subir-table tbody tr.subir-row-error {
+  box-shadow: inset 4px 0 0 var(--subir-error);
+}
+
+.subir-table tbody tr.subir-row-advertencia:hover {
+  background: #fffaf0;
+}
+
+.subir-table tbody tr.subir-row-error:hover {
+  background: #fff5f4;
+}
+
+@media (max-width: 1280px) {
+  .subir-grid-cards {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 860px) {
+  .subir-grid-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .subir-grid-cards {
+    grid-template-columns: 1fr;
+  }
+}
