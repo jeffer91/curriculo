@@ -10,6 +10,7 @@ Función o funciones:
 - Enriquecer cada advertencia con causa, solución y acción recomendada.
 - Mostrar por materia un botón para revisar cómo corregir cada advertencia.
 - Separar los contadores de materias completas, con advertencia y con error.
+- Permitir revisar, reanalizar o seleccionar nuevamente un ZIP corregido.
 ========================================================= -->
 <!DOCTYPE html>
 <html lang="es">
@@ -17,11 +18,12 @@ Función o funciones:
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Subir ZIP CCC | Gestión Curricular</title>
-  <link rel="stylesheet" href="../menu-superior/menu-superior.css?v=20260727-4" />
+  <link rel="stylesheet" href="../menu-superior/menu-superior.css?v=20260727-5" />
   <link rel="stylesheet" href="../diagnostico/diagnostico-modal.css?v=20260713-7" />
   <link rel="stylesheet" href="./subir.css?v=20260717-1" />
   <link rel="stylesheet" href="./subir.advertencias-ui.css?v=20260727-3" />
   <link rel="stylesheet" href="./subir.estados.css?v=20260727-4" />
+  <link rel="stylesheet" href="./subir.acciones.css?v=20260727-5" />
 </head>
 <body>
   <div class="subir-page">
@@ -76,6 +78,19 @@ Función o funciones:
         <article class="subir-card subir-card-error"><span>Errores</span><strong id="statErrores">0</strong><small>Materias con fallos de contenido</small></article>
       </section>
 
+      <section id="accionesRevision" class="subir-panel subir-review-actions" hidden>
+        <div>
+          <h2>Revisar y volver a comprobar</h2>
+          <p id="resumenAccionesRevision">Analiza un ZIP para habilitar las acciones de revisión.</p>
+        </div>
+        <div class="subir-review-actions-row">
+          <button id="btnPrimeraAdvertencia" class="subir-btn subir-btn-review" type="button">Revisar primera incidencia</button>
+          <button id="btnReanalizar" class="subir-btn subir-btn-rescan" type="button">Volver a analizar</button>
+          <button id="btnSeleccionarZipCorregido" class="subir-btn subir-btn-replace" type="button">Seleccionar ZIP corregido</button>
+        </div>
+        <p class="subir-review-help"><strong>Importante:</strong> después de corregir los Excel fuera de la aplicación, selecciona nuevamente el ZIP, aunque conserve el mismo nombre. “Volver a analizar” revisa la copia que ya estaba seleccionada.</p>
+      </section>
+
       <section id="accionesImportacion" class="subir-panel subir-actions-panel" hidden>
         <div>
           <h2>Importar a BDLocal</h2>
@@ -115,7 +130,7 @@ Función o funciones:
   <script src="../diagnostico/diagnostico-flujo.js?v=20260713-7"></script>
   <script src="../diagnostico/diagnostico-modal.js?v=20260713-7"></script>
   <script src="../diagnostico/subir-diagnostico.js?v=20260713-7"></script>
-  <script src="../menu-superior/menu-superior.js?v=20260727-4"></script>
+  <script src="../menu-superior/menu-superior.js?v=20260727-5"></script>
   <script src="../libs/jszip.min.js?v=20260713-7"></script>
   <script src="../libs/xlsx.min.js?v=20260713-7"></script>
 
@@ -145,5 +160,6 @@ Función o funciones:
   <script src="./subir.estados-ui.js?v=20260727-4"></script>
   <script src="./subir.contenido-inteligente.js?v=20260715-4"></script>
   <script src="./subir.main.js?v=20260717-1"></script>
+  <script src="./subir.acciones.js?v=20260727-5"></script>
 </body>
 </html>
