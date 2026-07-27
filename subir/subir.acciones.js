@@ -115,6 +115,13 @@ Funciones:
     return NS.Main.getEstado() || {};
   }
 
+  function bloquearAcciones(valor) {
+    ["btnPrimeraAdvertencia", "btnReanalizar", "btnSeleccionarZipCorregido"].forEach(function (id) {
+      var boton = $(id);
+      if (boton) boton.disabled = valor === true;
+    });
+  }
+
   function actualizarPanel(paquete) {
     paqueteActual = paquete || null;
     mostrar("accionesRevision", !!paqueteActual);
@@ -190,15 +197,22 @@ Funciones:
       return false;
     }
 
-    actualizarPanel(paqueteActual);
-    await NS.Main.analizarZIP();
-    actualizarPanel(NS.Main.getEstado().paqueteValidado || paqueteActual);
-    return true;
+    bloquearAcciones(true);
+    try {
+      await NS.Main.analizarZIP();
+      actualizarPanel(NS.Main.getEstado().paqueteValidado || paqueteActual);
+      return true;
+    } finally {
+      actualizarPanel(NS.Main.getEstado().paqueteValidado || paqueteActual);
+    }
   }
 
   function seleccionarZipCorregido() {
     var input = $("inputZip");
     if (!input) return false;
+
+    paqueteActual = null;
+    actualizarPanel(null);
 
     // El navegador conserva una copia del archivo seleccionado. Se limpia el
     // valor para que también permita escoger nuevamente el mismo nombre.
@@ -221,6 +235,17 @@ Funciones:
 
     var btnCorregido = $("btnSeleccionarZipCorregido");
     if (btnCorregido) btnCorregido.addEventListener("click", seleccionarZipCorregido);
+
+    var btnAnalizar = $("btnAnalizar");
+    if (btnAnalizar) btnAnalizar.addEventListener("click", function () {
+      bloquearAcciones(true);
+    });
+
+    var input = $("inputZip");
+    if (input) input.addEventListener("change", function () {
+      paqueteActual = null;
+      actualizarPanel(null);
+    });
   }
 
   function instalar() {
