@@ -8,6 +8,7 @@ Función o funciones:
 - Importar mediante un único orquestador con progreso, rollback y diagnóstico.
 - Mostrar un modal técnico cuando falle o se detenga cualquier etapa.
 - Enriquecer cada advertencia con causa, solución y acción recomendada.
+- Mostrar por materia un botón para revisar cómo corregir cada advertencia.
 ========================================================= -->
 <!DOCTYPE html>
 <html lang="es">
@@ -15,9 +16,10 @@ Función o funciones:
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Subir ZIP CCC | Gestión Curricular</title>
-  <link rel="stylesheet" href="../menu-superior/menu-superior.css?v=20260727-2" />
+  <link rel="stylesheet" href="../menu-superior/menu-superior.css?v=20260727-3" />
   <link rel="stylesheet" href="../diagnostico/diagnostico-modal.css?v=20260713-7" />
   <link rel="stylesheet" href="./subir.css?v=20260717-1" />
+  <link rel="stylesheet" href="./subir.advertencias-ui.css?v=20260727-3" />
 </head>
 <body>
   <div class="subir-page">
@@ -89,7 +91,7 @@ Función o funciones:
         </div>
         <div class="subir-table-wrap">
           <table class="subir-table">
-            <thead><tr><th>Carrera</th><th>Nivel</th><th>Código</th><th>Materia</th><th>Base</th><th>Unidades</th><th>Actividades</th><th>Estado</th><th>Archivos</th><th>Detalle</th></tr></thead>
+            <thead><tr><th>Carrera</th><th>Nivel</th><th>Código</th><th>Materia</th><th>Base</th><th>Unidades</th><th>Actividades</th><th>Estado</th><th>Archivos</th><th>Revisión</th></tr></thead>
             <tbody id="tablaPreview"><tr><td colspan="10" class="subir-empty">Sube un ZIP para ver la clasificación.</td></tr></tbody>
           </table>
         </div>
@@ -103,14 +105,14 @@ Función o funciones:
   </div>
 
   <dialog id="modalDetalle" class="subir-modal">
-    <div class="subir-modal-head"><div><p class="subir-eyebrow">Detalle de materia</p><h2 id="modalTitulo">Materia</h2></div><button id="btnCerrarModal" class="subir-icon-btn" type="button" aria-label="Cerrar">×</button></div>
+    <div class="subir-modal-head"><div><p class="subir-eyebrow">Detalle y corrección</p><h2 id="modalTitulo">Materia</h2></div><button id="btnCerrarModal" class="subir-icon-btn" type="button" aria-label="Cerrar">×</button></div>
     <div id="modalContenido" class="subir-modal-content">Cargando...</div>
   </dialog>
 
   <script src="../diagnostico/diagnostico-flujo.js?v=20260713-7"></script>
   <script src="../diagnostico/diagnostico-modal.js?v=20260713-7"></script>
   <script src="../diagnostico/subir-diagnostico.js?v=20260713-7"></script>
-  <script src="../menu-superior/menu-superior.js?v=20260727-2"></script>
+  <script src="../menu-superior/menu-superior.js?v=20260727-3"></script>
   <script src="../libs/jszip.min.js?v=20260713-7"></script>
   <script src="../libs/xlsx.min.js?v=20260713-7"></script>
 
@@ -135,6 +137,7 @@ Función o funciones:
   <script src="./subir.conexion-bdlocal.js?v=20260713-8"></script>
   <script src="../bdlocal/bdlocal.importacion-orquestador.js?v=20260713-7"></script>
   <script src="./subir.preview.js?v=20260717-1"></script>
+  <script src="./subir.advertencias-ui.js?v=20260727-3"></script>
   <script src="./subir.contenido-inteligente.js?v=20260715-4"></script>
   <script src="./subir.main.js?v=20260717-1"></script>
 </body>
