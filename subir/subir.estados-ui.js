@@ -5,6 +5,7 @@ Funciones:
 - Mostrar contadores separados de materias completas, con advertencia y con error.
 - Sustituir el estado técnico de la tabla por etiquetas comprensibles.
 - Mantener los estados visibles después de búsquedas o repintados.
+- Diferenciar el mensaje general cuando existen errores o advertencias.
 ========================================================= */
 
 (function (window, document) {
@@ -12,7 +13,7 @@ Funciones:
 
   window.SubirCCC = window.SubirCCC || {};
   var NS = window.SubirCCC;
-  var VERSION = "4.0.0";
+  var VERSION = "4.0.1";
   var paqueteActual = null;
   var observerTabla = null;
   var actualizando = false;
@@ -91,6 +92,48 @@ Funciones:
     }
   }
 
+  function actualizarEstadoGeneral(paquete) {
+    if (!NS.Preview || typeof NS.Preview.pintarEstado !== "function") return;
+
+    var resumen = paquete && paquete.resumenValidacion ? paquete.resumenValidacion : {};
+    var advertencias = Number(resumen.materiasAdvertencia || resumen.materiasRevision || 0);
+    var errores = Number(resumen.materiasError || resumen.materiasIncompletas || 0);
+    var alertasGlobales = Number(resumen.alertasGlobales || 0);
+
+    if (resumen.bloqueaImportacion === true) {
+      NS.Preview.pintarEstado(
+        "error",
+        "ZIP con errores críticos",
+        "La importación está bloqueada hasta corregir los problemas señalados."
+      );
+      return;
+    }
+
+    if (errores > 0) {
+      NS.Preview.pintarEstado(
+        "error",
+        "ZIP con errores",
+        errores + " materia" + (errores === 1 ? " tiene" : "s tienen") + " archivos faltantes, ilegibles o sin contenido válido."
+      );
+      return;
+    }
+
+    if (advertencias > 0 || alertasGlobales > 0) {
+      NS.Preview.pintarEstado(
+        "warn",
+        "ZIP con advertencias",
+        advertencias + " materia" + (advertencias === 1 ? " requiere" : "s requieren") + " revisión antes de continuar."
+      );
+      return;
+    }
+
+    NS.Preview.pintarEstado(
+      "ok",
+      "ZIP listo para importar",
+      "Todas las materias tienen los tres PEA y contenido curricular válido."
+    );
+  }
+
   function actualizarFilas(paquete) {
     var botones = document.querySelectorAll("#tablaPreview [data-detalle-materia]");
 
@@ -103,8 +146,17 @@ Funciones:
 
       var estado = normalizarEstado(materia);
       var celdaEstado = fila.children[7];
+      var badgeActual = celdaEstado.querySelector
+        ? celdaEstado.querySelector("[data-estado-clasificado]")
+        : null;
+      var debeRepintar = !badgeActual ||
+        badgeActual.getAttribute("data-estado-clasificado") !== estado.codigo ||
+        texto(badgeActual.textContent) !== estado.etiqueta;
 
-      celdaEstado.innerHTML = renderBadgeEstado(materia);
+      if (debeRepintar) {
+        celdaEstado.innerHTML = renderBadgeEstado(materia);
+      }
+
       fila.setAttribute("data-estado-materia", estado.codigo);
       fila.classList.remove(
         "subir-row-completa",
@@ -123,6 +175,7 @@ Funciones:
       paqueteActual = paquete || paqueteActual;
       if (!paqueteActual) return;
       actualizarContadores(paqueteActual);
+      actualizarEstadoGeneral(paqueteActual);
       actualizarFilas(paqueteActual);
     } finally {
       actualizando = false;
@@ -189,6 +242,7 @@ Funciones:
     instalar: instalar,
     actualizar: actualizar,
     actualizarContadores: actualizarContadores,
+    actualizarEstadoGeneral: actualizarEstadoGeneral,
     actualizarFilas: actualizarFilas,
     normalizarEstado: normalizarEstado,
     renderBadgeEstado: renderBadgeEstado
