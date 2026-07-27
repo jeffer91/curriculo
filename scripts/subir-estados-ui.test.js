@@ -81,7 +81,7 @@ vm.runInContext(leer("subir/subir.estados-ui.js"), context, {
 
 const UI = context.window.SubirCCC.EstadosUI;
 assert.ok(UI, "Debe exponerse SubirCCC.EstadosUI.");
-assert.strictEqual(UI.VERSION, "4.0.1");
+assert.strictEqual(UI.VERSION, "4.0.2");
 assert.strictEqual(context.window.SubirCCC.Preview.__estadosUI, true);
 assert.strictEqual(typeof listeners.input, "function");
 
@@ -130,6 +130,42 @@ assert.strictEqual(
 assert.strictEqual(estadoGeneral.tipo, "error");
 assert.strictEqual(estadoGeneral.titulo, "ZIP con errores");
 assert.match(estadoGeneral.mensaje, /1 materia tiene/);
+
+UI.actualizarContadores({
+  materias: new Array(16).fill(null),
+  resumenValidacion: {
+    totalMaterias: 16,
+    materiasCompletas: 16,
+    materiasAdvertencia: 0,
+    materiasRevision: 1,
+    materiasError: 0,
+    materiasIncompletas: 0
+  }
+});
+assert.strictEqual(elementos.statCompletas.textContent, "16");
+assert.strictEqual(elementos.statAdvertencias.textContent, "0");
+assert.strictEqual(elementos.statErrores.textContent, "0");
+assert.strictEqual(elementos.resumenEstadosMaterias.atributos["data-total-estados"], "16");
+assert.strictEqual(elementos.resumenEstadosMaterias.atributos["data-total-materias"], "16");
+assert.strictEqual(
+  elementos.resumenEstadosMaterias.classList.clases["subir-state-summary-error"],
+  false
+);
+
+UI.actualizarEstadoGeneral({
+  resumenValidacion: {
+    materiasAdvertencia: 0,
+    materiasRevision: 0,
+    materiasError: 0,
+    materiasIncompletas: 0,
+    alertasGlobales: 1,
+    bloqueaImportacion: false
+  }
+});
+assert.strictEqual(estadoGeneral.tipo, "warn");
+assert.strictEqual(estadoGeneral.titulo, "ZIP con alerta general");
+assert.match(estadoGeneral.mensaje, /1 alerta general/);
+assert.doesNotMatch(estadoGeneral.mensaje, /materia requiere/);
 
 context.window.SubirCCC.Preview.limpiarPreview();
 assert.strictEqual(limpiarEjecutado, true);
