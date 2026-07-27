@@ -7,6 +7,7 @@ Función o funciones:
 - Leer los tres Excel PEA y reemplazar de forma segura carreras existentes.
 - Importar mediante un único orquestador con progreso, rollback y diagnóstico.
 - Mostrar un modal técnico cuando falle o se detenga cualquier etapa.
+- Enriquecer cada advertencia con causa, solución y acción recomendada.
 ========================================================= -->
 <!DOCTYPE html>
 <html lang="es">
@@ -14,7 +15,7 @@ Función o funciones:
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Subir ZIP CCC | Gestión Curricular</title>
-  <link rel="stylesheet" href="../menu-superior/menu-superior.css?v=20260713-7" />
+  <link rel="stylesheet" href="../menu-superior/menu-superior.css?v=20260727-2" />
   <link rel="stylesheet" href="../diagnostico/diagnostico-modal.css?v=20260713-7" />
   <link rel="stylesheet" href="./subir.css?v=20260717-1" />
 </head>
@@ -109,7 +110,7 @@ Función o funciones:
   <script src="../diagnostico/diagnostico-flujo.js?v=20260713-7"></script>
   <script src="../diagnostico/diagnostico-modal.js?v=20260713-7"></script>
   <script src="../diagnostico/subir-diagnostico.js?v=20260713-7"></script>
-  <script src="../menu-superior/menu-superior.js?v=20260713-7"></script>
+  <script src="../menu-superior/menu-superior.js?v=20260727-2"></script>
   <script src="../libs/jszip.min.js?v=20260713-7"></script>
   <script src="../libs/xlsx.min.js?v=20260713-7"></script>
 
@@ -129,7 +130,8 @@ Función o funciones:
   <script src="./subir.detector-archivos.js?v=20260713-7"></script>
   <script src="./subir.zip.js?v=20260713-7"></script>
   <script src="./subir.excel.js?v=20260717-1"></script>
-  <script src="./subir.validador.js?v=20260717-1"></script>
+  <script src="./subir.validador.js?v=20260727-2"></script>
+  <script src="./subir.advertencias.js?v=20260727-2"></script>
   <script src="./subir.conexion-bdlocal.js?v=20260713-8"></script>
   <script src="../bdlocal/bdlocal.importacion-orquestador.js?v=20260713-7"></script>
   <script src="./subir.preview.js?v=20260717-1"></script>
