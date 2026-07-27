@@ -13,7 +13,7 @@ Funciones:
 
   window.SubirCCC = window.SubirCCC || {};
   var NS = window.SubirCCC;
-  var VERSION = "4.0.1";
+  var VERSION = "4.0.2";
   var paqueteActual = null;
   var observerTabla = null;
   var actualizando = false;
@@ -35,6 +35,21 @@ Funciones:
   function setTexto(id, valor) {
     var elemento = $(id);
     if (elemento) elemento.textContent = texto(valor);
+  }
+
+  function numeroResumen(resumen, campoActual, campoAnterior) {
+    var valor = resumen && resumen[campoActual];
+
+    if ((valor === null || typeof valor === "undefined") && campoAnterior) {
+      valor = resumen && resumen[campoAnterior];
+    }
+
+    if (valor === null || typeof valor === "undefined" || valor === "") {
+      return 0;
+    }
+
+    valor = Number(valor);
+    return Number.isFinite(valor) ? valor : 0;
   }
 
   function obtenerMateria(paquete, materiaId) {
@@ -70,16 +85,16 @@ Funciones:
 
   function actualizarContadores(paquete) {
     var resumen = paquete && paquete.resumenValidacion ? paquete.resumenValidacion : {};
-    var completas = Number(resumen.materiasCompletas || 0);
-    var advertencias = Number(resumen.materiasAdvertencia || resumen.materiasRevision || 0);
-    var errores = Number(resumen.materiasError || resumen.materiasIncompletas || 0);
+    var completas = numeroResumen(resumen, "materiasCompletas");
+    var advertencias = numeroResumen(resumen, "materiasAdvertencia", "materiasRevision");
+    var errores = numeroResumen(resumen, "materiasError", "materiasIncompletas");
 
     setTexto("statCompletas", completas);
     setTexto("statAdvertencias", advertencias);
     setTexto("statErrores", errores);
 
     var total = completas + advertencias + errores;
-    var totalMaterias = Number(resumen.totalMaterias || arr(paquete && paquete.materias).length || 0);
+    var totalMaterias = numeroResumen(resumen, "totalMaterias") || arr(paquete && paquete.materias).length || 0;
     var panel = $("resumenEstadosMaterias");
 
     if (panel) {
@@ -96,9 +111,9 @@ Funciones:
     if (!NS.Preview || typeof NS.Preview.pintarEstado !== "function") return;
 
     var resumen = paquete && paquete.resumenValidacion ? paquete.resumenValidacion : {};
-    var advertencias = Number(resumen.materiasAdvertencia || resumen.materiasRevision || 0);
-    var errores = Number(resumen.materiasError || resumen.materiasIncompletas || 0);
-    var alertasGlobales = Number(resumen.alertasGlobales || 0);
+    var advertencias = numeroResumen(resumen, "materiasAdvertencia", "materiasRevision");
+    var errores = numeroResumen(resumen, "materiasError", "materiasIncompletas");
+    var alertasGlobales = numeroResumen(resumen, "alertasGlobales");
 
     if (resumen.bloqueaImportacion === true) {
       NS.Preview.pintarEstado(
@@ -118,11 +133,20 @@ Funciones:
       return;
     }
 
-    if (advertencias > 0 || alertasGlobales > 0) {
+    if (advertencias > 0) {
       NS.Preview.pintarEstado(
         "warn",
         "ZIP con advertencias",
         advertencias + " materia" + (advertencias === 1 ? " requiere" : "s requieren") + " revisión antes de continuar."
+      );
+      return;
+    }
+
+    if (alertasGlobales > 0) {
+      NS.Preview.pintarEstado(
+        "warn",
+        alertasGlobales === 1 ? "ZIP con alerta general" : "ZIP con alertas generales",
+        "Se detect" + (alertasGlobales === 1 ? "ó 1 alerta general" : "aron " + alertasGlobales + " alertas generales") + " del ZIP. Revisa el detalle antes de continuar."
       );
       return;
     }
