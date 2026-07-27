@@ -13,7 +13,7 @@ Funciones:
 
   window.SubirCCC = window.SubirCCC || {};
   var NS = window.SubirCCC;
-  var VERSION = "5.0.0";
+  var VERSION = "5.0.1";
   var paqueteActual = null;
   var conectado = false;
 
@@ -43,6 +43,21 @@ Funciones:
     else elemento.setAttribute("hidden", "hidden");
   }
 
+  function numeroResumen(resumen, campoActual, campoAnterior) {
+    var valor = resumen && resumen[campoActual];
+
+    if ((valor === null || typeof valor === "undefined") && campoAnterior) {
+      valor = resumen && resumen[campoAnterior];
+    }
+
+    if (valor === null || typeof valor === "undefined" || valor === "") {
+      return 0;
+    }
+
+    valor = Number(valor);
+    return Number.isFinite(valor) ? valor : 0;
+  }
+
   function severidadPeso(validacion) {
     var severidad = texto(validacion && validacion.severidad).toLowerCase();
     if (severidad === "critico") return 4;
@@ -53,10 +68,10 @@ Funciones:
 
   function resumenAcciones(paquete) {
     var resumen = paquete && paquete.resumenValidacion ? paquete.resumenValidacion : {};
-    var completas = Number(resumen.materiasCompletas || 0);
-    var advertencias = Number(resumen.materiasAdvertencia || resumen.materiasRevision || 0);
-    var errores = Number(resumen.materiasError || resumen.materiasIncompletas || 0);
-    var globales = Number(resumen.alertasGlobales || 0);
+    var completas = numeroResumen(resumen, "materiasCompletas");
+    var advertencias = numeroResumen(resumen, "materiasAdvertencia", "materiasRevision");
+    var errores = numeroResumen(resumen, "materiasError", "materiasIncompletas");
+    var globales = numeroResumen(resumen, "alertasGlobales");
     var bloqueado = resumen.bloqueaImportacion === true;
 
     var partes = [];
