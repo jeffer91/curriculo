@@ -7,12 +7,15 @@ Función o funciones:
 - Incorporar los módulos Sincronización y Depuraciones mediante navegación local directa.
 - Cargar automáticamente diagnóstico global e inteligencia BDLocal.
 - Activar la revisión y edición segura del detalle de materias en BDLocal.
+- Mostrar la versión, el origen esperado y la carpeta real de ejecución.
 ========================================================= */
 (function(window,document){
   "use strict";
   var MENU_ID="curriculoMenuSuperior";
   var ROOT_CLASS="cms-menu-mounted";
-  var VERSION_RECURSOS="20260716-4";
+  var VERSION_RECURSOS="20260727-1";
+  var REPOSITORIO_OFICIAL="jeffer91/curriculo";
+  var VERSION_INTERFAZ="bloque-1";
   var LINKS=[
     {id:"inicio",label:"Inicio",shortLabel:"Inicio",root:"index.html",child:"../index.html",icon:"⌂"},
     {id:"subir",label:"Subir ZIP",shortLabel:"Subir",root:"subir/subir.html",child:"../subir/subir.html",icon:"ZIP"},
@@ -22,7 +25,7 @@ Función o funciones:
     {id:"comunicados",label:"Comunicados",shortLabel:"Com.",root:"comunicados/comunicados.html",child:"../comunicados/comunicados.html",icon:"COM"}
   ];
   function texto(v){return String(v===null||typeof v==="undefined"?"":v).trim();}
-  function escapar(v){return texto(v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");}
+  function escapar(v){return texto(v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\"/g,"&quot;").replace(/'/g,"&#039;");}
   function pathActual(){return String(window.location.pathname||"").replace(/\\/g,"/").toLowerCase();}
   function estaEnSubcarpeta(){return /\/(subir|bdlocal|sincronizacion|comunicados|depuraciones|menu-superior)\//.test(pathActual());}
   function rutaDesdeRaiz(ruta){return(estaEnSubcarpeta()?"../":"")+ruta;}
@@ -35,7 +38,7 @@ Función o funciones:
       var routeAttr=link.native?"":' data-cms-route="'+escapar(link.id)+'"';
       return '<a class="cms-link '+(link.id===activa?"cms-link-active":"")+'" href="'+escapar(hrefDe(link))+'"'+routeAttr+' title="'+escapar(link.label)+'"><span class="cms-link-icon">'+escapar(link.icon)+'</span><span class="cms-link-label">'+escapar(link.label)+'</span><span class="cms-link-short">'+escapar(link.shortLabel)+'</span></a>';
     }).join("");
-    return '<nav id="'+MENU_ID+'" class="cms-menu" aria-label="Menú superior Curriculo"><div class="cms-inner"><a class="cms-brand" href="'+escapar(estaEnSubcarpeta()?"../index.html":"index.html")+'" data-cms-route="inicio"><span class="cms-brand-mark">CCC</span><span class="cms-brand-text"><strong>Curriculo</strong><small>Gestión Curricular</small></span></a><div class="cms-links">'+links+'</div><div class="cms-right"><span class="cms-mode" id="cmsMode">Local</span><button class="cms-icon-btn" type="button" id="cmsBtnRecargar" title="Recargar pantalla">↻</button></div></div></nav>';
+    return '<nav id="'+MENU_ID+'" class="cms-menu" aria-label="Menú superior Curriculo"><div class="cms-inner"><a class="cms-brand" href="'+escapar(estaEnSubcarpeta()?"../index.html":"index.html")+'" data-cms-route="inicio"><span class="cms-brand-mark">CCC</span><span class="cms-brand-text"><strong>Curriculo</strong><small>Gestión Curricular</small></span></a><div class="cms-links">'+links+'</div><div class="cms-right"><span class="cms-version" id="cmsVersion" title="Repositorio esperado: '+escapar(REPOSITORIO_OFICIAL)+'">Código GitHub</span><span class="cms-mode" id="cmsMode">Local</span><button class="cms-icon-btn" type="button" id="cmsBtnRecargar" title="Recargar pantalla">↻</button></div></div></nav>';
   }
   async function navegar(ruta,fallbackHref){
     var href=texto(fallbackHref);
@@ -50,6 +53,47 @@ Función o funciones:
     var recargar=document.getElementById("cmsBtnRecargar");if(recargar)recargar.addEventListener("click",function(){window.location.reload();});
   }
   function actualizarModo(){var el=document.getElementById("cmsMode");if(!el)return;el.textContent=esElectron()?"Electron":"Navegador";el.classList.toggle("cms-mode-electron",esElectron());}
+  async function actualizarIdentidad(){
+    var el=document.getElementById("cmsVersion");
+    if(!el)return null;
+    var detalle=[
+      "Repositorio esperado: "+REPOSITORIO_OFICIAL,
+      "Interfaz: "+VERSION_INTERFAZ,
+      "Pantalla: "+pantallaActual(),
+      "Modo: "+(esElectron()?"Electron":"Navegador")
+    ];
+    el.textContent="GitHub";
+    el.title=detalle.join("\n");
+    el.dataset.repositorio=REPOSITORIO_OFICIAL;
+    el.dataset.interfaz=VERSION_INTERFAZ;
+    if(!esElectron()||typeof window.CurriculoElectron.getAppInfo!=="function")return null;
+    try{
+      var info=await window.CurriculoElectron.getAppInfo();
+      if(!info||info.ok!==true){
+        el.textContent="Versión no disponible";
+        el.classList.add("cms-version-warning");
+        return info||null;
+      }
+      var version=texto(info.version)||"sin versión";
+      el.textContent="v"+version;
+      detalle.push("Versión instalada: "+version);
+      detalle.push("Ejecución: "+(info.isPackaged?"empaquetada":"código fuente"));
+      detalle.push("Carpeta raíz: "+texto(info.rootDir));
+      detalle.push("Plataforma: "+texto(info.platform));
+      detalle.push("Puente Electron: "+texto(info.bridgeVersion));
+      el.title=detalle.join("\n");
+      el.dataset.version=version;
+      el.dataset.root=texto(info.rootDir);
+      el.dataset.packaged=info.isPackaged?"true":"false";
+      el.classList.remove("cms-version-warning");
+      return info;
+    }catch(error){
+      el.textContent="Versión no disponible";
+      el.classList.add("cms-version-warning");
+      el.title=detalle.concat("No se pudo consultar Electron: "+(error&&error.message?error.message:String(error))).join("\n");
+      return null;
+    }
+  }
   function cargarScript(src,atributo,callback){
     var existente=document.querySelector('script['+atributo+'="true"]');if(existente){if(callback)callback();return;}
     var script=document.createElement("script");script.src=src;script.async=false;script.setAttribute(atributo,"true");if(callback)script.addEventListener("load",callback,{once:true});script.addEventListener("error",function(){console.error("[MenuSuperior] No se pudo cargar:",src);});document.head.appendChild(script);
@@ -69,11 +113,11 @@ Función o funciones:
   }
   function montar(){
     cargarDiagnosticoGlobal();
-    if(document.getElementById(MENU_ID)){cargarInteligenciaBDLocal();cargarDetalleRapidoBDLocal();return;}
-    document.body.classList.add(ROOT_CLASS);document.body.insertAdjacentHTML("afterbegin",construirHTML());conectarEventos();actualizarModo();cargarInteligenciaBDLocal();cargarDetalleRapidoBDLocal();
+    if(document.getElementById(MENU_ID)){actualizarModo();actualizarIdentidad();cargarInteligenciaBDLocal();cargarDetalleRapidoBDLocal();return;}
+    document.body.classList.add(ROOT_CLASS);document.body.insertAdjacentHTML("afterbegin",construirHTML());conectarEventos();actualizarModo();actualizarIdentidad();cargarInteligenciaBDLocal();cargarDetalleRapidoBDLocal();
   }
   function marcarActivo(ruta){document.querySelectorAll(".cms-link").forEach(function(link){var href=link.getAttribute("href")||"";var id=link.getAttribute("data-cms-route")||(/sincronizacion/.test(href)?"sincronizacion":/depuraciones/.test(href)?"depuraciones":"");link.classList.toggle("cms-link-active",id===texto(ruta||pantallaActual()).toLowerCase());});}
-  window.CurriculoMenuSuperior={montar:montar,marcarActivo:marcarActivo,obtenerPantallaActual:pantallaActual,esElectron:esElectron,navegar:navegar,cargarDiagnosticoGlobal:cargarDiagnosticoGlobal};
+  window.CurriculoMenuSuperior={montar:montar,marcarActivo:marcarActivo,obtenerPantallaActual:pantallaActual,esElectron:esElectron,navegar:navegar,cargarDiagnosticoGlobal:cargarDiagnosticoGlobal,actualizarIdentidad:actualizarIdentidad,REPOSITORIO_OFICIAL:REPOSITORIO_OFICIAL,VERSION_INTERFAZ:VERSION_INTERFAZ};
   cargarDiagnosticoGlobal();
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",montar,{once:true});else montar();
 })(window,document);
