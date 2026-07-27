@@ -74,23 +74,29 @@ const paquete = context.window.SubirCCC.Validador.validarPaquete({
 
 const Estados = context.window.SubirCCC.Estados;
 assert.ok(Estados, "Debe exponerse SubirCCC.Estados.");
-assert.strictEqual(Estados.VERSION, "4.0.0");
+assert.strictEqual(Estados.VERSION, "4.0.1");
 assert.strictEqual(context.window.SubirCCC.Validador.__estadosClasificados, true);
 
 const completa = paquete.materias.find((materia) => materia.id === "materia_completa");
 const advertencia = paquete.materias.find((materia) => materia.id === "materia_advertencia");
 const error = paquete.materias.find((materia) => materia.id === "materia_error");
 
+assert.strictEqual(completa.estadoValidacion, "completo");
+assert.strictEqual(completa.estadoValidacionTecnico, "completo");
 assert.strictEqual(completa.estadoClasificado, "completa");
 assert.strictEqual(completa.etiquetaEstado, "Completa");
 assert.strictEqual(completa.requiereRevision, false);
 
+assert.strictEqual(advertencia.estadoValidacion, "revision");
+assert.strictEqual(advertencia.estadoValidacionTecnico, "revision");
 assert.strictEqual(advertencia.estadoClasificado, "advertencia");
 assert.strictEqual(advertencia.etiquetaEstado, "Advertencia");
 assert.strictEqual(advertencia.totalAdvertenciasMateria, 1);
 assert.strictEqual(advertencia.totalErroresMateria, 0);
 assert.strictEqual(advertencia.requiereRevision, true);
 
+assert.strictEqual(error.estadoValidacion, "incompleto");
+assert.strictEqual(error.estadoValidacionTecnico, "incompleto");
 assert.strictEqual(error.estadoClasificado, "error");
 assert.strictEqual(error.etiquetaEstado, "Error");
 assert.strictEqual(error.totalErroresMateria, 1);
@@ -126,6 +132,7 @@ const paqueteCritico = context.window.SubirCCC.Validador.validarPaquete({
   carga: {}
 });
 
+assert.strictEqual(paqueteCritico.materias[0].estadoValidacion, "revision");
 assert.strictEqual(paqueteCritico.materias[0].estadoClasificado, "error");
 assert.strictEqual(paqueteCritico.materias[0].bloqueaImportacion, true);
 assert.strictEqual(paqueteCritico.resumenValidacion.bloqueaImportacion, true);
