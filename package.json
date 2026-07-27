@@ -9,11 +9,11 @@
       "Mantener la app local-first usando los HTML existentes.",
       "Preparar el proyecto para futuras tareas de empaquetado.",
       "Identificar de forma reproducible la versión oficial del repositorio.",
-      "Ejecutar pruebas de advertencias, interfaz, clasificación y contadores."
+      "Ejecutar pruebas de advertencias, estados, acciones y flujo integral."
     ]
   },
   "name": "curriculo",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "App local para Gestión Curricular CCC con subida ZIP, BDLocal y modo Electron.",
   "main": "electron/main.js",
   "private": true,
@@ -32,12 +32,14 @@
     "dev": "electron . --devtools",
     "electron": "electron .",
     "reset": "electron . --reset-local-data",
-    "test": "node scripts/sync-rules.test.js && node scripts/subir-observaciones.test.js && node scripts/subir-advertencias.test.js && node scripts/subir-estados.test.js && node scripts/subir-advertencias-ui.test.js && node scripts/subir-estados-ui.test.js && node scripts/comunicados-zip.test.js",
-    "test:subir": "node scripts/subir-observaciones.test.js && node scripts/subir-advertencias.test.js && node scripts/subir-estados.test.js && node scripts/subir-advertencias-ui.test.js && node scripts/subir-estados-ui.test.js",
+    "test": "node scripts/sync-rules.test.js && node scripts/subir-observaciones.test.js && node scripts/subir-advertencias.test.js && node scripts/subir-estados.test.js && node scripts/subir-advertencias-ui.test.js && node scripts/subir-estados-ui.test.js && node scripts/subir-acciones.test.js && node scripts/subir-flujo-integral.test.js && node scripts/comunicados-zip.test.js",
+    "test:subir": "node scripts/subir-observaciones.test.js && node scripts/subir-advertencias.test.js && node scripts/subir-estados.test.js && node scripts/subir-advertencias-ui.test.js && node scripts/subir-estados-ui.test.js && node scripts/subir-acciones.test.js && node scripts/subir-flujo-integral.test.js",
     "test:advertencias": "node scripts/subir-advertencias.test.js && node scripts/subir-estados.test.js && node scripts/subir-advertencias-ui.test.js && node scripts/subir-estados-ui.test.js",
     "test:advertencias-ui": "node scripts/subir-advertencias-ui.test.js",
     "test:estados": "node scripts/subir-estados.test.js && node scripts/subir-estados-ui.test.js",
     "test:estados-ui": "node scripts/subir-estados-ui.test.js",
+    "test:acciones": "node scripts/subir-acciones.test.js",
+    "test:flujo": "node scripts/subir-flujo-integral.test.js",
     "test:comunicados": "node scripts/comunicados-zip.test.js"
   },
   "dependencies": {
