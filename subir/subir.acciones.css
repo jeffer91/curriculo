@@ -1,0 +1,83 @@
+/* =========================================================
+Nombre completo: subir.acciones.css
+Ruta o ubicación: /Curriculo/subir/subir.acciones.css
+Funciones:
+- Diseñar el panel de revisión, reescaneo y reemplazo del ZIP.
+- Mantener las acciones claras en escritorio y pantallas pequeñas.
+========================================================= */
+
+.subir-review-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  border-color: #c7daf2;
+  background: linear-gradient(180deg, #ffffff 0%, #f5f9ff 100%);
+}
+
+.subir-review-actions h2 {
+  margin: 0;
+  font-size: 20px;
+  letter-spacing: -0.02em;
+}
+
+.subir-review-actions p {
+  margin: 6px 0 0;
+  color: var(--subir-muted);
+  line-height: 1.45;
+}
+
+.subir-review-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 9px;
+}
+
+.subir-review-help {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 11px 13px;
+  border: 1px solid var(--subir-border);
+  border-radius: var(--subir-radius-md);
+  background: #ffffff;
+  color: var(--subir-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.subir-review-help strong {
+  color: var(--subir-text);
+}
+
+.subir-btn-review {
+  color: #7a4700;
+  background: var(--subir-warn-soft);
+  border-color: #f0c36d;
+}
+
+.subir-btn-review:hover {
+  background: #ffe9b8;
+}
+
+.subir-btn-rescan {
+  color: var(--subir-primary);
+  background: var(--subir-primary-soft);
+  border-color: #c7daf2;
+}
+
+.subir-btn-replace {
+  color: var(--subir-text);
+  background: #ffffff;
+  border-color: var(--subir-border-strong);
+}
+
+@media (max-width: 900px) {
+  .subir-review-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .subir-review-actions-row {
+    justify-content: flex-start;
+  }
+}
