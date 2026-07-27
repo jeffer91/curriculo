@@ -8,11 +8,12 @@
       "Indicar que el archivo principal de Electron está en /electron/main.js.",
       "Mantener la app local-first usando los HTML existentes.",
       "Preparar el proyecto para futuras tareas de empaquetado.",
-      "Identificar de forma reproducible la versión oficial del repositorio."
+      "Identificar de forma reproducible la versión oficial del repositorio.",
+      "Ejecutar pruebas de estructura y explicación de advertencias."
     ]
   },
   "name": "curriculo",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "App local para Gestión Curricular CCC con subida ZIP, BDLocal y modo Electron.",
   "main": "electron/main.js",
   "private": true,
@@ -31,8 +32,9 @@
     "dev": "electron . --devtools",
     "electron": "electron .",
     "reset": "electron . --reset-local-data",
-    "test": "node scripts/sync-rules.test.js && node scripts/subir-observaciones.test.js && node scripts/comunicados-zip.test.js",
-    "test:subir": "node scripts/subir-observaciones.test.js",
+    "test": "node scripts/sync-rules.test.js && node scripts/subir-observaciones.test.js && node scripts/subir-advertencias.test.js && node scripts/comunicados-zip.test.js",
+    "test:subir": "node scripts/subir-observaciones.test.js && node scripts/subir-advertencias.test.js",
+    "test:advertencias": "node scripts/subir-advertencias.test.js",
     "test:comunicados": "node scripts/comunicados-zip.test.js"
   },
   "dependencies": {
