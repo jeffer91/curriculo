@@ -7,6 +7,7 @@ Función o funciones:
 - Adaptar el menú a navegador y Electron.
 - Resaltar la pantalla activa.
 - Mantener diseño claro, institucional y compatible con las pantallas actuales.
+- Mostrar una identificación visible de versión y origen de ejecución.
 ========================================================= */
 
 :root {
@@ -20,6 +21,7 @@ Función o funciones:
   --cms-primary-soft: #e8f1fb;
   --cms-shadow: 0 12px 35px rgba(31, 50, 78, 0.08);
   --cms-ok: #137a4b;
+  --cms-warn: #9a5b00;
 }
 
 body.cms-menu-mounted {
@@ -158,17 +160,35 @@ body.cms-menu-mounted {
   min-width: 180px;
 }
 
+.cms-version,
 .cms-mode {
   display: inline-flex;
   align-items: center;
   min-height: 32px;
   padding: 6px 10px;
   border-radius: 999px;
-  color: var(--cms-muted);
-  background: #f8fafc;
   border: 1px solid var(--cms-border);
   font-size: 12px;
   font-weight: 900;
+  white-space: nowrap;
+}
+
+.cms-version {
+  color: var(--cms-primary);
+  background: var(--cms-primary-soft);
+  border-color: #c7daf2;
+  cursor: help;
+}
+
+.cms-version-warning {
+  color: var(--cms-warn);
+  background: #fff6df;
+  border-color: #f0d39a;
+}
+
+.cms-mode {
+  color: var(--cms-muted);
+  background: #f8fafc;
 }
 
 .cms-mode-electron {
@@ -196,6 +216,12 @@ body.cms-menu-mounted {
   background: var(--cms-primary-soft);
   border-color: var(--cms-primary);
   transform: translateY(-1px);
+}
+
+@media (max-width: 1120px) {
+  .cms-version {
+    display: none;
+  }
 }
 
 @media (max-width: 960px) {
