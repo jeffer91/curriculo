@@ -7,16 +7,25 @@
       "Definir scripts npm para iniciar la aplicación de escritorio.",
       "Indicar que el archivo principal de Electron está en /electron/main.js.",
       "Mantener la app local-first usando los HTML existentes.",
-      "Preparar el proyecto para futuras tareas de empaquetado."
+      "Preparar el proyecto para futuras tareas de empaquetado.",
+      "Identificar de forma reproducible la versión oficial del repositorio."
     ]
   },
   "name": "curriculo",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "App local para Gestión Curricular CCC con subida ZIP, BDLocal y modo Electron.",
   "main": "electron/main.js",
   "private": true,
   "author": "ITSQMET",
   "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jeffer91/curriculo.git"
+  },
+  "homepage": "https://github.com/jeffer91/curriculo#readme",
+  "bugs": {
+    "url": "https://github.com/jeffer91/curriculo/issues"
+  },
   "scripts": {
     "start": "electron .",
     "dev": "electron . --devtools",
@@ -31,6 +40,6 @@
     "xlsx": "0.18.5"
   },
   "devDependencies": {
-    "electron": "latest"
+    "electron": "39.8.10"
   }
 }
