@@ -15,6 +15,7 @@ let inputClick = false;
 
 const inputZip = {
   value: "anterior.zip",
+  addEventListener() {},
   click() {
     inputClick = true;
   }
