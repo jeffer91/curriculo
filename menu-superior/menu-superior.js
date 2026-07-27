@@ -13,9 +13,9 @@ Función o funciones:
   "use strict";
   var MENU_ID="curriculoMenuSuperior";
   var ROOT_CLASS="cms-menu-mounted";
-  var VERSION_RECURSOS="20260727-1";
+  var VERSION_RECURSOS="20260727-2";
   var REPOSITORIO_OFICIAL="jeffer91/curriculo";
-  var VERSION_INTERFAZ="bloque-1";
+  var VERSION_INTERFAZ="bloque-2";
   var LINKS=[
     {id:"inicio",label:"Inicio",shortLabel:"Inicio",root:"index.html",child:"../index.html",icon:"⌂"},
     {id:"subir",label:"Subir ZIP",shortLabel:"Subir",root:"subir/subir.html",child:"../subir/subir.html",icon:"ZIP"},
