@@ -9,11 +9,11 @@
       "Mantener la app local-first usando los HTML existentes.",
       "Preparar el proyecto para futuras tareas de empaquetado.",
       "Identificar de forma reproducible la versión oficial del repositorio.",
-      "Ejecutar pruebas de estructura y explicación de advertencias."
+      "Ejecutar pruebas de estructura, explicación y visualización de advertencias."
     ]
   },
   "name": "curriculo",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "App local para Gestión Curricular CCC con subida ZIP, BDLocal y modo Electron.",
   "main": "electron/main.js",
   "private": true,
@@ -32,9 +32,10 @@
     "dev": "electron . --devtools",
     "electron": "electron .",
     "reset": "electron . --reset-local-data",
-    "test": "node scripts/sync-rules.test.js && node scripts/subir-observaciones.test.js && node scripts/subir-advertencias.test.js && node scripts/comunicados-zip.test.js",
-    "test:subir": "node scripts/subir-observaciones.test.js && node scripts/subir-advertencias.test.js",
-    "test:advertencias": "node scripts/subir-advertencias.test.js",
+    "test": "node scripts/sync-rules.test.js && node scripts/subir-observaciones.test.js && node scripts/subir-advertencias.test.js && node scripts/subir-advertencias-ui.test.js && node scripts/comunicados-zip.test.js",
+    "test:subir": "node scripts/subir-observaciones.test.js && node scripts/subir-advertencias.test.js && node scripts/subir-advertencias-ui.test.js",
+    "test:advertencias": "node scripts/subir-advertencias.test.js && node scripts/subir-advertencias-ui.test.js",
+    "test:advertencias-ui": "node scripts/subir-advertencias-ui.test.js",
     "test:comunicados": "node scripts/comunicados-zip.test.js"
   },
   "dependencies": {
