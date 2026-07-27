@@ -9,6 +9,7 @@ Función o funciones:
 - Mostrar un modal técnico cuando falle o se detenga cualquier etapa.
 - Enriquecer cada advertencia con causa, solución y acción recomendada.
 - Mostrar por materia un botón para revisar cómo corregir cada advertencia.
+- Separar los contadores de materias completas, con advertencia y con error.
 ========================================================= -->
 <!DOCTYPE html>
 <html lang="es">
@@ -16,10 +17,11 @@ Función o funciones:
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Subir ZIP CCC | Gestión Curricular</title>
-  <link rel="stylesheet" href="../menu-superior/menu-superior.css?v=20260727-3" />
+  <link rel="stylesheet" href="../menu-superior/menu-superior.css?v=20260727-4" />
   <link rel="stylesheet" href="../diagnostico/diagnostico-modal.css?v=20260713-7" />
   <link rel="stylesheet" href="./subir.css?v=20260717-1" />
   <link rel="stylesheet" href="./subir.advertencias-ui.css?v=20260727-3" />
+  <link rel="stylesheet" href="./subir.estados.css?v=20260727-4" />
 </head>
 <body>
   <div class="subir-page">
@@ -64,13 +66,14 @@ Función o funciones:
         </div>
       </section>
 
-      <section class="subir-grid subir-grid-cards" aria-label="Resumen de subida">
+      <section id="resumenEstadosMaterias" class="subir-grid subir-grid-cards" aria-label="Resumen de subida y estados de materias">
         <article class="subir-card"><span>Carreras</span><strong id="statCarreras">0</strong><small>Detectadas</small></article>
         <article class="subir-card"><span>Niveles</span><strong id="statNiveles">0</strong><small>Clasificados</small></article>
         <article class="subir-card"><span>Materias</span><strong id="statMaterias">0</strong><small>Encontradas</small></article>
         <article class="subir-card"><span>Archivos</span><strong id="statArchivos">0</strong><small>Dentro del ZIP</small></article>
-        <article class="subir-card subir-card-ok"><span>Completas</span><strong id="statCompletas">0</strong><small>Con contenido validado</small></article>
-        <article class="subir-card subir-card-warn"><span>Observaciones</span><strong id="statObservaciones">0</strong><small>Revisión requerida</small></article>
+        <article class="subir-card subir-card-ok"><span>Completas</span><strong id="statCompletas">0</strong><small>Sin problemas detectados</small></article>
+        <article class="subir-card subir-card-warn"><span>Advertencias</span><strong id="statAdvertencias">0</strong><small>Materias que requieren revisión</small></article>
+        <article class="subir-card subir-card-error"><span>Errores</span><strong id="statErrores">0</strong><small>Materias con fallos de contenido</small></article>
       </section>
 
       <section id="accionesImportacion" class="subir-panel subir-actions-panel" hidden>
@@ -112,7 +115,7 @@ Función o funciones:
   <script src="../diagnostico/diagnostico-flujo.js?v=20260713-7"></script>
   <script src="../diagnostico/diagnostico-modal.js?v=20260713-7"></script>
   <script src="../diagnostico/subir-diagnostico.js?v=20260713-7"></script>
-  <script src="../menu-superior/menu-superior.js?v=20260727-3"></script>
+  <script src="../menu-superior/menu-superior.js?v=20260727-4"></script>
   <script src="../libs/jszip.min.js?v=20260713-7"></script>
   <script src="../libs/xlsx.min.js?v=20260713-7"></script>
 
@@ -134,10 +137,12 @@ Función o funciones:
   <script src="./subir.excel.js?v=20260717-1"></script>
   <script src="./subir.validador.js?v=20260727-2"></script>
   <script src="./subir.advertencias.js?v=20260727-2"></script>
+  <script src="./subir.estados.js?v=20260727-4"></script>
   <script src="./subir.conexion-bdlocal.js?v=20260713-8"></script>
   <script src="../bdlocal/bdlocal.importacion-orquestador.js?v=20260713-7"></script>
   <script src="./subir.preview.js?v=20260717-1"></script>
   <script src="./subir.advertencias-ui.js?v=20260727-3"></script>
+  <script src="./subir.estados-ui.js?v=20260727-4"></script>
   <script src="./subir.contenido-inteligente.js?v=20260715-4"></script>
   <script src="./subir.main.js?v=20260717-1"></script>
 </body>
