@@ -1,0 +1,57 @@
+name: Verificar Firebase y versionado
+
+on:
+  push:
+    paths:
+      - "firebase/**"
+      - "subir/**"
+      - "comunicados/**"
+      - "scripts/firebase-*.test.js"
+      - "scripts/comunicados-contador-firebase.test.js"
+      - "package.json"
+      - ".github/workflows/firebase-check.yml"
+  pull_request:
+    paths:
+      - "firebase/**"
+      - "subir/**"
+      - "comunicados/**"
+      - "scripts/firebase-*.test.js"
+      - "scripts/comunicados-contador-firebase.test.js"
+      - "package.json"
+      - ".github/workflows/firebase-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  comprobar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Verificar sintaxis crítica
+        run: |
+          node --check firebase/firebase.inteligencia.js
+          node --check firebase/firebase.inteligencia-v2.js
+          node --check firebase/firebase.curriculo.js
+          node --check firebase/firebase.robustez.js
+          node --check subir/subir.conexion-bdlocal.js
+          node --check comunicados/comunicados.contador.js
+          node --check comunicados/comunicados.reservas-ui.js
+
+      - name: Ejecutar pruebas de robustez
+        run: |
+          node scripts/firebase-inteligencia.test.js
+          node scripts/firebase-robustez.test.js
+          node scripts/comunicados-contador-firebase.test.js
+
+      - name: Ejecutar pruebas del flujo existente
+        run: npm test
