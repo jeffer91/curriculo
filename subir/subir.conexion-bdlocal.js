@@ -1,23 +1,21 @@
 /* =========================================================
 Nombre completo: subir.conexion-bdlocal.js
-Ruta o ubicación: /gestion-curricular-ccc/subir/subir.conexion-bdlocal.js
-Función o funciones:
-- Comunicar la carpeta subir con la carpeta bdlocal sin acoplarlas internamente.
-- Validar el paquete final antes de importarlo a BDLocalCCC.
-- Limpiar datos temporales no guardables antes de enviar a IndexedDB.
-- Ejecutar la importación mediante window.BDLocalCCC.importarPaqueteCCC().
-- Emitir eventos para que la pantalla pueda mostrar progreso, éxito o errores.
+Ruta o ubicación: /Curriculo/subir/subir.conexion-bdlocal.js
+Funciones:
+- Mantener la interfaz histórica de conexión usada por subir.main.js.
+- Conectar la pantalla Subir ZIP exclusivamente con Firebase Firestore.
+- Eliminar contenido binario antes de enviar el paquete al importador remoto.
+- Emitir progreso, resultado y errores de la comparación inteligente.
 ========================================================= */
-
 (function (window) {
   "use strict";
 
   window.SubirCCC = window.SubirCCC || {};
-
   var NS = window.SubirCCC;
+  var VERSION = "6.0.0";
 
-  function fechaISO() {
-    return new Date().toISOString();
+  function texto(valor) {
+    return String(valor === null || typeof valor === "undefined" ? "" : valor).trim();
   }
 
   function arr(valor) {
@@ -26,245 +24,121 @@ Función o funciones:
     return [valor];
   }
 
+  function fechaISO() {
+    return new Date().toISOString();
+  }
+
   function emitir(nombre, detalle) {
     try {
-      window.dispatchEvent(new CustomEvent(nombre, {
-        detail: detalle || {}
-      }));
+      window.dispatchEvent(new CustomEvent(nombre, { detail: detalle || {} }));
     } catch (error) {
-      console.warn("[SubirCCC.ConexionBDLocal] No se pudo emitir evento:", nombre, error);
+      console.warn("[SubirCCC.ConexionFirebase] No se pudo emitir:", nombre, error);
     }
   }
 
-  function obtenerBDLocal() {
-    if (!window.BDLocalCCC) {
+  function obtenerFirebase() {
+    if (!window.CurriculoFirebase || typeof window.CurriculoFirebase.importarPaquete !== "function") {
+      throw new Error("El servicio CurriculoFirebase no está disponible.");
+    }
+    return window.CurriculoFirebase;
+  }
+
+  function limpiarBinarios(valor, clave) {
+    if (valor === null || typeof valor === "undefined") return valor;
+    if (clave === "contenidoBinario" || clave === "archivoOriginal" || clave === "workbook" || clave === "file" || clave === "blob" || clave === "raw") {
       return null;
     }
-
-    return window.BDLocalCCC;
-  }
-
-  function verificarBDLocalDisponible() {
-    var BD = obtenerBDLocal();
-
-    if (!BD) {
-      throw new Error("BDLocalCCC no está cargado. Revisa que los scripts de /bdlocal estén incluidos en el HTML.");
+    if (valor instanceof ArrayBuffer) return null;
+    if (ArrayBuffer.isView && ArrayBuffer.isView(valor)) return null;
+    if (Array.isArray(valor)) {
+      return valor.map(function (item) { return limpiarBinarios(item, ""); });
     }
-
-    if (typeof BD.importarPaqueteCCC !== "function") {
-      throw new Error("BDLocalCCC.importarPaqueteCCC no está disponible. Falta bdlocal.importador.js o bdlocal.api.js.");
+    if (typeof valor === "object") {
+      var salida = {};
+      Object.keys(valor).forEach(function (k) {
+        var limpio = limpiarBinarios(valor[k], k);
+        if (limpio === null && ["contenidoBinario", "archivoOriginal", "workbook", "file", "blob", "raw"].indexOf(k) !== -1) return;
+        salida[k] = limpio;
+      });
+      return salida;
     }
-
-    return BD;
-  }
-
-  async function inicializarBDLocal() {
-    var BD = verificarBDLocalDisponible();
-
-    if (typeof BD.inicializar === "function") {
-      await BD.inicializar();
-    }
-
-    return BD;
-  }
-
-  function esArrayBuffer(valor) {
-    return valor instanceof ArrayBuffer;
-  }
-
-  function copiarContenidoBinario(valor) {
-    if (!valor) return null;
-
-    if (esArrayBuffer(valor)) {
-      return valor.slice(0);
-    }
-
     return valor;
-  }
-
-  function limpiarArchivoParaBDLocal(archivo, opciones) {
-    opciones = opciones || {};
-
-    var conservarContenidoBinario = opciones.conservarContenidoBinario !== false;
-
-    var limpio = {
-      id: archivo.id,
-      cargaId: archivo.cargaId || null,
-      carreraId: archivo.carreraId || "",
-      matrizId: archivo.matrizId || "",
-      nivelId: archivo.nivelId || "",
-      materiaId: archivo.materiaId || "",
-      carrera: archivo.carrera || "",
-      nivel: archivo.nivel || "",
-      numeroNivel: archivo.numeroNivel || 0,
-      codigo: archivo.codigo || "",
-      materia: archivo.materia || "",
-      tipo: archivo.tipo || "",
-      tipoSugerido: archivo.tipoSugerido || archivo.tipo || "",
-      tipoLabel: archivo.tipoLabel || "",
-      nombreArchivo: archivo.nombreArchivo || archivo.nombre || "",
-      rutaOriginal: archivo.rutaOriginal || archivo.ruta || "",
-      extension: archivo.extension || "",
-      esExcel: archivo.esExcel !== false,
-      estado: archivo.estado || "",
-      confianza: typeof archivo.confianza === "number" ? archivo.confianza : 0,
-      razonesDeteccion: arr(archivo.razonesDeteccion),
-      puntajesDeteccion: arr(archivo.puntajesDeteccion),
-      tamanoBytes: archivo.tamanoBytes || 0,
-      tieneContenidoBinario: false,
-      contenidoBinario: null,
-      datosProcesados: archivo.datosProcesados || archivo.datos || null,
-      errorExcel: archivo.errorExcel || archivo.errorLectura || "",
-      errorLectura: archivo.errorLectura || archivo.errorExcel || "",
-      creadoEn: archivo.creadoEn || fechaISO(),
-      actualizadoEn: fechaISO()
-    };
-
-    if (conservarContenidoBinario && archivo.contenidoBinario) {
-      limpio.contenidoBinario = copiarContenidoBinario(archivo.contenidoBinario);
-      limpio.tieneContenidoBinario = !!limpio.contenidoBinario;
-    }
-
-    return limpio;
-  }
-
-  function limpiarPaqueteParaBDLocal(paquete, opciones) {
-    opciones = opciones || {};
-
-    if (!paquete || typeof paquete !== "object") {
-      throw new Error("No se recibió un paquete válido para preparar.");
-    }
-
-    var limpio = {
-      carga: Object.assign({}, paquete.carga || {}, {
-        preparadoParaBDLocalEn: fechaISO()
-      }),
-      carreras: arr(paquete.carreras).map(function (item) {
-        return Object.assign({}, item);
-      }),
-      matrices: arr(paquete.matrices).map(function (item) {
-        return Object.assign({}, item);
-      }),
-      niveles: arr(paquete.niveles).map(function (item) {
-        return Object.assign({}, item);
-      }),
-      materias: arr(paquete.materias).map(function (item) {
-        return Object.assign({}, item);
-      }),
-      archivos: arr(paquete.archivos).map(function (archivo) {
-        return limpiarArchivoParaBDLocal(archivo, opciones);
-      }),
-      advertencias: arr(paquete.advertencias).map(function (item) {
-        return Object.assign({}, item);
-      }),
-      validacionesSubida: arr(paquete.validacionesSubida).map(function (item) {
-        return Object.assign({}, item);
-      }),
-      evaluacionesMaterias: arr(paquete.evaluacionesMaterias).map(function (item) {
-        return Object.assign({}, item);
-      }),
-      resumenValidacion: Object.assign({}, paquete.resumenValidacion || {}),
-      diagnostico: Object.assign({}, paquete.diagnostico || {}),
-      diagnosticoExcel: Object.assign({}, paquete.diagnosticoExcel || {}),
-      zip: Object.assign({}, paquete.zip || {}),
-      origen: "subir",
-      preparadoEn: fechaISO()
-    };
-
-    return limpio;
   }
 
   function validarAntesDeImportar(paquete, opciones) {
     opciones = opciones || {};
-
-    var paqueteValidado = paquete;
-
-    if (NS.Validador && typeof NS.Validador.validarPaquete === "function") {
-      paqueteValidado = NS.Validador.validarPaquete(paquete, {
-        lanzarSiBloquea: false
-      });
+    if (!paquete || typeof paquete !== "object") {
+      throw new Error("No se recibió un paquete válido para Firebase.");
     }
-
-    var resumen = paqueteValidado.resumenValidacion || {};
-
+    var validado = paquete;
+    if (NS.Validador && typeof NS.Validador.validarPaquete === "function") {
+      validado = NS.Validador.validarPaquete(paquete, { lanzarSiBloquea: false });
+    }
+    var resumen = validado.resumenValidacion || {};
     if (opciones.bloquearCriticos !== false && resumen.bloqueaImportacion === true) {
-      var criticos = arr(paqueteValidado.validacionesSubida).filter(function (v) {
-        return v.bloqueaImportacion === true || v.severidad === "critico";
+      var criticos = arr(validado.validacionesSubida).filter(function (item) {
+        return item && (item.bloqueaImportacion === true || item.severidad === "critico");
       });
-
       throw new Error(
-        "No se puede importar porque existen errores críticos: " +
-        criticos.map(function (v) { return v.mensaje; }).join(" | ")
+        "No se puede subir a Firebase porque existen errores críticos: " +
+        criticos.map(function (item) { return texto(item.mensaje || item.titulo); }).filter(Boolean).join(" | ")
       );
     }
-
-    return paqueteValidado;
+    return validado;
   }
 
   async function probarConexion() {
     try {
-      var BD = await inicializarBDLocal();
-
-      var diagnostico = null;
-
-      if (typeof BD.diagnostico === "function") {
-        diagnostico = await BD.diagnostico();
-      }
-
-      return {
-        ok: true,
-        estado: "conectado",
-        mensaje: "BDLocalCCC está disponible.",
-        diagnostico: diagnostico
-      };
+      var Firebase = obtenerFirebase();
+      var resultado = await Firebase.probarConexion();
+      return Object.assign({ proyectoId: Firebase.CONFIG && Firebase.CONFIG.projectId }, resultado);
     } catch (error) {
       return {
         ok: false,
         estado: "error",
-        mensaje: error.message
+        mensaje: error && error.message ? error.message : "No se pudo conectar con Firebase."
       };
     }
   }
 
   async function importarPaquete(paquete, opciones) {
     opciones = opciones || {};
-
     emitir("subirccc:importacion-inicio", {
       etapa: "inicio",
-      mensaje: "Preparando importación hacia BDLocal.",
+      porcentaje: 5,
+      mensaje: "Preparando comparación con Firebase.",
       creadoEn: fechaISO()
     });
 
-    var BD = await inicializarBDLocal();
+    var Firebase = obtenerFirebase();
+    await Firebase.ready();
 
     emitir("subirccc:importacion-progreso", {
       etapa: "validacion",
-      mensaje: "Validando paquete antes de guardar.",
-      porcentaje: 20
+      porcentaje: 15,
+      mensaje: "Validando el paquete curricular."
     });
 
     var validado = validarAntesDeImportar(paquete, opciones);
+    var paqueteSinBinarios = limpiarBinarios(validado, "");
 
     emitir("subirccc:importacion-progreso", {
-      etapa: "limpieza",
-      mensaje: "Limpiando datos temporales antes de guardar.",
-      porcentaje: 40
+      etapa: "comparacion",
+      porcentaje: 20,
+      mensaje: "Buscando diferencias y versiones anteriores en Firebase."
     });
 
-    var paqueteLimpio = limpiarPaqueteParaBDLocal(validado, opciones);
-
-    emitir("subirccc:importacion-progreso", {
-      etapa: "bdlocal",
-      mensaje: "Guardando información en BDLocal.",
-      porcentaje: 70
+    var resultado = await Firebase.importarPaquete(paqueteSinBinarios, {
+      detectarEliminadas: opciones.detectarEliminadas !== false,
+      onProgress: function (data) {
+        emitir("subirccc:importacion-progreso", data);
+      }
     });
-
-    var resultado = await BD.importarPaqueteCCC(paqueteLimpio);
 
     emitir("subirccc:importacion-fin", {
       etapa: "finalizado",
-      mensaje: "Importación completada.",
       porcentaje: 100,
+      mensaje: resultado.mensaje || "Firebase actualizado.",
       resultado: resultado
     });
 
@@ -273,168 +147,31 @@ Función o funciones:
 
   async function importarSiEstaListo(paquete, opciones) {
     opciones = opciones || {};
-
-    var validado = validarAntesDeImportar(paquete, {
-      bloquearCriticos: opciones.bloquearCriticos !== false
-    });
-
+    var validado = validarAntesDeImportar(paquete, opciones);
     var resumen = validado.resumenValidacion || {};
-
     if (resumen.requiereRevision && opciones.importarConRevision !== true) {
       return {
         ok: false,
         estado: "requiere_revision",
-        mensaje: "El paquete tiene observaciones. Confirma la importación manualmente.",
+        mensaje: "El paquete tiene observaciones. Confirma la subida manualmente.",
         paquete: validado,
         resumen: resumen,
         validaciones: validado.validacionesSubida || []
       };
     }
-
-    var resultado = await importarPaquete(validado, opciones);
-
-    return {
-      ok: true,
-      estado: "importado",
-      resultado: resultado,
-      resumen: resultado.resumen || null
-    };
+    return await importarPaquete(validado, opciones);
   }
 
-  function crearPaqueteDePrueba() {
-    var ahora = fechaISO();
-
-    return {
-      carga: {
-        nombreZip: "prueba-local.zip",
-        fechaCarga: ahora,
-        estado: "prueba",
-        totalCarreras: 1,
-        totalNiveles: 1,
-        totalMaterias: 1,
-        totalArchivos: 3
-      },
-      carreras: [
-        {
-          id: "carrera_prueba",
-          nombre: "Carrera Prueba",
-          nombreNormalizado: "carrera prueba",
-          estado: "activo",
-          creadoEn: ahora,
-          actualizadoEn: ahora
-        }
-      ],
-      matrices: [
-        {
-          id: "matriz_carrera_prueba_ccc",
-          carreraId: "carrera_prueba",
-          nombre: "Matriz CCC",
-          tipo: "ccc",
-          estado: "activo",
-          creadoEn: ahora,
-          actualizadoEn: ahora
-        }
-      ],
-      niveles: [
-        {
-          id: "nivel_carrera_prueba_1",
-          carreraId: "carrera_prueba",
-          matrizId: "matriz_carrera_prueba_ccc",
-          numero: 1,
-          nombre: "1. Nivel",
-          estado: "activo",
-          creadoEn: ahora,
-          actualizadoEn: ahora
-        }
-      ],
-      materias: [
-        {
-          id: "materia_carrera_prueba_0001",
-          carreraId: "carrera_prueba",
-          matrizId: "matriz_carrera_prueba_ccc",
-          nivelId: "nivel_carrera_prueba_1",
-          codigo: "0001",
-          nombre: "Materia Prueba",
-          estadoValidacion: "completo",
-          totalArchivosEsperados: 3,
-          totalArchivosEncontrados: 3,
-          creadoEn: ahora,
-          actualizadoEn: ahora
-        }
-      ],
-      archivos: [
-        {
-          id: "archivo_prueba_base",
-          carreraId: "carrera_prueba",
-          matrizId: "matriz_carrera_prueba_ccc",
-          nivelId: "nivel_carrera_prueba_1",
-          materiaId: "materia_carrera_prueba_0001",
-          tipo: "pea_base",
-          nombreArchivo: "PEA Base - Materia Prueba.xlsx",
-          rutaOriginal: "Carrera Prueba/Matriz CCC/1. Nivel/Materia Prueba/PEA Base - Materia Prueba.xlsx",
-          extension: "xlsx",
-          esExcel: true,
-          estado: "detectado",
-          confianza: 100
-        },
-        {
-          id: "archivo_prueba_unidades",
-          carreraId: "carrera_prueba",
-          matrizId: "matriz_carrera_prueba_ccc",
-          nivelId: "nivel_carrera_prueba_1",
-          materiaId: "materia_carrera_prueba_0001",
-          tipo: "pea_unidades",
-          nombreArchivo: "PEA Unidades - Materia Prueba.xlsx",
-          rutaOriginal: "Carrera Prueba/Matriz CCC/1. Nivel/Materia Prueba/PEA Unidades - Materia Prueba.xlsx",
-          extension: "xlsx",
-          esExcel: true,
-          estado: "detectado",
-          confianza: 100
-        },
-        {
-          id: "archivo_prueba_actividades",
-          carreraId: "carrera_prueba",
-          matrizId: "matriz_carrera_prueba_ccc",
-          nivelId: "nivel_carrera_prueba_1",
-          materiaId: "materia_carrera_prueba_0001",
-          tipo: "pea_actividades",
-          nombreArchivo: "PEA Actividades - Materia Prueba.xlsx",
-          rutaOriginal: "Carrera Prueba/Matriz CCC/1. Nivel/Materia Prueba/PEA Actividades - Materia Prueba.xlsx",
-          extension: "xlsx",
-          esExcel: true,
-          estado: "detectado",
-          confianza: 100
-        }
-      ],
-      advertencias: [],
-      validacionesSubida: [],
-      resumenValidacion: {
-        listoParaImportar: true,
-        bloqueaImportacion: false,
-        requiereRevision: false
-      }
-    };
-  }
-
-  async function importarPrueba() {
-    var paquete = crearPaqueteDePrueba();
-
-    return await importarPaquete(paquete, {
-      importarConRevision: true,
-      conservarContenidoBinario: false
-    });
-  }
-
-  NS.ConexionBDLocal = {
+  var API = {
+    VERSION: VERSION,
     probarConexion: probarConexion,
-    inicializarBDLocal: inicializarBDLocal,
-    verificarBDLocalDisponible: verificarBDLocalDisponible,
-    limpiarArchivoParaBDLocal: limpiarArchivoParaBDLocal,
-    limpiarPaqueteParaBDLocal: limpiarPaqueteParaBDLocal,
-    validarAntesDeImportar: validarAntesDeImportar,
     importarPaquete: importarPaquete,
     importarSiEstaListo: importarSiEstaListo,
-    crearPaqueteDePrueba: crearPaqueteDePrueba,
-    importarPrueba: importarPrueba
+    validarAntesDeImportar: validarAntesDeImportar,
+    limpiarPaqueteParaFirebase: function (paquete) { return limpiarBinarios(paquete, ""); },
+    limpiarPaqueteParaBDLocal: function (paquete) { return limpiarBinarios(paquete, ""); }
   };
+
+  NS.ConexionFirebase = API;
+  NS.ConexionBDLocal = API;
 })(window);
