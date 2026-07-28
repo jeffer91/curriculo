@@ -13,7 +13,7 @@
     ]
   },
   "name": "curriculo",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "App local para Gestión Curricular CCC con subida ZIP, BDLocal y modo Electron.",
   "main": "electron/main.js",
   "private": true,
