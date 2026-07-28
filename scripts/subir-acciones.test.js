@@ -100,7 +100,7 @@ async function ejecutar() {
   const Acciones = context.window.SubirCCC.AccionesRevision;
 
   assert.ok(Acciones, "Debe exponerse SubirCCC.AccionesRevision.");
-  assert.strictEqual(Acciones.VERSION, "5.0.1");
+  assert.strictEqual(Acciones.VERSION, "5.0.2");
   assert.strictEqual(context.window.SubirCCC.Preview.__accionesRevision, true);
 
   const resumen = Acciones.resumenAcciones(paquete);
@@ -125,6 +125,16 @@ async function ejecutar() {
   assert.strictEqual(resumenSinAdvertenciasHeredadas.advertencias, 0);
   assert.strictEqual(resumenSinAdvertenciasHeredadas.totalProblemas, 0);
   assert.match(resumenSinAdvertenciasHeredadas.texto, /No se detectaron problemas/);
+
+  const incidenciaAntigua = Acciones.primeraIncidencia({
+    materias: [{
+      id: "materia_reanalizada",
+      estadoValidacion: "completo",
+      estadoClasificado: "advertencia"
+    }],
+    validacionesSubida: []
+  });
+  assert.strictEqual(incidenciaAntigua, null);
 
   const primera = Acciones.primeraIncidencia(paquete);
   assert.strictEqual(primera.tipo, "materia");
