@@ -81,7 +81,7 @@ vm.runInContext(leer("subir/subir.estados-ui.js"), context, {
 
 const UI = context.window.SubirCCC.EstadosUI;
 assert.ok(UI, "Debe exponerse SubirCCC.EstadosUI.");
-assert.strictEqual(UI.VERSION, "4.0.2");
+assert.strictEqual(UI.VERSION, "4.0.3");
 assert.strictEqual(context.window.SubirCCC.Preview.__estadosUI, true);
 assert.strictEqual(typeof listeners.input, "function");
 
@@ -97,6 +97,13 @@ assert.deepStrictEqual(
   JSON.parse(JSON.stringify(UI.normalizarEstado({ estadoClasificado: "error" }))),
   { codigo: "error", etiqueta: "Error", clase: "error" }
 );
+assert.deepStrictEqual(
+  JSON.parse(JSON.stringify(UI.normalizarEstado({
+    estadoValidacion: "completo",
+    estadoClasificado: "advertencia"
+  }))),
+  { codigo: "completa", etiqueta: "Completa", clase: "ok" }
+);
 assert.match(UI.renderBadgeEstado({ estadoClasificado: "error" }), /data-estado-clasificado="error"/);
 assert.match(UI.renderBadgeEstado({ estadoClasificado: "error" }), />Error</);
 
@@ -106,6 +113,7 @@ const resultado = context.window.SubirCCC.Preview.pintarPaquete({
     { id: "m2", estadoClasificado: "advertencia" },
     { id: "m3", estadoClasificado: "error" }
   ],
+  validacionesSubida: [],
   resumenValidacion: {
     totalMaterias: 3,
     materiasCompletas: 1,
@@ -131,17 +139,27 @@ assert.strictEqual(estadoGeneral.tipo, "error");
 assert.strictEqual(estadoGeneral.titulo, "ZIP con errores");
 assert.match(estadoGeneral.mensaje, /1 materia tiene/);
 
-UI.actualizarContadores({
-  materias: new Array(16).fill(null),
+const materiasCompletas = Array.from({ length: 16 }, (_, indice) => ({
+  id: "materia_" + indice,
+  estadoValidacion: "completo",
+  estadoClasificado: indice === 0 ? "advertencia" : "completa"
+}));
+const paqueteInconsistente = {
+  materias: materiasCompletas,
+  validacionesSubida: [],
   resumenValidacion: {
     totalMaterias: 16,
     materiasCompletas: 16,
-    materiasAdvertencia: 0,
+    materiasAdvertencia: 1,
     materiasRevision: 1,
     materiasError: 0,
-    materiasIncompletas: 0
-  }
-});
+    materiasIncompletas: 0,
+    bloqueaImportacion: false
+  },
+  carga: {}
+};
+
+UI.actualizarContadores(paqueteInconsistente);
 assert.strictEqual(elementos.statCompletas.textContent, "16");
 assert.strictEqual(elementos.statAdvertencias.textContent, "0");
 assert.strictEqual(elementos.statErrores.textContent, "0");
@@ -151,8 +169,18 @@ assert.strictEqual(
   elementos.resumenEstadosMaterias.classList.clases["subir-state-summary-error"],
   false
 );
+assert.strictEqual(paqueteInconsistente.resumenValidacion.materiasAdvertencia, 0);
+assert.strictEqual(paqueteInconsistente.resumenValidacion.materiasRevision, 0);
+assert.strictEqual(paqueteInconsistente.resumenValidacion.contadoresConsistentes, true);
+assert.strictEqual(paqueteInconsistente.carga.estado, "validado");
 
 UI.actualizarEstadoGeneral({
+  materias: [{ id: "m_global", estadoValidacion: "completo" }],
+  validacionesSubida: [{
+    tipo: "nivel_baja_confianza",
+    severidad: "advertencia",
+    materiaId: ""
+  }],
   resumenValidacion: {
     materiasAdvertencia: 0,
     materiasRevision: 0,
