@@ -13,7 +13,7 @@ Funciones:
 
   window.SubirCCC = window.SubirCCC || {};
   var NS = window.SubirCCC;
-  var VERSION = "4.0.1";
+  var VERSION = "4.0.2";
 
   var ESTADOS = Object.freeze({
     COMPLETA: "completa",
@@ -88,8 +88,9 @@ Funciones:
     validaciones = arr(validaciones);
 
     var estadoTecnico = texto(materia.estadoValidacion || materia.estado || "");
-    var estadoOriginal = texto(materia.estadoValidacionOriginal || estadoTecnico);
-    var estado = estadoDesdeOriginal(estadoOriginal) || ESTADOS.COMPLETA;
+    var estadoAnterior = texto(materia.estadoValidacionOriginal || "");
+    var estadoFuente = estadoTecnico || estadoAnterior;
+    var estado = estadoDesdeOriginal(estadoFuente) || ESTADOS.COMPLETA;
     var errores = validaciones.filter(function (validacion) {
       return esSeveridadError(validacion && validacion.severidad);
     });
@@ -118,7 +119,9 @@ Funciones:
     }).filter(Boolean);
 
     return Object.assign({}, materia, {
-      estadoValidacionOriginal: estadoOriginal || estadoTecnico,
+      // Siempre se conserva como referencia el estado técnico más reciente.
+      // Solo se usa el valor anterior cuando el validador no entregó estado.
+      estadoValidacionOriginal: estadoTecnico || estadoAnterior,
       estadoValidacionTecnico: estadoTecnico,
       estadoClasificado: estado,
       etiquetaEstado: estado === ESTADOS.COMPLETA
