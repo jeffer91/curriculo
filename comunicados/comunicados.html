@@ -5,7 +5,7 @@ Función o funciones:
 - Generar comunicados institucionales con información curricular de Firebase.
 - Usar únicamente la versión vigente de cada materia.
 - Mantener generación individual, seleccionada y global.
-- Registrar la numeración institucional en Firestore.
+- Reservar la numeración institucional en Firestore antes de generar los PDF.
 ========================================================= -->
 <!DOCTYPE html>
 <html lang="es">
@@ -50,7 +50,7 @@ Función o funciones:
         <input id="inputLogoSrc" type="hidden" value="../assets/logo-itsqmet-comunicado-oficial.png" />
         <div class="com-field com-field-full">
           <div class="com-logo-ready"><div class="com-logo-mark">✓</div><div><strong>Logo institucional configurado</strong><span>El PDF utiliza el archivo PNG externo:</span><span class="com-logo-path">/Curriculo/assets/logo-itsqmet-comunicado-oficial.png</span></div></div>
-          <p class="com-content-note">La pantalla usa directamente el contenido curricular vigente en Firebase. Las cargas repetidas sin diferencias no crean nuevas versiones ni alteran los comunicados.</p>
+          <p class="com-content-note">La pantalla reserva en Firebase todos los números antes de generar el lote. Dos ventanas no pueden utilizar la misma numeración.</p>
         </div>
       </div>
     </section>
@@ -87,10 +87,12 @@ Función o funciones:
 
   <script src="../menu-superior/menu-superior.js?v=20260728-1"></script>
   <script src="../firebase/firebase.inteligencia.js?v=20260728-1"></script>
+  <script src="../firebase/firebase.inteligencia-v2.js?v=20260728-2"></script>
   <script src="../firebase/firebase.curriculo.js?v=20260728-1"></script>
+  <script src="../firebase/firebase.robustez.js?v=20260728-2"></script>
   <script src="../assets/logo-itsqmet-comunicado-data.js?v=20260716-4"></script>
   <script src="./comunicados.bdlocal.js?v=20260728-1"></script>
-  <script src="./comunicados.contador.js?v=20260728-1"></script>
+  <script src="./comunicados.contador.js?v=20260728-2"></script>
   <script src="./comunicados.plantilla.js?v=20260716-4"></script>
   <script src="./comunicados.ajustes-portada.js?v=20260716-4"></script>
   <script src="./comunicados.pdf.js?v=20260717-1"></script>
@@ -101,6 +103,7 @@ Función o funciones:
   <script src="./comunicados.orden-contenidos.js?v=20260716-1"></script>
   <script src="./comunicados.firma-fija.js?v=20260716-1"></script>
   <script src="./comunicados.main.js?v=20260728-1"></script>
+  <script src="./comunicados.reservas-ui.js?v=20260728-2"></script>
   <script src="./comunicados.firebase-ui.js?v=20260728-1"></script>
 </body>
 </html>
