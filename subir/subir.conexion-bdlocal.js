@@ -6,13 +6,14 @@ Funciones:
 - Conectar la pantalla Subir ZIP exclusivamente con Firebase Firestore.
 - Eliminar contenido binario antes de enviar el paquete al importador remoto.
 - Emitir progreso, resultado y errores de la comparación inteligente.
+- Mantener desactivada la retirada automática salvo confirmación expresa.
 ========================================================= */
 (function (window) {
   "use strict";
 
   window.SubirCCC = window.SubirCCC || {};
   var NS = window.SubirCCC;
-  var VERSION = "6.0.0";
+  var VERSION = "6.0.1";
 
   function texto(valor) {
     return String(valor === null || typeof valor === "undefined" ? "" : valor).trim();
@@ -129,7 +130,8 @@ Funciones:
     });
 
     var resultado = await Firebase.importarPaquete(paqueteSinBinarios, {
-      detectarEliminadas: opciones.detectarEliminadas !== false,
+      detectarEliminadas: opciones.detectarEliminadas === true,
+      cargaCompleta: opciones.cargaCompleta === true,
       onProgress: function (data) {
         emitir("subirccc:importacion-progreso", data);
       }
