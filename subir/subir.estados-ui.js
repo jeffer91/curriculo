@@ -13,7 +13,7 @@ Funciones:
 
   window.SubirCCC = window.SubirCCC || {};
   var NS = window.SubirCCC;
-  var VERSION = "4.0.2";
+  var VERSION = "4.0.3";
   var paqueteActual = null;
   var observerTabla = null;
   var actualizando = false;
@@ -59,15 +59,17 @@ Funciones:
   }
 
   function normalizarEstado(materia) {
+    // El estado técnico proviene del análisis actual. El clasificado se usa
+    // únicamente como respaldo para evitar conservar una revisión anterior.
     var estado = texto(
       materia && (
-        materia.estadoClasificado ||
         materia.estadoValidacion ||
+        materia.estadoClasificado ||
         materia.estado
       )
     ).toLowerCase();
 
-    if (["completa", "completo", "ok", "validado"].indexOf(estado) !== -1) {
+    if (["completa", "completo", "ok", "validado", "validada"].indexOf(estado) !== -1) {
       return { codigo: "completa", etiqueta: "Completa", clase: "ok" };
     }
 
@@ -78,6 +80,64 @@ Funciones:
     return { codigo: "advertencia", etiqueta: "Advertencia", clase: "warn" };
   }
 
+  function resumirMaterias(paquete) {
+    var materias = arr(paquete && paquete.materias);
+    var salida = {
+      total: materias.length,
+      completas: 0,
+      advertencias: 0,
+      errores: 0
+    };
+
+    materias.forEach(function (materia) {
+      var estado = normalizarEstado(materia).codigo;
+      if (estado === "completa") salida.completas += 1;
+      else if (estado === "error") salida.errores += 1;
+      else salida.advertencias += 1;
+    });
+
+    return salida;
+  }
+
+  function contarAlertasGlobales(paquete) {
+    return arr(paquete && paquete.validacionesSubida).filter(function (validacion) {
+      return validacion && !texto(validacion.materiaId);
+    }).length;
+  }
+
+  function sincronizarResumen(paquete, conteo) {
+    if (!paquete || !conteo || conteo.total <= 0) return;
+
+    var resumen = Object.assign({}, paquete.resumenValidacion || {});
+    var globales = contarAlertasGlobales(paquete);
+    var bloquea = resumen.bloqueaImportacion === true;
+    var requiereRevision = conteo.advertencias > 0 || conteo.errores > 0 || globales > 0;
+
+    resumen.totalMaterias = conteo.total;
+    resumen.materiasCompletas = conteo.completas;
+    resumen.materiasAdvertencia = conteo.advertencias;
+    resumen.materiasError = conteo.errores;
+    resumen.materiasRevision = conteo.advertencias;
+    resumen.materiasIncompletas = conteo.errores;
+    resumen.materiasConProblemas = conteo.advertencias + conteo.errores;
+    resumen.totalEstadosMaterias = conteo.completas + conteo.advertencias + conteo.errores;
+    resumen.contadoresConsistentes = resumen.totalEstadosMaterias === conteo.total;
+    resumen.alertasGlobales = globales;
+    resumen.requiereRevision = requiereRevision;
+    resumen.listoParaImportar = !bloquea && !requiereRevision;
+    resumen.puedeImportarConObservaciones = !bloquea;
+    paquete.resumenValidacion = resumen;
+
+    paquete.carga = Object.assign({}, paquete.carga || {}, {
+      materiasCompletas: conteo.completas,
+      materiasAdvertencia: conteo.advertencias,
+      materiasError: conteo.errores,
+      materiasRevision: conteo.advertencias,
+      materiasIncompletas: conteo.errores,
+      estado: bloquea ? "bloqueado" : (requiereRevision ? "con_observaciones" : "validado")
+    });
+  }
+
   function renderBadgeEstado(materia) {
     var estado = normalizarEstado(materia);
     return '<span class="subir-badge subir-badge-' + estado.clase + '" data-estado-clasificado="' + estado.codigo + '">' + estado.etiqueta + "</span>";
@@ -85,16 +145,30 @@ Funciones:
 
   function actualizarContadores(paquete) {
     var resumen = paquete && paquete.resumenValidacion ? paquete.resumenValidacion : {};
-    var completas = numeroResumen(resumen, "materiasCompletas");
-    var advertencias = numeroResumen(resumen, "materiasAdvertencia", "materiasRevision");
-    var errores = numeroResumen(resumen, "materiasError", "materiasIncompletas");
+    var conteo = resumirMaterias(paquete);
+    var completas;
+    var advertencias;
+    var errores;
+    var totalMaterias;
+
+    if (conteo.total > 0) {
+      sincronizarResumen(paquete, conteo);
+      completas = conteo.completas;
+      advertencias = conteo.advertencias;
+      errores = conteo.errores;
+      totalMaterias = conteo.total;
+    } else {
+      completas = numeroResumen(resumen, "materiasCompletas");
+      advertencias = numeroResumen(resumen, "materiasAdvertencia", "materiasRevision");
+      errores = numeroResumen(resumen, "materiasError", "materiasIncompletas");
+      totalMaterias = numeroResumen(resumen, "totalMaterias");
+    }
 
     setTexto("statCompletas", completas);
     setTexto("statAdvertencias", advertencias);
     setTexto("statErrores", errores);
 
     var total = completas + advertencias + errores;
-    var totalMaterias = numeroResumen(resumen, "totalMaterias") || arr(paquete && paquete.materias).length || 0;
     var panel = $("resumenEstadosMaterias");
 
     if (panel) {
@@ -111,9 +185,14 @@ Funciones:
     if (!NS.Preview || typeof NS.Preview.pintarEstado !== "function") return;
 
     var resumen = paquete && paquete.resumenValidacion ? paquete.resumenValidacion : {};
-    var advertencias = numeroResumen(resumen, "materiasAdvertencia", "materiasRevision");
-    var errores = numeroResumen(resumen, "materiasError", "materiasIncompletas");
-    var alertasGlobales = numeroResumen(resumen, "alertasGlobales");
+    var conteo = resumirMaterias(paquete);
+    var advertencias = conteo.total > 0
+      ? conteo.advertencias
+      : numeroResumen(resumen, "materiasAdvertencia", "materiasRevision");
+    var errores = conteo.total > 0
+      ? conteo.errores
+      : numeroResumen(resumen, "materiasError", "materiasIncompletas");
+    var alertasGlobales = contarAlertasGlobales(paquete);
 
     if (resumen.bloqueaImportacion === true) {
       NS.Preview.pintarEstado(
@@ -269,6 +348,8 @@ Funciones:
     actualizarEstadoGeneral: actualizarEstadoGeneral,
     actualizarFilas: actualizarFilas,
     normalizarEstado: normalizarEstado,
+    resumirMaterias: resumirMaterias,
+    sincronizarResumen: sincronizarResumen,
     renderBadgeEstado: renderBadgeEstado
   };
 
