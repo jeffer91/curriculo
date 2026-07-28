@@ -13,7 +13,7 @@ Funciones:
 
   window.SubirCCC = window.SubirCCC || {};
   var NS = window.SubirCCC;
-  var VERSION = "5.0.1";
+  var VERSION = "5.0.2";
   var paqueteActual = null;
   var conectado = false;
 
@@ -66,12 +66,27 @@ Funciones:
     return 1;
   }
 
+  function contarGlobales(paquete) {
+    return arr(paquete && paquete.validacionesSubida).filter(function (validacion) {
+      return validacion && !texto(validacion.materiaId);
+    }).length;
+  }
+
   function resumenAcciones(paquete) {
     var resumen = paquete && paquete.resumenValidacion ? paquete.resumenValidacion : {};
-    var completas = numeroResumen(resumen, "materiasCompletas");
-    var advertencias = numeroResumen(resumen, "materiasAdvertencia", "materiasRevision");
-    var errores = numeroResumen(resumen, "materiasError", "materiasIncompletas");
-    var globales = numeroResumen(resumen, "alertasGlobales");
+    var conteo = NS.EstadosUI && typeof NS.EstadosUI.resumirMaterias === "function"
+      ? NS.EstadosUI.resumirMaterias(paquete)
+      : null;
+    var completas = conteo && conteo.total > 0
+      ? conteo.completas
+      : numeroResumen(resumen, "materiasCompletas");
+    var advertencias = conteo && conteo.total > 0
+      ? conteo.advertencias
+      : numeroResumen(resumen, "materiasAdvertencia", "materiasRevision");
+    var errores = conteo && conteo.total > 0
+      ? conteo.errores
+      : numeroResumen(resumen, "materiasError", "materiasIncompletas");
+    var globales = contarGlobales(paquete);
     var bloqueado = resumen.bloqueaImportacion === true;
 
     var partes = [];
@@ -113,8 +128,14 @@ Funciones:
     }
 
     var materia = arr(paquete && paquete.materias).find(function (item) {
-      var estado = texto(item && (item.estadoClasificado || item.estadoValidacion)).toLowerCase();
-      return estado && ["completa", "completo", "ok", "validado"].indexOf(estado) === -1;
+      // El estado técnico del análisis actual prevalece sobre una clasificación
+      // guardada por una ejecución anterior.
+      var estado = texto(item && (
+        item.estadoValidacion ||
+        item.estadoClasificado ||
+        item.estado
+      )).toLowerCase();
+      return estado && ["completa", "completo", "ok", "validado", "validada"].indexOf(estado) === -1;
     });
 
     return materia ? {
