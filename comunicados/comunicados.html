@@ -2,11 +2,10 @@
 Nombre completo: comunicados.html
 Ruta o ubicación: /Curriculo/comunicados/comunicados.html
 Función o funciones:
-- Generar comunicados institucionales con toda la información curricular.
-- Reparar automáticamente PEA Base heredados antes de listar materias.
-- Usar el logo institucional externo con respaldo embebido.
+- Generar comunicados institucionales con información curricular de Firebase.
+- Usar únicamente la versión vigente de cada materia.
 - Mantener generación individual, seleccionada y global.
-- Cargar scripts con versión para evitar archivos antiguos en caché.
+- Registrar la numeración institucional en Firestore.
 ========================================================= -->
 <!DOCTYPE html>
 <html lang="es">
@@ -14,75 +13,44 @@ Función o funciones:
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Comunicados | Curriculo</title>
-  <link rel="stylesheet" href="../menu-superior/menu-superior.css?v=20260713-7" />
+  <link rel="stylesheet" href="../menu-superior/menu-superior.css?v=20260728-1" />
   <link rel="stylesheet" href="./comunicados.css?v=20260713-7" />
   <style>
     .com-logo-ready{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid #d8e2ef;border-radius:12px;background:#f8fafc}
-    .com-logo-ready strong{display:block}
-    .com-logo-ready span{display:block;color:#64748b;font-size:13px}
+    .com-logo-ready strong{display:block}.com-logo-ready span{display:block;color:#64748b;font-size:13px}
     .com-logo-mark{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:#e7f6ec;color:#087f5b;font-weight:900}
-    .com-content-note{margin-top:10px;color:#475569;font-size:13px}
-    .com-logo-path{margin-top:4px;font-family:Consolas,monospace;color:#334155!important;overflow-wrap:anywhere}
+    .com-content-note{margin-top:10px;color:#475569;font-size:13px}.com-logo-path{margin-top:4px;font-family:Consolas,monospace;color:#334155!important;overflow-wrap:anywhere}
   </style>
 </head>
 <body>
   <div class="com-page">
     <header class="com-header">
       <div>
-        <p class="com-eyebrow">Gestión Curricular CCC</p>
+        <p class="com-eyebrow">Gestión Curricular CCC · Firebase</p>
         <h1>Comunicados institucionales</h1>
-        <p class="com-subtitle">
-          Genera comunicados con descripción, objetivo, cuatro unidades, todos los contenidos,
-          actividades y bibliografía.
-        </p>
+        <p class="com-subtitle">Genera comunicados con la versión vigente de descripción, objetivo, unidades, contenidos, actividades y bibliografía guardada en Firestore.</p>
       </div>
       <div class="com-header-actions">
-        <button id="btnRecargar" type="button" class="com-btn com-btn-light">Recargar BDLocal</button>
+        <button id="btnRecargar" type="button" class="com-btn com-btn-light">Recargar Firebase</button>
         <a href="../subir/subir.html" class="com-btn com-btn-light">Subir ZIP</a>
       </div>
     </header>
 
     <section id="comEstado" class="com-status com-status-neutral">
-      <div class="com-status-dot"></div>
-      <div><strong>Inicializando</strong><span>Conectando con BDLocal.</span></div>
+      <div class="com-status-dot"></div><div><strong>Inicializando</strong><span>Conectando con Firebase Firestore.</span></div>
     </section>
 
     <section class="com-panel">
       <div class="com-form-grid">
-        <div class="com-field">
-          <label for="selectorCarrera">Carrera</label>
-          <select id="selectorCarrera"><option value="">Cargando carreras...</option></select>
-        </div>
-        <div class="com-field">
-          <label for="inputFecha">Fecha del comunicado</label>
-          <input id="inputFecha" type="date" />
-        </div>
-        <div class="com-field">
-          <label for="inputCiudad">Ciudad</label>
-          <input id="inputCiudad" type="text" value="Quito, D.M." />
-        </div>
-        <div class="com-field">
-          <label for="inputUnidadResponsable">Unidad responsable</label>
-          <input id="inputUnidadResponsable" type="text" value="Unidad Gestión de Procesos Académicos" />
-        </div>
-        <div class="com-field com-field-full">
-          <label for="inputNota">Pie institucional</label>
-          <input id="inputNota" type="text" value="Instituto Superior Tecnológico Quito Metropolitano" />
-        </div>
+        <div class="com-field"><label for="selectorCarrera">Carrera</label><select id="selectorCarrera"><option value="">Cargando carreras...</option></select></div>
+        <div class="com-field"><label for="inputFecha">Fecha del comunicado</label><input id="inputFecha" type="date" /></div>
+        <div class="com-field"><label for="inputCiudad">Ciudad</label><input id="inputCiudad" type="text" value="Quito, D.M." /></div>
+        <div class="com-field"><label for="inputUnidadResponsable">Unidad responsable</label><input id="inputUnidadResponsable" type="text" value="Unidad Gestión de Procesos Académicos" /></div>
+        <div class="com-field com-field-full"><label for="inputNota">Pie institucional</label><input id="inputNota" type="text" value="Instituto Superior Tecnológico Quito Metropolitano" /></div>
         <input id="inputLogoSrc" type="hidden" value="../assets/logo-itsqmet-comunicado-oficial.png" />
         <div class="com-field com-field-full">
-          <div class="com-logo-ready">
-            <div class="com-logo-mark">✓</div>
-            <div>
-              <strong>Logo institucional configurado</strong>
-              <span>El PDF utiliza el archivo PNG externo:</span>
-              <span class="com-logo-path">/Curriculo/assets/logo-itsqmet-comunicado-oficial.png</span>
-            </div>
-          </div>
-          <p class="com-content-note">
-            La pantalla reconstruye automáticamente descripción, objetivo, unidades, competencias,
-            resultados y bibliografía cuando esos datos existen en las filas originales del PEA Base.
-          </p>
+          <div class="com-logo-ready"><div class="com-logo-mark">✓</div><div><strong>Logo institucional configurado</strong><span>El PDF utiliza el archivo PNG externo:</span><span class="com-logo-path">/Curriculo/assets/logo-itsqmet-comunicado-oficial.png</span></div></div>
+          <p class="com-content-note">La pantalla usa directamente el contenido curricular vigente en Firebase. Las cargas repetidas sin diferencias no crean nuevas versiones ni alteran los comunicados.</p>
         </div>
       </div>
     </section>
@@ -97,10 +65,7 @@ Función o funciones:
     </section>
 
     <section class="com-panel com-actions-panel">
-      <div>
-        <h2>Generación de comunicados</h2>
-        <p>Cada materia genera un PDF independiente. Los lotes se descargan juntos dentro de un ZIP.</p>
-      </div>
+      <div><h2>Generación de comunicados</h2><p>Cada materia genera un PDF independiente. Los lotes se descargan juntos dentro de un ZIP.</p></div>
       <div class="com-actions-row">
         <button id="btnSeleccionarTodas" type="button" class="com-btn com-btn-light">Seleccionar todas</button>
         <button id="btnLimpiarSeleccion" type="button" class="com-btn com-btn-light">Limpiar selección</button>
@@ -110,43 +75,22 @@ Función o funciones:
     </section>
 
     <section class="com-panel">
-      <div class="com-panel-head">
-        <div>
-          <h2>Materias completas</h2>
-          <p>Puedes corregir el nombre institucional antes de generar el comunicado.</p>
-        </div>
-      </div>
+      <div class="com-panel-head"><div><h2>Materias completas</h2><p>Puedes corregir el nombre institucional antes de generar el comunicado; el cambio se guardará en Firebase.</p></div></div>
       <div class="com-table-wrap">
         <table class="com-table">
-          <thead>
-            <tr>
-              <th>Sel.</th><th>Nivel</th><th>Código</th><th>Nombre importado</th>
-              <th>Nombre institucional</th><th>Estado</th><th>PEA</th><th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="tablaMaterias">
-            <tr><td colspan="8" class="com-empty">Selecciona una carrera para cargar materias completas.</td></tr>
-          </tbody>
+          <thead><tr><th>Sel.</th><th>Nivel</th><th>Código</th><th>Nombre importado</th><th>Nombre institucional</th><th>Estado</th><th>PEA</th><th>Acciones</th></tr></thead>
+          <tbody id="tablaMaterias"><tr><td colspan="8" class="com-empty">Selecciona una carrera para cargar materias completas.</td></tr></tbody>
         </table>
       </div>
     </section>
   </div>
 
-  <script src="../menu-superior/menu-superior.js?v=20260713-7"></script>
-  <script src="../bdlocal/bdlocal.schema.js?v=20260713-7"></script>
-  <script src="../bdlocal/bdlocal.core.js?v=20260713-7"></script>
-  <script src="../bdlocal/bdlocal.api.js?v=20260713-7"></script>
-  <script src="../bdlocal/bdlocal.importador.js?v=20260713-7"></script>
-  <script src="../bdlocal/bdlocal.integridad.js?v=20260713-7"></script>
-  <script src="../bdlocal/bdlocal.validaciones.js?v=20260713-7"></script>
-  <script src="../bdlocal/bdlocal.consultas.js?v=20260713-7"></script>
-  <script src="../bdlocal/bdlocal.backup.js?v=20260713-7"></script>
-
+  <script src="../menu-superior/menu-superior.js?v=20260728-1"></script>
+  <script src="../firebase/firebase.inteligencia.js?v=20260728-1"></script>
+  <script src="../firebase/firebase.curriculo.js?v=20260728-1"></script>
   <script src="../assets/logo-itsqmet-comunicado-data.js?v=20260716-4"></script>
-  <script src="./comunicados.bdlocal.js?v=20260713-7"></script>
-  <script src="../bdlocal/bdlocal.inteligencia.js?v=20260713-7"></script>
-  <script src="../bdlocal/bdlocal.inteligencia-consultas.js?v=20260713-9"></script>
-  <script src="./comunicados.contador.js?v=20260713-7"></script>
+  <script src="./comunicados.bdlocal.js?v=20260728-1"></script>
+  <script src="./comunicados.contador.js?v=20260728-1"></script>
   <script src="./comunicados.plantilla.js?v=20260716-4"></script>
   <script src="./comunicados.ajustes-portada.js?v=20260716-4"></script>
   <script src="./comunicados.pdf.js?v=20260717-1"></script>
@@ -156,6 +100,7 @@ Función o funciones:
   <script src="./comunicados.estilo-tecnico.js?v=20260716-1"></script>
   <script src="./comunicados.orden-contenidos.js?v=20260716-1"></script>
   <script src="./comunicados.firma-fija.js?v=20260716-1"></script>
-  <script src="./comunicados.main.js?v=20260717-1"></script>
+  <script src="./comunicados.main.js?v=20260728-1"></script>
+  <script src="./comunicados.firebase-ui.js?v=20260728-1"></script>
 </body>
 </html>
