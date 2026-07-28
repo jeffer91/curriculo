@@ -74,7 +74,7 @@ const paquete = context.window.SubirCCC.Validador.validarPaquete({
 
 const Estados = context.window.SubirCCC.Estados;
 assert.ok(Estados, "Debe exponerse SubirCCC.Estados.");
-assert.strictEqual(Estados.VERSION, "4.0.1");
+assert.strictEqual(Estados.VERSION, "4.0.2");
 assert.strictEqual(context.window.SubirCCC.Validador.__estadosClasificados, true);
 
 const completa = paquete.materias.find((materia) => materia.id === "materia_completa");
@@ -138,5 +138,27 @@ assert.strictEqual(paqueteCritico.materias[0].bloqueaImportacion, true);
 assert.strictEqual(paqueteCritico.resumenValidacion.bloqueaImportacion, true);
 assert.strictEqual(paqueteCritico.resumenValidacion.puedeImportarConObservaciones, false);
 assert.strictEqual(paqueteCritico.carga.estado, "bloqueado");
+
+const paqueteEstadoAnterior = context.window.SubirCCC.Validador.validarPaquete({
+  materias: [{
+    id: "materia_reanalizada",
+    estadoValidacion: "completo",
+    estadoValidacionOriginal: "revision",
+    estadoClasificado: "advertencia"
+  }],
+  validacionesSubida: [],
+  resumenValidacion: {
+    materiasCompletas: 1,
+    materiasRevision: 1
+  },
+  carga: {}
+});
+
+assert.strictEqual(paqueteEstadoAnterior.materias[0].estadoValidacionOriginal, "completo");
+assert.strictEqual(paqueteEstadoAnterior.materias[0].estadoClasificado, "completa");
+assert.strictEqual(paqueteEstadoAnterior.resumenValidacion.materiasCompletas, 1);
+assert.strictEqual(paqueteEstadoAnterior.resumenValidacion.materiasAdvertencia, 0);
+assert.strictEqual(paqueteEstadoAnterior.resumenValidacion.materiasRevision, 0);
+assert.strictEqual(paqueteEstadoAnterior.resumenValidacion.contadoresConsistentes, true);
 
 console.log("Subir ZIP: clasificación y contadores de estados superados.");
