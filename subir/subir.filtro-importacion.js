@@ -4,14 +4,15 @@ Ruta o ubicación: /Curriculo/subir/subir.filtro-importacion.js
 Funciones:
 - Marcar como subibles únicamente las materias completas.
 - Mantener las materias con advertencias o errores visibles, pero omitidas.
-- Calcular los contadores de una importación parcial segura.
+- Permitir cargas parciales cuando los errores pertenecen a materias concretas.
+- Bloquear todo el ZIP únicamente por errores globales de estructura o lectura.
 ========================================================= */
 (function (window) {
   "use strict";
 
   window.SubirCCC = window.SubirCCC || {};
   var NS = window.SubirCCC;
-  var VERSION = "1.0.0";
+  var VERSION = "1.1.0";
 
   function texto(valor) {
     return String(valor === null || typeof valor === "undefined" ? "" : valor).trim();
@@ -37,6 +38,21 @@ Funciones:
     return ["completa", "completo", "ok", "validado", "validada"].indexOf(
       estadoMateria(materia)
     ) !== -1;
+  }
+
+  function esBloqueoGlobal(paquete) {
+    var control = paquete && paquete.diagnosticoExcel
+      ? paquete.diagnosticoExcel.controlLectura || {}
+      : {};
+    if (control.bloqueaImportacion === true) return true;
+
+    return arr(paquete && paquete.validacionesSubida).some(function (validacion) {
+      if (texto(validacion && validacion.materiaId)) return false;
+      return validacion && (
+        validacion.bloqueaImportacion === true ||
+        texto(validacion.severidad).toLowerCase() === "critico"
+      );
+    });
   }
 
   function motivoOmision(materia) {
@@ -76,14 +92,15 @@ Funciones:
       return materia.subibleFirebase === true;
     }).length;
     var omitidas = materias.length - subibles;
+    var bloqueoGlobal = esBloqueoGlobal(paquete);
     var resumen = Object.assign({}, paquete.resumenValidacion || {}, {
       materiasSubibles: subibles,
       materiasOmitidas: omitidas,
       totalMateriasDetectadas: materias.length,
-      puedeImportarParcial: subibles > 0 && !(
-        paquete.resumenValidacion &&
-        paquete.resumenValidacion.bloqueaImportacion === true
-      )
+      bloqueaImportacion: bloqueoGlobal,
+      listoParaImportar: subibles > 0 && !bloqueoGlobal && omitidas === 0,
+      puedeImportarConObservaciones: subibles > 0 && !bloqueoGlobal,
+      puedeImportarParcial: subibles > 0 && !bloqueoGlobal
     });
 
     paquete.materias = materias;
@@ -91,7 +108,8 @@ Funciones:
     paquete.carga = Object.assign({}, paquete.carga || {}, {
       materiasSubibles: subibles,
       materiasOmitidas: omitidas,
-      totalMateriasDetectadas: materias.length
+      totalMateriasDetectadas: materias.length,
+      bloqueaImportacion: bloqueoGlobal
     });
 
     return paquete;
@@ -114,6 +132,7 @@ Funciones:
     VERSION: VERSION,
     aplicar: aplicar,
     esCompleta: esCompleta,
+    esBloqueoGlobal: esBloqueoGlobal,
     motivoOmision: motivoOmision
   };
 
