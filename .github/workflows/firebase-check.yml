@@ -5,8 +5,11 @@ on:
     paths:
       - "firebase/**"
       - "subir/**"
+      - "mallas/**"
+      - "menu-superior/**"
       - "comunicados/**"
       - "scripts/firebase-*.test.js"
+      - "scripts/mallas-*.test.js"
       - "scripts/comunicados-contador-firebase.test.js"
       - "package.json"
       - ".github/workflows/firebase-check.yml"
@@ -14,8 +17,11 @@ on:
     paths:
       - "firebase/**"
       - "subir/**"
+      - "mallas/**"
+      - "menu-superior/**"
       - "comunicados/**"
       - "scripts/firebase-*.test.js"
+      - "scripts/mallas-*.test.js"
       - "scripts/comunicados-contador-firebase.test.js"
       - "package.json"
       - ".github/workflows/firebase-check.yml"
@@ -46,12 +52,21 @@ jobs:
           node --check firebase/firebase.robustez.js
           node --check firebase/firebase.robustez-ajustes.js
           node --check firebase/firebase.importacion-parcial.js
+          node --check firebase/firebase.mallas.js
+          node --check firebase/firebase.mallas-integracion.js
+          node --check mallas/mallas.parser.js
+          node --check mallas/mallas.comparador.js
+          node --check mallas/mallas.main.js
           node --check subir/subir.conexion-bdlocal.js
           node --check subir/subir.filtro-importacion.js
           node --check subir/subir.importacion-parcial-ui.js
           node --check subir/subir.firebase-ui.js
+          node --check subir/subir.malla-ui.js
           node --check comunicados/comunicados.contador.js
           node --check comunicados/comunicados.reservas-ui.js
+
+      - name: Ejecutar pruebas de mallas
+        run: node scripts/mallas-curriculares.test.js
 
       - name: Ejecutar pruebas de robustez
         run: |
