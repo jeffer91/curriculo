@@ -4,6 +4,7 @@ Ruta o ubicación: /Curriculo/diagnostico/subir-diagnostico.js
 Función o funciones:
 - Vigilar el análisis del ZIP antes de iniciar la importación.
 - Convertir los cambios de progreso y estado en etapas diagnósticas.
+- Cerrar el diagnóstico al llegar al 100 % para evitar falsos bloqueos.
 - Detectar en qué punto se detuvo la lectura, clasificación o validación.
 ========================================================= */
 
@@ -38,15 +39,39 @@ Función o funciones:
     return "analisis_zip";
   }
 
+  function completarAnalisis() {
+    if (!analisisActivo) return false;
+
+    analisisActivo = false;
+    D.completar({
+      etapa: "analisis_completado",
+      archivo: "subir/subir.main.js",
+      funcion: "analizarZIP()",
+      mensaje: "Análisis del ZIP completado.",
+      porcentaje: 100,
+      zip: archivoSeleccionado()
+    });
+    return true;
+  }
+
   function registrarProgreso() {
     if (!analisisActivo) return;
+
     var mensaje = texto(document.getElementById("progresoTexto") && document.getElementById("progresoTexto").textContent);
     if (!mensaje || mensaje === ultimoMensaje) return;
+
     ultimoMensaje = mensaje;
     var barra = document.getElementById("progresoBar");
     var porcentaje = barra ? Number.parseFloat(barra.style.width || "0") : 0;
+    var etapa = inferirEtapa(mensaje);
+
+    if (etapa === "analisis_completado" || porcentaje >= 100) {
+      completarAnalisis();
+      return;
+    }
+
     D.paso({
-      etapa: inferirEtapa(mensaje),
+      etapa: etapa,
       archivo: mensaje.toLowerCase().indexOf("excel") !== -1 ? "subir/subir.excel.js" : "subir/subir.main.js",
       funcion: mensaje.toLowerCase().indexOf("excel") !== -1 ? "enriquecerPaqueteConExcel()" : "analizarZIP()",
       mensaje: mensaje,
@@ -63,6 +88,7 @@ Función o funciones:
     observer = new MutationObserver(function () {
       registrarProgreso();
       if (!analisisActivo) return;
+
       var titulo = texto(estado.querySelector("strong") && estado.querySelector("strong").textContent);
       var mensaje = texto(estado.querySelector("span") && estado.querySelector("span").textContent);
       var clase = texto(estado.className);
@@ -80,14 +106,7 @@ Función o funciones:
       }
 
       if (/análisis completado|analisis completado/i.test(titulo + " " + mensaje)) {
-        analisisActivo = false;
-        D.completar({
-          etapa: "analisis_completado",
-          archivo: "subir/subir.main.js",
-          funcion: "analizarZIP()",
-          mensaje: "Análisis del ZIP completado.",
-          porcentaje: 100
-        });
+        completarAnalisis();
       }
     });
 
@@ -97,10 +116,12 @@ Función o funciones:
 
   function conectar() {
     var boton = document.getElementById("btnAnalizar");
+
     if (boton) {
       boton.addEventListener("click", function () {
         var input = document.getElementById("inputZip");
         if (!input || !input.files || !input.files.length) return;
+
         analisisActivo = true;
         ultimoMensaje = "";
         D.iniciar({
@@ -116,6 +137,7 @@ Función o funciones:
         });
       }, true);
     }
+
     observarEstado();
   }
 
