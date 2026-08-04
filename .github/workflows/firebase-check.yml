@@ -6,6 +6,7 @@ on:
       - "firebase/**"
       - "subir/**"
       - "mallas/**"
+      - "diagnostico/**"
       - "menu-superior/**"
       - "comunicados/**"
       - "scripts/firebase-*.test.js"
@@ -18,6 +19,7 @@ on:
       - "firebase/**"
       - "subir/**"
       - "mallas/**"
+      - "diagnostico/**"
       - "menu-superior/**"
       - "comunicados/**"
       - "scripts/firebase-*.test.js"
@@ -45,6 +47,8 @@ jobs:
 
       - name: Verificar sintaxis crítica
         run: |
+          node --check diagnostico/diagnostico-flujo.js
+          node --check diagnostico/subir-diagnostico.js
           node --check firebase/firebase.inteligencia.js
           node --check firebase/firebase.inteligencia-v2.js
           node --check firebase/firebase.inteligencia-v2-ajustes.js
