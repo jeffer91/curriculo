@@ -2,9 +2,10 @@
 Nombre completo: mallas.html
 Ruta o ubicación: /Curriculo/mallas/mallas.html
 Funciones:
-- Registrar y editar mallas curriculares.
-- Importar materias desde texto, Excel, PDF o imagen.
-- Mantener una versión vigente por carrera.
+- Seleccionar una carrera y cargar sus materias desde Firebase.
+- Editar la malla agrupada por niveles.
+- Agregar materias nuevas y guardar la malla vigente.
+- Mantener importación e historial como opciones secundarias.
 ========================================================= -->
 <!DOCTYPE html>
 <html lang="es">
@@ -13,128 +14,175 @@ Funciones:
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mallas | Curriculo</title>
   <link rel="stylesheet" href="../menu-superior/menu-superior.css?v=20260804-1" />
-  <link rel="stylesheet" href="./mallas.css?v=20260804-1" />
+  <link rel="stylesheet" href="./mallas.css?v=20260804-2" />
 </head>
 <body>
   <main class="ml-page">
     <header class="ml-header">
-      <div><h1>Mallas</h1></div>
+      <div>
+        <h1>Malla curricular</h1>
+        <p>Selecciona una carrera, revisa sus materias y guarda.</p>
+      </div>
       <div class="ml-actions">
-        <button id="btnNuevaMalla" class="ml-btn ml-btn-light" type="button">Nueva</button>
-        <button id="btnGuardarMalla" class="ml-btn" type="button">Guardar</button>
+        <button id="btnHistorial" class="ml-btn ml-btn-light" type="button">Historial</button>
+        <button id="btnMasOpciones" class="ml-btn ml-btn-light" type="button">Más opciones</button>
+        <button id="btnGuardarMalla" class="ml-btn" type="button">Guardar malla</button>
       </div>
     </header>
 
-    <section id="mlEstado" class="ml-status ml-status-neutral">
-      <strong>Inicializando</strong>
-      <span>Cargando...</span>
+    <section id="mlEstado" class="ml-status ml-status-neutral" aria-live="polite">
+      <strong>Selecciona una carrera</strong>
+      <span>Las materias se cargarán desde Firebase.</span>
     </section>
 
-    <div class="ml-grid">
-      <div>
-        <section class="ml-panel">
-          <div class="ml-panel-head"><div><h2>Datos</h2></div></div>
-          <div class="ml-form-grid">
-            <div class="ml-field ml-field-full">
-              <label for="inputCarrera">Carrera</label>
-              <input id="inputCarrera" list="listaCarreras" type="text" placeholder="Administración" autocomplete="off" />
-              <datalist id="listaCarreras"></datalist>
-            </div>
-            <div class="ml-field">
-              <label for="inputVersion">Versión</label>
-              <input id="inputVersion" type="number" min="1" step="1" value="1" />
-            </div>
-            <div class="ml-field">
-              <label for="inputEstadoMalla">Estado</label>
-              <select id="inputEstadoMalla"><option value="vigente">Vigente</option><option value="borrador">Borrador</option><option value="historica">Histórica</option></select>
-            </div>
-            <div class="ml-field">
-              <label for="inputPeriodoInicio">Desde</label>
-              <input id="inputPeriodoInicio" type="month" />
-            </div>
-            <div class="ml-field">
-              <label for="inputPeriodoFin">Hasta</label>
-              <input id="inputPeriodoFin" type="month" />
-            </div>
-            <div class="ml-field ml-field-full">
-              <label for="inputObservaciones">Observaciones</label>
-              <textarea id="inputObservaciones" rows="2" placeholder="Opcional"></textarea>
-            </div>
-            <label class="ml-check ml-field-full"><input id="checkVigente" type="checkbox" checked /> Usar como vigente</label>
-          </div>
-        </section>
+    <section class="ml-panel ml-select-panel">
+      <div class="ml-field">
+        <label for="inputCarrera">Carrera</label>
+        <select id="inputCarrera">
+          <option value="">Selecciona una carrera</option>
+        </select>
+      </div>
+      <div id="mlResumenCarrera" class="ml-summary" hidden>
+        <strong id="resumenTotalMaterias">0 materias</strong>
+        <span id="resumenOrigen">Firebase</span>
+      </div>
+    </section>
 
-        <section class="ml-panel">
-          <div class="ml-panel-head"><div><h2>Importar</h2></div></div>
-          <div class="ml-source-tabs">
-            <button class="ml-source-tab ml-source-tab-active" type="button" data-source="texto">Manual</button>
-            <button class="ml-source-tab" type="button" data-source="excel">Excel</button>
-            <button class="ml-source-tab" type="button" data-source="documento">PDF / imagen</button>
-          </div>
-
-          <div class="ml-source-pane" data-pane="texto">
-            <div class="ml-field">
-              <label for="inputTextoMalla">Pega la malla</label>
-              <textarea id="inputTextoMalla" placeholder="Primer Nivel&#10;Administración I&#10;Ofimática&#10;..."></textarea>
-            </div>
-            <div class="ml-row-actions"><button id="btnProcesarTexto" class="ml-btn" type="button">Procesar</button></div>
-          </div>
-
-          <div class="ml-source-pane" data-pane="excel" hidden>
-            <div class="ml-upload">
-              <div class="ml-field"><label for="inputExcelMalla">Excel</label><input id="inputExcelMalla" type="file" accept=".xlsx,.xls,.csv" /></div>
-            </div>
-            <div class="ml-row-actions"><button id="btnProcesarExcel" class="ml-btn" type="button">Procesar</button></div>
-          </div>
-
-          <div class="ml-source-pane" data-pane="documento" hidden>
-            <div class="ml-upload">
-              <div class="ml-field"><label for="inputDocumentoMalla">PDF o imagen</label><input id="inputDocumentoMalla" type="file" accept="image/*,.pdf,application/pdf" /></div>
-              <div id="previewDocumento" class="ml-source-preview"><p>Selecciona un archivo.</p></div>
-            </div>
-            <div class="ml-field" style="margin-top:12px">
-              <label for="inputTextoDocumento">Texto</label>
-              <textarea id="inputTextoDocumento" placeholder="Pega la transcripción."></textarea>
-            </div>
-            <div class="ml-row-actions" style="margin-top:12px"><button id="btnProcesarDocumento" class="ml-btn" type="button">Procesar</button></div>
-          </div>
-        </section>
-
-        <section class="ml-panel">
-          <h2>Requisitos</h2>
-          <div class="ml-field"><textarea id="inputRequisitos" rows="4" placeholder="Un requisito por línea"></textarea></div>
-        </section>
+    <section id="panelMaterias" class="ml-panel" hidden>
+      <div class="ml-panel-head">
+        <div>
+          <h2>Materias</h2>
+          <p id="textoVersionActual">Sin malla guardada</p>
+        </div>
+        <div class="ml-row-actions">
+          <button id="btnAgregarMateria" class="ml-btn ml-btn-light" type="button">+ Agregar materia</button>
+          <button id="btnOrdenarMaterias" class="ml-btn ml-btn-light" type="button">Ordenar</button>
+        </div>
       </div>
 
-      <div>
-        <section class="ml-panel">
-          <div class="ml-panel-head">
-            <div><h2>Materias</h2></div>
-            <div class="ml-row-actions"><button id="btnAgregarMateria" class="ml-btn ml-btn-light" type="button">Agregar</button><button id="btnOrdenarMaterias" class="ml-btn ml-btn-light" type="button">Ordenar</button></div>
-          </div>
-
-          <div class="ml-stats">
-            <article class="ml-stat"><span>Niveles</span><strong id="statNivelesMalla">0</strong></article>
-            <article class="ml-stat"><span>Materias</span><strong id="statMateriasMalla">0</strong></article>
-            <article class="ml-stat"><span>Requisitos</span><strong id="statRequisitosMalla">0</strong></article>
-            <article class="ml-stat"><span>Versión</span><strong id="statVersionMalla">1</strong></article>
-          </div>
-
-          <div class="ml-table-wrap">
-            <table class="ml-table">
-              <thead><tr><th class="ml-col-level">Nivel</th><th class="ml-col-order">Orden</th><th class="ml-col-code">Código</th><th>Nombre oficial</th><th>Tipo</th><th>Acción</th></tr></thead>
-              <tbody id="tablaMateriasMalla"><tr><td colspan="6" class="ml-empty">Sin materias.</td></tr></tbody>
-            </table>
-          </div>
-        </section>
-
-        <section class="ml-panel">
-          <div class="ml-panel-head"><div><h2>Versiones</h2></div><button id="btnRecargarMallas" class="ml-btn ml-btn-light" type="button">Recargar</button></div>
-          <div id="listaVersiones" class="ml-version-list"><p class="ml-muted">Cargando...</p></div>
-        </section>
+      <div id="listaMateriasMalla" class="ml-level-list">
+        <div class="ml-empty">Selecciona una carrera.</div>
       </div>
-    </div>
+    </section>
   </main>
+
+  <dialog id="modalAgregarMateria" class="ml-modal ml-modal-small">
+    <form method="dialog" class="ml-modal-card" id="formAgregarMateria">
+      <div class="ml-modal-head">
+        <h2>Agregar materia</h2>
+        <button class="ml-icon-btn" type="button" data-cerrar-modal="modalAgregarMateria" aria-label="Cerrar">×</button>
+      </div>
+      <div class="ml-form-grid">
+        <div class="ml-field">
+          <label for="inputNuevaNivel">Nivel</label>
+          <input id="inputNuevaNivel" type="number" min="1" max="20" value="1" />
+        </div>
+        <div class="ml-field">
+          <label for="inputNuevaCodigo">Código</label>
+          <input id="inputNuevaCodigo" type="text" placeholder="Opcional" />
+        </div>
+        <div class="ml-field ml-field-full">
+          <label for="inputNuevaNombre">Nombre</label>
+          <input id="inputNuevaNombre" type="text" placeholder="Nombre de la materia" autocomplete="off" />
+        </div>
+      </div>
+      <div class="ml-modal-actions">
+        <button class="ml-btn ml-btn-light" type="button" data-cerrar-modal="modalAgregarMateria">Cancelar</button>
+        <button id="btnConfirmarAgregar" class="ml-btn" type="submit">Agregar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="modalOpciones" class="ml-modal">
+    <div class="ml-modal-card">
+      <div class="ml-modal-head">
+        <div><h2>Más opciones</h2><p>Configuración e importación.</p></div>
+        <button class="ml-icon-btn" type="button" data-cerrar-modal="modalOpciones" aria-label="Cerrar">×</button>
+      </div>
+
+      <section class="ml-options-section">
+        <div class="ml-options-title">
+          <h3>Configuración</h3>
+          <button id="btnNuevaVersion" class="ml-mini" type="button">Crear nueva versión</button>
+        </div>
+        <div class="ml-form-grid">
+          <div class="ml-field">
+            <label for="inputVersion">Versión</label>
+            <input id="inputVersion" type="number" min="1" step="1" value="1" />
+          </div>
+          <div class="ml-field">
+            <label for="inputEstadoMalla">Estado</label>
+            <select id="inputEstadoMalla">
+              <option value="vigente">Vigente</option>
+              <option value="borrador">Borrador</option>
+              <option value="historica">Histórica</option>
+            </select>
+          </div>
+          <div class="ml-field">
+            <label for="inputPeriodoInicio">Desde</label>
+            <input id="inputPeriodoInicio" type="month" />
+          </div>
+          <div class="ml-field">
+            <label for="inputPeriodoFin">Hasta</label>
+            <input id="inputPeriodoFin" type="month" />
+          </div>
+          <div class="ml-field ml-field-full">
+            <label for="inputObservaciones">Observaciones</label>
+            <textarea id="inputObservaciones" rows="2" placeholder="Opcional"></textarea>
+          </div>
+          <label class="ml-check ml-field-full"><input id="checkVigente" type="checkbox" checked /> Usar como malla vigente</label>
+        </div>
+      </section>
+
+      <section class="ml-options-section">
+        <h3>Requisitos adicionales</h3>
+        <div class="ml-field">
+          <textarea id="inputRequisitos" rows="4" placeholder="Un requisito por línea"></textarea>
+        </div>
+      </section>
+
+      <section class="ml-options-section">
+        <h3>Importar materias</h3>
+        <div class="ml-source-tabs">
+          <button class="ml-source-tab ml-source-tab-active" type="button" data-source="texto">Texto</button>
+          <button class="ml-source-tab" type="button" data-source="excel">Excel</button>
+          <button class="ml-source-tab" type="button" data-source="documento">PDF / imagen</button>
+        </div>
+
+        <div class="ml-source-pane" data-pane="texto">
+          <div class="ml-field">
+            <textarea id="inputTextoMalla" rows="7" placeholder="Primer Nivel&#10;Administración I&#10;Ofimática"></textarea>
+          </div>
+          <button id="btnProcesarTexto" class="ml-btn" type="button">Agregar a la malla</button>
+        </div>
+
+        <div class="ml-source-pane" data-pane="excel" hidden>
+          <div class="ml-field"><input id="inputExcelMalla" type="file" accept=".xlsx,.xls,.csv" /></div>
+          <button id="btnProcesarExcel" class="ml-btn" type="button">Agregar desde Excel</button>
+        </div>
+
+        <div class="ml-source-pane" data-pane="documento" hidden>
+          <div class="ml-field"><input id="inputDocumentoMalla" type="file" accept="image/*,.pdf,application/pdf" /></div>
+          <div id="previewDocumento" class="ml-source-preview"><p>Selecciona un archivo.</p></div>
+          <div class="ml-field"><textarea id="inputTextoDocumento" rows="6" placeholder="Pega la transcripción del documento"></textarea></div>
+          <button id="btnProcesarDocumento" class="ml-btn" type="button">Agregar transcripción</button>
+        </div>
+      </section>
+    </div>
+  </dialog>
+
+  <dialog id="modalHistorial" class="ml-modal">
+    <div class="ml-modal-card">
+      <div class="ml-modal-head">
+        <div><h2>Historial</h2><p>Versiones guardadas.</p></div>
+        <button class="ml-icon-btn" type="button" data-cerrar-modal="modalHistorial" aria-label="Cerrar">×</button>
+      </div>
+      <div class="ml-row-actions ml-history-actions">
+        <button id="btnRecargarMallas" class="ml-btn ml-btn-light" type="button">Recargar</button>
+      </div>
+      <div id="listaVersiones" class="ml-version-list"><p class="ml-muted">Cargando...</p></div>
+    </div>
+  </dialog>
 
   <script src="../menu-superior/menu-superior.js?v=20260804-2"></script>
   <script src="../libs/xlsx.min.js?v=20260713-7"></script>
@@ -144,6 +192,6 @@ Funciones:
   <script src="../firebase/firebase.curriculo.js?v=20260728-1"></script>
   <script src="../firebase/firebase.mallas.js?v=20260804-1"></script>
   <script src="./mallas.parser.js?v=20260804-1"></script>
-  <script src="./mallas.main.js?v=20260804-1"></script>
+  <script src="./mallas.main.js?v=20260804-2"></script>
 </body>
 </html>
