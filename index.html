@@ -4,7 +4,7 @@ Ruta o ubicación: /Curriculo/index.html
 Funciones:
 - Servir como menú principal de Gestión Curricular CCC.
 - Explicar el flujo Firebase, comparación inteligente y versiones.
-- Permitir ingresar a Subir ZIP, Firebase y Comunicados.
+- Permitir ingresar a Subir ZIP, Firebase, Mallas y Comunicados.
 ========================================================= -->
 <!DOCTYPE html>
 <html lang="es">
@@ -12,10 +12,10 @@ Funciones:
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Curriculo | Gestión Curricular CCC</title>
-  <link rel="stylesheet" href="./menu-superior/menu-superior.css?v=20260728-1" />
+  <link rel="stylesheet" href="./menu-superior/menu-superior.css?v=20260804-1" />
   <style>
-    :root{--bg:#f4f7fb;--surface:#fff;--border:#dbe3ef;--text:#142033;--muted:#64748b;--primary:#184f90;--soft:#e8f1fb;--gold:#6d5017;--gold-soft:#fff6df;--shadow:0 18px 45px rgba(31,50,78,.08)}
-    *{box-sizing:border-box}body{margin:0;min-height:100vh;font-family:Arial,Helvetica,sans-serif;color:var(--text);background:radial-gradient(circle at top left,rgba(24,79,144,.14),transparent 34rem),linear-gradient(180deg,#f7faff 0%,var(--bg) 100%)}.app{width:min(1280px,calc(100% - 32px));margin:0 auto;padding:42px 0}.hero{display:grid;grid-template-columns:1.1fr .9fr;gap:28px;align-items:center;margin-bottom:28px}.eyebrow{margin:0 0 8px;color:var(--primary);text-transform:uppercase;font-size:12px;font-weight:900;letter-spacing:.12em}h1{margin:0;font-size:clamp(38px,5vw,62px);line-height:1.03;letter-spacing:-.05em}.subtitle{margin:14px 0 0;color:var(--muted);font-size:17px;line-height:1.55;max-width:780px}.hero-card,.module,.footer-note{border:1px solid var(--border);background:rgba(255,255,255,.94);box-shadow:var(--shadow)}.hero-card{padding:24px;border-radius:26px}.hero-card h2{margin:0 0 10px}.hero-card p{color:var(--muted);line-height:1.5}.flow{display:grid;gap:10px;margin-top:16px}.flow-item{display:flex;gap:12px;align-items:center;padding:12px;border-radius:14px;background:#f8fafc;border:1px solid var(--border)}.num{width:31px;height:31px;display:grid;place-items:center;border-radius:50%;color:#fff;background:var(--primary);font-weight:900;flex:0 0 auto}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}.module{min-height:310px;display:flex;flex-direction:column;justify-content:space-between;padding:26px;border-radius:26px;text-decoration:none;color:inherit;transition:.15s}.module:hover{transform:translateY(-3px);border-color:var(--primary);box-shadow:0 22px 58px rgba(24,79,144,.14)}.tag{display:inline-flex;padding:7px 11px;border-radius:999px;background:var(--soft);color:var(--primary);font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.07em}.tag-gold{background:var(--gold-soft);color:var(--gold)}.module h2{margin:20px 0 10px;font-size:29px;letter-spacing:-.03em}.module p{margin:0;color:var(--muted);line-height:1.55}.module-footer{display:flex;justify-content:space-between;align-items:center;margin-top:28px}.btn-text{color:var(--primary);font-weight:900}.circle{width:46px;height:46px;display:grid;place-items:center;border-radius:50%;color:#fff;background:var(--primary);font-weight:900;font-size:20px}.circle-gold{background:var(--gold)}.footer-note{margin-top:22px;padding:18px;border-radius:18px;color:var(--muted);line-height:1.5}.footer-note strong{color:var(--text)}code{padding:3px 7px;border-radius:999px;background:#f8fafc;color:var(--primary);font-weight:900}@media(max-width:1000px){.hero,.grid{grid-template-columns:1fr}.module{min-height:auto}}@media(max-width:560px){.app{width:min(100% - 20px,1280px);padding-top:24px}}
+    :root{--bg:#f4f7fb;--surface:#fff;--border:#dbe3ef;--text:#142033;--muted:#64748b;--primary:#184f90;--soft:#e8f1fb;--gold:#6d5017;--gold-soft:#fff6df;--green:#087f5b;--green-soft:#ecfdf3;--shadow:0 18px 45px rgba(31,50,78,.08)}
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;font-family:Arial,Helvetica,sans-serif;color:var(--text);background:radial-gradient(circle at top left,rgba(24,79,144,.14),transparent 34rem),linear-gradient(180deg,#f7faff 0%,var(--bg) 100%)}.app{width:min(1380px,calc(100% - 32px));margin:0 auto;padding:42px 0}.hero{display:grid;grid-template-columns:1.1fr .9fr;gap:28px;align-items:center;margin-bottom:28px}.eyebrow{margin:0 0 8px;color:var(--primary);text-transform:uppercase;font-size:12px;font-weight:900;letter-spacing:.12em}h1{margin:0;font-size:clamp(38px,5vw,62px);line-height:1.03;letter-spacing:-.05em}.subtitle{margin:14px 0 0;color:var(--muted);font-size:17px;line-height:1.55;max-width:780px}.hero-card,.module,.footer-note{border:1px solid var(--border);background:rgba(255,255,255,.94);box-shadow:var(--shadow)}.hero-card{padding:24px;border-radius:26px}.hero-card h2{margin:0 0 10px}.hero-card p{color:var(--muted);line-height:1.5}.flow{display:grid;gap:10px;margin-top:16px}.flow-item{display:flex;gap:12px;align-items:center;padding:12px;border-radius:14px;background:#f8fafc;border:1px solid var(--border)}.num{width:31px;height:31px;display:grid;place-items:center;border-radius:50%;color:#fff;background:var(--primary);font-weight:900;flex:0 0 auto}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}.module{min-height:310px;display:flex;flex-direction:column;justify-content:space-between;padding:24px;border-radius:26px;text-decoration:none;color:inherit;transition:.15s}.module:hover{transform:translateY(-3px);border-color:var(--primary);box-shadow:0 22px 58px rgba(24,79,144,.14)}.tag{display:inline-flex;padding:7px 11px;border-radius:999px;background:var(--soft);color:var(--primary);font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.07em}.tag-gold{background:var(--gold-soft);color:var(--gold)}.tag-green{background:var(--green-soft);color:var(--green)}.module h2{margin:20px 0 10px;font-size:27px;letter-spacing:-.03em}.module p{margin:0;color:var(--muted);line-height:1.55}.module-footer{display:flex;justify-content:space-between;align-items:center;margin-top:28px}.btn-text{color:var(--primary);font-weight:900}.circle{width:46px;height:46px;display:grid;place-items:center;border-radius:50%;color:#fff;background:var(--primary);font-weight:900;font-size:20px}.circle-gold{background:var(--gold)}.circle-green{background:var(--green)}.footer-note{margin-top:22px;padding:18px;border-radius:18px;color:var(--muted);line-height:1.5}.footer-note strong{color:var(--text)}code{padding:3px 7px;border-radius:999px;background:#f8fafc;color:var(--primary);font-weight:900}@media(max-width:1180px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:1000px){.hero{grid-template-columns:1fr}.module{min-height:auto}}@media(max-width:650px){.grid{grid-template-columns:1fr}}@media(max-width:560px){.app{width:min(100% - 20px,1380px);padding-top:24px}}
   </style>
 </head>
 <body>
@@ -24,22 +24,22 @@ Funciones:
       <div>
         <p class="eyebrow">Gestión Curricular CCC · Firebase</p>
         <h1>Una sola base, con historial inteligente</h1>
-        <p class="subtitle">La aplicación analiza los ZIP, guarda la información en Cloud Firestore y compara cada carga con la versión vigente. Un archivo repetido no duplica datos ni crea versiones falsas.</p>
+        <p class="subtitle">La aplicación analiza los ZIP, compara cada materia con la malla curricular vigente y guarda en Cloud Firestore únicamente cambios reales y materias completas.</p>
       </div>
       <aside class="hero-card">
         <h2>Flujo de trabajo</h2>
-        <p>Las colecciones son planas y se relacionan mediante identificadores estables.</p>
+        <p>La malla oficial indica lo esperado; el ZIP contiene lo recibido y Firebase conserva la versión vigente y su historial.</p>
         <div class="flow">
-          <div class="flow-item"><span class="num">1</span><span>Analizar y validar el ZIP completo.</span></div>
-          <div class="flow-item"><span class="num">2</span><span>Comparar materias, PEA Base, unidades y actividades con Firebase.</span></div>
-          <div class="flow-item"><span class="num">3</span><span>Guardar solo diferencias y conservar la versión anterior.</span></div>
+          <div class="flow-item"><span class="num">1</span><span>Registrar la malla oficial y su versión vigente.</span></div>
+          <div class="flow-item"><span class="num">2</span><span>Analizar el ZIP, validar los PEA y conciliar nombres.</span></div>
+          <div class="flow-item"><span class="num">3</span><span>Guardar materias válidas y generar comunicados institucionales.</span></div>
         </div>
       </aside>
     </section>
 
     <section class="grid">
       <a class="module" href="./subir/subir.html" data-home-route="subir">
-        <div><span class="tag">Análisis inteligente</span><h2>Subir ZIP</h2><p>Detecta carreras, niveles y materias; lee los tres PEA y muestra errores antes de escribir en Firestore.</p></div>
+        <div><span class="tag">Análisis inteligente</span><h2>Subir ZIP</h2><p>Detecta carreras, niveles y materias; lee los tres PEA, compara con la malla vigente y muestra errores antes de escribir.</p></div>
         <div class="module-footer"><span class="btn-text">Analizar una carga</span><span class="circle">→</span></div>
       </a>
 
@@ -48,16 +48,21 @@ Funciones:
         <div class="module-footer"><span class="btn-text">Ver la base curricular</span><span class="circle">→</span></div>
       </a>
 
+      <a class="module" href="./mallas/mallas.html">
+        <div><span class="tag tag-green">Estructura oficial</span><h2>Mallas</h2><p>Registra versiones por carrera, importa materias desde texto o Excel y define la malla vigente para comparar los ZIP.</p></div>
+        <div class="module-footer"><span class="btn-text">Administrar mallas</span><span class="circle circle-green">→</span></div>
+      </a>
+
       <a class="module" href="./comunicados/comunicados.html" data-home-route="comunicados">
         <div><span class="tag tag-gold">Documentos</span><h2>Comunicados</h2><p>Genera PDFs institucionales usando directamente el contenido curricular vigente almacenado en Firebase.</p></div>
         <div class="module-footer"><span class="btn-text">Generar comunicados</span><span class="circle circle-gold">→</span></div>
       </a>
     </section>
 
-    <div class="footer-note"><strong>Colecciones principales:</strong> <code>carreras</code>, <code>materias</code>, <code>pea_base</code>, <code>pea_unidades</code>, <code>pea_actividades</code>, <code>cargas</code>, <code>materia_versiones</code>, <code>materia_cambios</code>, <code>comunicados</code> y <code>configuracion</code>. No se utilizan subcolecciones.</div>
+    <div class="footer-note"><strong>Colecciones principales:</strong> <code>carreras</code>, <code>materias</code>, <code>pea_base</code>, <code>pea_unidades</code>, <code>pea_actividades</code>, <code>mallas_curriculares</code>, <code>malla_materias</code>, <code>malla_equivalencias</code>, <code>cargas</code>, <code>materia_versiones</code>, <code>materia_cambios</code>, <code>comunicados</code> y <code>configuracion</code>. No se utilizan subcolecciones.</div>
   </main>
 
-  <script src="./menu-superior/menu-superior.js?v=20260728-1"></script>
+  <script src="./menu-superior/menu-superior.js?v=20260804-1"></script>
   <script>
     (function () {
       document.addEventListener("click", function (event) {
