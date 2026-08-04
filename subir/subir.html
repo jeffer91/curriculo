@@ -1,20 +1,19 @@
 <!-- =========================================================
 Nombre completo: subir.html
 Ruta o ubicación: /Curriculo/subir/subir.html
-Función o funciones:
-- Mostrar la carga y análisis de ZIP de Gestión Curricular CCC.
-- Leer los tres Excel PEA y validar su contenido.
-- Subir únicamente las materias completas y omitir las defectuosas.
-- Comparar el contenido con Firebase y crear versiones solo con cambios reales.
-- Mantener todas las colecciones de Firestore en un solo nivel.
+Funciones:
+- Cargar y analizar un ZIP curricular.
+- Validar los tres archivos PEA.
+- Subir únicamente materias completas.
+- Comparar las materias con la malla vigente.
 ========================================================= -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Subir ZIP CCC | Gestión Curricular</title>
-  <link rel="stylesheet" href="../menu-superior/menu-superior.css?v=20260728-1" />
+  <title>Subir ZIP | Curriculo</title>
+  <link rel="stylesheet" href="../menu-superior/menu-superior.css?v=20260804-1" />
   <link rel="stylesheet" href="../diagnostico/diagnostico-modal.css?v=20260713-7" />
   <link rel="stylesheet" href="./subir.css?v=20260717-1" />
   <link rel="stylesheet" href="./subir.advertencias-ui.css?v=20260727-3" />
@@ -25,13 +24,12 @@ Función o funciones:
   <div class="subir-page">
     <header class="subir-header">
       <div>
-        <p class="subir-eyebrow">Gestión Curricular CCC</p>
         <h1>Subir ZIP</h1>
-        <p class="subir-subtitle">Carga un ZIP completo. La aplicación analizará cada materia, subirá únicamente las completas y dejará fuera las que tengan errores o advertencias.</p>
+        <p class="subir-subtitle">Selecciona el archivo y analiza.</p>
       </div>
       <div class="subir-header-actions">
-        <a class="subir-btn subir-btn-light" href="../bdlocal/bdlocal.html" id="linkBDLocal" hidden>Ver Firebase</a>
-        <button id="btnProbarBD" class="subir-btn subir-btn-light" type="button">Probar Firebase</button>
+        <a class="subir-btn subir-btn-light" href="../bdlocal/bdlocal.html" id="linkBDLocal" hidden>Firebase</a>
+        <button id="btnProbarBD" class="subir-btn subir-btn-light" type="button">Probar conexión</button>
         <button id="btnLimpiar" class="subir-btn subir-btn-light" type="button">Limpiar</button>
       </div>
     </header>
@@ -39,22 +37,22 @@ Función o funciones:
     <main>
       <section id="subirEstado" class="subir-status subir-status-neutral">
         <div class="subir-status-dot"></div>
-        <div><strong>Esperando ZIP</strong><span>Selecciona un archivo .zip para iniciar la lectura.</span></div>
+        <div><strong>Esperando ZIP</strong><span>Selecciona un archivo.</span></div>
       </section>
 
       <section class="subir-panel subir-upload-panel">
         <div id="dropZone" class="subir-drop">
           <div class="subir-drop-icon">ZIP</div>
-          <div><h2>Selecciona o arrastra el ZIP</h2><p>La pantalla detectará carreras, niveles, materias y los tres PEA aunque los nombres de las carpetas no sean idénticos.</p></div>
+          <div><h2>Selecciona o arrastra el ZIP</h2><p>La aplicación detectará la estructura.</p></div>
           <div class="subir-upload-actions">
-            <button id="btnSeleccionarZip" class="subir-btn subir-btn-primary" type="button">Seleccionar ZIP</button>
-            <button id="btnAnalizar" class="subir-btn subir-btn-dark" type="button">Analizar ZIP</button>
+            <button id="btnSeleccionarZip" class="subir-btn subir-btn-primary" type="button">Seleccionar</button>
+            <button id="btnAnalizar" class="subir-btn subir-btn-dark" type="button">Analizar</button>
           </div>
           <input id="inputZip" type="file" accept=".zip,application/zip" hidden />
         </div>
 
         <div id="archivoInfo" class="subir-file-selected" hidden>
-          <div><span>Archivo seleccionado</span><strong id="archivoNombre">Ningún archivo seleccionado</strong></div>
+          <div><span>Archivo</span><strong id="archivoNombre">Sin archivo</strong></div>
           <small id="archivoTamano"></small>
         </div>
 
@@ -64,69 +62,69 @@ Función o funciones:
         </div>
       </section>
 
-      <section id="resumenEstadosMaterias" class="subir-grid subir-grid-cards" aria-label="Resumen de subida y estados de materias">
-        <article class="subir-card"><span>Carreras</span><strong id="statCarreras">0</strong><small>Detectadas</small></article>
-        <article class="subir-card"><span>Niveles</span><strong id="statNiveles">0</strong><small>Clasificados</small></article>
-        <article class="subir-card"><span>Materias</span><strong id="statMaterias">0</strong><small>Encontradas</small></article>
-        <article class="subir-card"><span>Archivos</span><strong id="statArchivos">0</strong><small>Dentro del ZIP</small></article>
-        <article class="subir-card subir-card-ok"><span>Completas</span><strong id="statCompletas">0</strong><small>Se pueden subir</small></article>
-        <article class="subir-card subir-card-warn"><span>Advertencias</span><strong id="statAdvertencias">0</strong><small>No se subirán hasta corregirlas</small></article>
-        <article class="subir-card subir-card-error"><span>Errores</span><strong id="statErrores">0</strong><small>No se subirán</small></article>
+      <section id="resumenEstadosMaterias" class="subir-grid subir-grid-cards" aria-label="Resumen">
+        <article class="subir-card"><span>Carreras</span><strong id="statCarreras">0</strong></article>
+        <article class="subir-card"><span>Niveles</span><strong id="statNiveles">0</strong></article>
+        <article class="subir-card"><span>Materias</span><strong id="statMaterias">0</strong></article>
+        <article class="subir-card"><span>Archivos</span><strong id="statArchivos">0</strong></article>
+        <article class="subir-card subir-card-ok"><span>Completas</span><strong id="statCompletas">0</strong></article>
+        <article class="subir-card subir-card-warn"><span>Advertencias</span><strong id="statAdvertencias">0</strong></article>
+        <article class="subir-card subir-card-error"><span>Errores</span><strong id="statErrores">0</strong></article>
       </section>
 
       <section id="accionesRevision" class="subir-panel subir-review-actions" hidden>
         <div>
-          <h2>Revisar y volver a comprobar</h2>
-          <p id="resumenAccionesRevision">Analiza un ZIP para habilitar las acciones de revisión.</p>
+          <h2>Revisar incidencias</h2>
+          <p id="resumenAccionesRevision">Analiza un ZIP.</p>
         </div>
         <div class="subir-review-actions-row">
-          <button id="btnPrimeraAdvertencia" class="subir-btn subir-btn-review" type="button">Revisar primera incidencia</button>
-          <button id="btnReanalizar" class="subir-btn subir-btn-rescan" type="button">Volver a analizar</button>
-          <button id="btnSeleccionarZipCorregido" class="subir-btn subir-btn-replace" type="button">Seleccionar ZIP corregido</button>
+          <button id="btnPrimeraAdvertencia" class="subir-btn subir-btn-review" type="button">Revisar primera</button>
+          <button id="btnReanalizar" class="subir-btn subir-btn-rescan" type="button">Analizar de nuevo</button>
+          <button id="btnSeleccionarZipCorregido" class="subir-btn subir-btn-replace" type="button">Cambiar ZIP</button>
         </div>
-        <p class="subir-review-help"><strong>Importante:</strong> después de corregir los Excel, vuelve a seleccionar el ZIP aunque conserve el mismo nombre.</p>
+        <p class="subir-review-help">Tras corregirlo, selecciona de nuevo el ZIP.</p>
       </section>
 
       <section id="accionesImportacion" class="subir-panel subir-actions-panel" hidden>
         <div>
-          <h2>Guardar materias completas en Firebase</h2>
-          <p>Las materias completas se compararán con su versión vigente. Las materias con errores o advertencias se omitirán y no modificarán información correcta que ya exista en Firebase.</p>
+          <h2>Guardar en Firebase</h2>
+          <p>Solo se subirán las materias completas.</p>
         </div>
         <div class="subir-actions-row">
-          <button id="btnImportar" class="subir-btn subir-btn-primary" type="button">Subir materias completas</button>
-          <button id="btnImportarObservaciones" class="subir-btn subir-btn-warn" type="button" hidden>Subir materias completas</button>
+          <button id="btnImportar" class="subir-btn subir-btn-primary" type="button">Subir completas</button>
+          <button id="btnImportarObservaciones" class="subir-btn subir-btn-warn" type="button" hidden>Subir completas</button>
         </div>
       </section>
 
       <section id="previewPanel" class="subir-panel" hidden>
         <div class="subir-panel-head">
-          <div><h2>Vista previa de materias</h2><p>Solo las materias clasificadas como completas se guardarán en Firebase.</p></div>
-          <div class="subir-search"><input id="buscadorPreview" type="search" placeholder="Buscar por carrera, nivel, código, materia o estado..." autocomplete="off" /></div>
+          <div><h2>Materias</h2></div>
+          <div class="subir-search"><input id="buscadorPreview" type="search" placeholder="Buscar materia..." autocomplete="off" /></div>
         </div>
         <div class="subir-table-wrap">
           <table class="subir-table">
             <thead><tr><th>Carrera</th><th>Nivel</th><th>Código</th><th>Materia</th><th>Base</th><th>Unidades</th><th>Actividades</th><th>Estado</th><th>Archivos</th><th>Revisión</th></tr></thead>
-            <tbody id="tablaPreview"><tr><td colspan="10" class="subir-empty">Sube un ZIP para ver la clasificación.</td></tr></tbody>
+            <tbody id="tablaPreview"><tr><td colspan="10" class="subir-empty">Sube un ZIP.</td></tr></tbody>
           </table>
         </div>
       </section>
 
       <section class="subir-panel subir-panel-split">
-        <div><h2>Estructura detectada</h2><p class="subir-panel-text">Carreras, niveles y materias encontradas automáticamente.</p><div id="listaEstructura" class="subir-tree"><p class="subir-muted">Sin estructura detectada todavía.</p></div></div>
-        <div><h2>Observaciones</h2><p class="subir-panel-text">Alertas de archivos faltantes, baja confianza, duplicados o contenido incompleto.</p><div id="listaValidaciones" class="subir-validations"><p class="subir-muted">Sin observaciones todavía.</p></div></div>
+        <div><h2>Estructura</h2><div id="listaEstructura" class="subir-tree"><p class="subir-muted">Sin datos.</p></div></div>
+        <div><h2>Observaciones</h2><div id="listaValidaciones" class="subir-validations"><p class="subir-muted">Sin observaciones.</p></div></div>
       </section>
     </main>
   </div>
 
   <dialog id="modalDetalle" class="subir-modal">
-    <div class="subir-modal-head"><div><p class="subir-eyebrow">Detalle y corrección</p><h2 id="modalTitulo">Materia</h2></div><button id="btnCerrarModal" class="subir-icon-btn" type="button" aria-label="Cerrar">×</button></div>
+    <div class="subir-modal-head"><div><h2 id="modalTitulo">Materia</h2></div><button id="btnCerrarModal" class="subir-icon-btn" type="button" aria-label="Cerrar">×</button></div>
     <div id="modalContenido" class="subir-modal-content">Cargando...</div>
   </dialog>
 
   <script src="../diagnostico/diagnostico-flujo.js?v=20260713-7"></script>
   <script src="../diagnostico/diagnostico-modal.js?v=20260713-7"></script>
   <script src="../diagnostico/subir-diagnostico.js?v=20260713-7"></script>
-  <script src="../menu-superior/menu-superior.js?v=20260728-1"></script>
+  <script src="../menu-superior/menu-superior.js?v=20260804-2"></script>
   <script src="../libs/jszip.min.js?v=20260713-7"></script>
   <script src="../libs/xlsx.min.js?v=20260713-7"></script>
 
