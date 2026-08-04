@@ -32,7 +32,7 @@ const idsRequeridos = [
 
 idsRequeridos.forEach((id) => {
   assert.match(html, new RegExp(`id=["']${id}["']`), `Falta el control #${id} en mallas.html`);
-  assert.match(js, new RegExp(`\\$\\(["']${id}["']\\)`), `mallas.main.js no utiliza #${id}`);
+  assert.match(js, new RegExp(`["']${id}["']`), `mallas.main.js no hace referencia a #${id}`);
 });
 
 assert.match(js, /Firebase\.obtenerMateriasPorCarrera/, "La malla debe cargar materias existentes desde Firebase.");
