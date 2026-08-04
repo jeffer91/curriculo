@@ -1,11 +1,9 @@
 <!-- =========================================================
 Nombre completo: comunicados.html
 Ruta o ubicación: /Curriculo/comunicados/comunicados.html
-Función o funciones:
-- Generar comunicados institucionales con información curricular de Firebase.
-- Usar únicamente la versión vigente de cada materia.
-- Mantener generación individual, seleccionada y global.
-- Reservar la numeración institucional en Firestore antes de generar los PDF.
+Funciones:
+- Generar comunicados institucionales desde Firebase.
+- Reservar la numeración antes de crear los PDF.
 ========================================================= -->
 <!DOCTYPE html>
 <html lang="es">
@@ -13,79 +11,69 @@ Función o funciones:
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Comunicados | Curriculo</title>
-  <link rel="stylesheet" href="../menu-superior/menu-superior.css?v=20260728-1" />
+  <link rel="stylesheet" href="../menu-superior/menu-superior.css?v=20260804-1" />
   <link rel="stylesheet" href="./comunicados.css?v=20260713-7" />
   <style>
-    .com-logo-ready{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid #d8e2ef;border-radius:12px;background:#f8fafc}
-    .com-logo-ready strong{display:block}.com-logo-ready span{display:block;color:#64748b;font-size:13px}
-    .com-logo-mark{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:#e7f6ec;color:#087f5b;font-weight:900}
-    .com-content-note{margin-top:10px;color:#475569;font-size:13px}.com-logo-path{margin-top:4px;font-family:Consolas,monospace;color:#334155!important;overflow-wrap:anywhere}
+    .com-logo-ready{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #d8e2ef;border-radius:12px;background:#f8fafc}.com-logo-ready strong{display:block}.com-logo-mark{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:#e7f6ec;color:#087f5b;font-weight:900}
   </style>
 </head>
 <body>
   <div class="com-page">
     <header class="com-header">
-      <div>
-        <p class="com-eyebrow">Gestión Curricular CCC · Firebase</p>
-        <h1>Comunicados institucionales</h1>
-        <p class="com-subtitle">Genera comunicados con la versión vigente de descripción, objetivo, unidades, contenidos, actividades y bibliografía guardada en Firestore.</p>
-      </div>
+      <div><h1>Comunicados</h1></div>
       <div class="com-header-actions">
-        <button id="btnRecargar" type="button" class="com-btn com-btn-light">Recargar Firebase</button>
+        <button id="btnRecargar" type="button" class="com-btn com-btn-light">Recargar</button>
         <a href="../subir/subir.html" class="com-btn com-btn-light">Subir ZIP</a>
       </div>
     </header>
 
     <section id="comEstado" class="com-status com-status-neutral">
-      <div class="com-status-dot"></div><div><strong>Inicializando</strong><span>Conectando con Firebase Firestore.</span></div>
+      <div class="com-status-dot"></div><div><strong>Inicializando</strong><span>Conectando...</span></div>
     </section>
 
     <section class="com-panel">
       <div class="com-form-grid">
-        <div class="com-field"><label for="selectorCarrera">Carrera</label><select id="selectorCarrera"><option value="">Cargando carreras...</option></select></div>
-        <div class="com-field"><label for="inputFecha">Fecha del comunicado</label><input id="inputFecha" type="date" /></div>
+        <div class="com-field"><label for="selectorCarrera">Carrera</label><select id="selectorCarrera"><option value="">Cargando...</option></select></div>
+        <div class="com-field"><label for="inputFecha">Fecha</label><input id="inputFecha" type="date" /></div>
         <div class="com-field"><label for="inputCiudad">Ciudad</label><input id="inputCiudad" type="text" value="Quito, D.M." /></div>
-        <div class="com-field"><label for="inputUnidadResponsable">Unidad responsable</label><input id="inputUnidadResponsable" type="text" value="Unidad Gestión de Procesos Académicos" /></div>
-        <div class="com-field com-field-full"><label for="inputNota">Pie institucional</label><input id="inputNota" type="text" value="Instituto Superior Tecnológico Quito Metropolitano" /></div>
+        <div class="com-field"><label for="inputUnidadResponsable">Unidad</label><input id="inputUnidadResponsable" type="text" value="Unidad Gestión de Procesos Académicos" /></div>
+        <div class="com-field com-field-full"><label for="inputNota">Pie</label><input id="inputNota" type="text" value="Instituto Superior Tecnológico Quito Metropolitano" /></div>
         <input id="inputLogoSrc" type="hidden" value="../assets/logo-itsqmet-comunicado-oficial.png" />
-        <div class="com-field com-field-full">
-          <div class="com-logo-ready"><div class="com-logo-mark">✓</div><div><strong>Logo institucional configurado</strong><span>El PDF utiliza el archivo PNG externo:</span><span class="com-logo-path">/Curriculo/assets/logo-itsqmet-comunicado-oficial.png</span></div></div>
-          <p class="com-content-note">La pantalla reserva en Firebase todos los números antes de generar el lote. Dos ventanas no pueden utilizar la misma numeración.</p>
-        </div>
+        <div class="com-field com-field-full"><div class="com-logo-ready"><div class="com-logo-mark">✓</div><div><strong>Logo configurado</strong></div></div></div>
       </div>
     </section>
 
     <section class="com-stats">
-      <article><span>Total materias</span><strong id="statTotalMaterias">0</strong></article>
+      <article><span>Materias</span><strong id="statTotalMaterias">0</strong></article>
       <article class="com-stat-ok"><span>Completas</span><strong id="statCompletas">0</strong></article>
-      <article class="com-stat-warn"><span>En revisión</span><strong id="statRevision">0</strong></article>
+      <article class="com-stat-warn"><span>Revisión</span><strong id="statRevision">0</strong></article>
       <article class="com-stat-error"><span>Incompletas</span><strong id="statIncompletas">0</strong></article>
       <article><span>Mostradas</span><strong id="statMostradas">0</strong></article>
       <article><span>Seleccionadas</span><strong id="statSeleccionadas">0</strong></article>
     </section>
 
     <section class="com-panel com-actions-panel">
-      <div><h2>Generación de comunicados</h2><p>Cada materia genera un PDF independiente. Los lotes se descargan juntos dentro de un ZIP.</p></div>
+      <div><h2>Generar</h2></div>
       <div class="com-actions-row">
         <button id="btnSeleccionarTodas" type="button" class="com-btn com-btn-light">Seleccionar todas</button>
-        <button id="btnLimpiarSeleccion" type="button" class="com-btn com-btn-light">Limpiar selección</button>
-        <button id="btnGenerarSeleccionadas" type="button" class="com-btn com-btn-primary">Generar seleccionadas</button>
+        <button id="btnLimpiarSeleccion" type="button" class="com-btn com-btn-light">Limpiar</button>
+        <button id="btnGenerarSeleccionadas" type="button" class="com-btn com-btn-primary">Generar selección</button>
         <button id="btnGenerarTodas" type="button" class="com-btn com-btn-dark">Generar todas</button>
       </div>
     </section>
 
     <section class="com-panel">
-      <div class="com-panel-head"><div><h2>Materias completas</h2><p>Puedes corregir el nombre institucional antes de generar el comunicado; el cambio se guardará en Firebase.</p></div></div>
+      <div class="com-panel-head"><div><h2>Materias</h2></div></div>
       <div class="com-table-wrap">
         <table class="com-table">
           <thead><tr><th>Sel.</th><th>Nivel</th><th>Código</th><th>Nombre importado</th><th>Nombre institucional</th><th>Estado</th><th>PEA</th><th>Acciones</th></tr></thead>
-          <tbody id="tablaMaterias"><tr><td colspan="8" class="com-empty">Selecciona una carrera para cargar materias completas.</td></tr></tbody>
+          <tbody id="tablaMaterias"><tr><td colspan="8" class="com-empty">Selecciona una carrera.</td></tr></tbody>
         </table>
       </div>
     </section>
   </div>
 
-  <script src="../menu-superior/menu-superior.js?v=20260728-1"></script>
+  <script src="../menu-superior/menu-superior.js?v=20260804-2"></script>
   <script src="../firebase/firebase.inteligencia.js?v=20260728-1"></script>
   <script src="../firebase/firebase.inteligencia-v2.js?v=20260728-2"></script>
   <script src="../firebase/firebase.inteligencia-v2-ajustes.js?v=20260728-3"></script>
