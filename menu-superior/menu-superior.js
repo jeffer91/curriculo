@@ -3,9 +3,9 @@ Nombre completo: menu-superior.js
 Ruta o ubicación: /Curriculo/menu-superior/menu-superior.js
 Funciones:
 - Crear el menú superior reutilizable.
-- Navegar entre Inicio, Subir ZIP, Firebase, Mallas y Comunicados.
-- Mostrar la versión y la carpeta real de ejecución en Electron.
-- Cargar la comparación de mallas al finalizar la pantalla Subir ZIP.
+- Navegar entre Inicio, Subir, Firebase, Mallas y Comunicados.
+- Mostrar la versión instalada.
+- Cargar la comparación de mallas en Subir ZIP.
 ========================================================= */
 (function (window, document) {
   "use strict";
@@ -13,17 +13,17 @@ Funciones:
   var MENU_ID = "curriculoMenuSuperior";
   var ROOT_CLASS = "cms-menu-mounted";
   var REPOSITORIO_OFICIAL = "jeffer91/curriculo";
-  var VERSION_INTERFAZ = "firebase-mallas-1";
+  var VERSION_INTERFAZ = "firebase-mallas-simple-1";
   var LINKS = [
     { id: "inicio", label: "Inicio", shortLabel: "Inicio", root: "index.html", child: "../index.html", icon: "⌂", electron: true },
-    { id: "subir", label: "Subir ZIP", shortLabel: "Subir", root: "subir/subir.html", child: "../subir/subir.html", icon: "ZIP", electron: true },
+    { id: "subir", label: "Subir", shortLabel: "Subir", root: "subir/subir.html", child: "../subir/subir.html", icon: "ZIP", electron: true },
     { id: "bdlocal", label: "Firebase", shortLabel: "Firebase", root: "bdlocal/bdlocal.html", child: "../bdlocal/bdlocal.html", icon: "FB", electron: true },
     { id: "mallas", label: "Mallas", shortLabel: "Mallas", root: "mallas/mallas.html", child: "../mallas/mallas.html", icon: "MC", electron: false },
     { id: "comunicados", label: "Comunicados", shortLabel: "Com.", root: "comunicados/comunicados.html", child: "../comunicados/comunicados.html", icon: "COM", electron: true }
   ];
 
   function texto(v) { return String(v === null || typeof v === "undefined" ? "" : v).trim(); }
-  function escapar(v) { return texto(v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); }
+  function escapar(v) { return texto(v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;").replace(/'/g, "&#039;"); }
   function pathActual() { return String(window.location.pathname || "").replace(/\\/g, "/").toLowerCase(); }
   function estaEnSubcarpeta() { return /\/(subir|bdlocal|comunicados|firebase|mallas|menu-superior)\//.test(pathActual()); }
   function pantallaActual() {
@@ -45,8 +45,8 @@ Funciones:
         '<span class="cms-link-icon">' + escapar(link.icon) + '</span><span class="cms-link-label">' + escapar(link.label) + '</span><span class="cms-link-short">' + escapar(link.shortLabel) + '</span></a>';
     }).join("");
     return '<nav id="' + MENU_ID + '" class="cms-menu" aria-label="Menú superior Curriculo"><div class="cms-inner">' +
-      '<a class="cms-brand" href="' + escapar(estaEnSubcarpeta() ? "../index.html" : "index.html") + '" data-cms-route="inicio"><span class="cms-brand-mark">CCC</span><span class="cms-brand-text"><strong>Curriculo</strong><small>Firebase · Gestión Curricular</small></span></a>' +
-      '<div class="cms-links">' + links + '</div><div class="cms-right"><span class="cms-version" id="cmsVersion">GitHub</span><span class="cms-mode" id="cmsMode">Firebase</span><button class="cms-icon-btn" type="button" id="cmsBtnRecargar" title="Recargar pantalla">↻</button></div></div></nav>';
+      '<a class="cms-brand" href="' + escapar(estaEnSubcarpeta() ? "../index.html" : "index.html") + '" data-cms-route="inicio"><span class="cms-brand-mark">CCC</span><span class="cms-brand-text"><strong>Curriculo</strong><small>Gestión curricular</small></span></a>' +
+      '<div class="cms-links">' + links + '</div><div class="cms-right"><span class="cms-version" id="cmsVersion">GitHub</span><span class="cms-mode" id="cmsMode">Firebase</span><button class="cms-icon-btn" type="button" id="cmsBtnRecargar" title="Recargar">↻</button></div></div></nav>';
   }
 
   async function navegar(ruta, fallbackHref) {
@@ -121,7 +121,7 @@ Funciones:
   function actualizarModo() {
     var el = document.getElementById("cmsMode");
     if (!el) return;
-    el.textContent = esElectron() ? "Electron · Firebase" : "Firebase";
+    el.textContent = esElectron() ? "Electron" : "Firebase";
     el.classList.toggle("cms-mode-electron", esElectron());
   }
 
@@ -145,7 +145,7 @@ Funciones:
       el.classList.remove("cms-version-warning");
       return info;
     } catch (error) {
-      el.textContent = "Versión no disponible";
+      el.textContent = "Sin versión";
       el.classList.add("cms-version-warning");
       return null;
     }
