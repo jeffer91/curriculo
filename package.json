@@ -8,12 +8,13 @@
       "Comparar cargas curriculares y crear versiones solo cuando existen cambios reales.",
       "Subir únicamente materias completas y registrar las materias omitidas.",
       "Registrar versiones de mallas curriculares y comparar el ZIP con la malla vigente.",
+      "Mantener una interfaz simple y directa.",
       "Ejecutar pruebas de Firebase, mallas, concurrencia, importación parcial, estados y comunicados."
     ]
   },
   "name": "curriculo",
-  "version": "1.2.0",
-  "description": "App de Gestión Curricular CCC con Firebase Firestore, mallas oficiales, versionado atómico e importación parcial segura.",
+  "version": "1.2.1",
+  "description": "App de Gestión Curricular CCC con Firebase, mallas oficiales e interfaz simplificada.",
   "main": "electron/main.js",
   "private": true,
   "author": "ITSQMET",
