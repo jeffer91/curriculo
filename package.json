@@ -7,13 +7,14 @@
       "Conectar la aplicación exclusivamente con Firebase Firestore.",
       "Comparar cargas curriculares y crear versiones solo cuando existen cambios reales.",
       "Subir únicamente materias completas y registrar las materias omitidas.",
-      "Registrar versiones de mallas curriculares y comparar el ZIP con la malla vigente.",
+      "Crear mallas a partir de las materias existentes en Firebase.",
+      "Agregar, ordenar y versionar materias oficiales por carrera.",
       "Mantener una interfaz simple y directa.",
       "Ejecutar pruebas de Firebase, mallas, concurrencia, importación parcial, estados y comunicados."
     ]
   },
   "name": "curriculo",
-  "version": "1.2.1",
+  "version": "1.3.0",
   "description": "App de Gestión Curricular CCC con Firebase, mallas oficiales e interfaz simplificada.",
   "main": "electron/main.js",
   "private": true,
