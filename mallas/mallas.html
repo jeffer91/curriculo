@@ -1,0 +1,161 @@
+<!-- =========================================================
+Nombre completo: mallas.html
+Ruta o ubicación: /Curriculo/mallas/mallas.html
+Funciones:
+- Registrar y editar versiones de mallas curriculares.
+- Importar materias desde texto, Excel o una referencia PDF/imagen.
+- Mantener una sola versión vigente por carrera.
+- Consultar materias, requisitos y versiones históricas guardadas en Firebase.
+========================================================= -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mallas curriculares | Curriculo</title>
+  <link rel="stylesheet" href="../menu-superior/menu-superior.css?v=20260804-1" />
+  <link rel="stylesheet" href="./mallas.css?v=20260804-1" />
+</head>
+<body>
+  <main class="ml-page">
+    <header class="ml-header">
+      <div>
+        <p class="ml-eyebrow">Gestión Curricular CCC · Firebase</p>
+        <h1>Mallas curriculares</h1>
+        <p>Registra la estructura oficial de cada carrera, conserva sus versiones y define qué malla está vigente para comparar las materias encontradas en los ZIP.</p>
+      </div>
+      <div class="ml-actions">
+        <button id="btnNuevaMalla" class="ml-btn ml-btn-light" type="button">Nueva malla</button>
+        <button id="btnGuardarMalla" class="ml-btn" type="button">Guardar en Firebase</button>
+      </div>
+    </header>
+
+    <section id="mlEstado" class="ml-status ml-status-neutral">
+      <strong>Inicializando</strong>
+      <span>Conectando con Firebase y cargando versiones existentes.</span>
+    </section>
+
+    <div class="ml-grid">
+      <div>
+        <section class="ml-panel">
+          <div class="ml-panel-head">
+            <div><h2>Datos de la malla</h2><p>Identifica la carrera, la versión y el periodo de vigencia.</p></div>
+          </div>
+          <div class="ml-form-grid">
+            <div class="ml-field ml-field-full">
+              <label for="inputCarrera">Carrera</label>
+              <input id="inputCarrera" list="listaCarreras" type="text" placeholder="Ej.: Administración" autocomplete="off" />
+              <datalist id="listaCarreras"></datalist>
+            </div>
+            <div class="ml-field">
+              <label for="inputVersion">Versión</label>
+              <input id="inputVersion" type="number" min="1" step="1" value="1" />
+            </div>
+            <div class="ml-field">
+              <label for="inputEstadoMalla">Estado inicial</label>
+              <select id="inputEstadoMalla"><option value="vigente">Vigente</option><option value="borrador">Borrador</option><option value="historica">Histórica</option></select>
+            </div>
+            <div class="ml-field">
+              <label for="inputPeriodoInicio">Periodo inicial</label>
+              <input id="inputPeriodoInicio" type="month" />
+            </div>
+            <div class="ml-field">
+              <label for="inputPeriodoFin">Periodo final</label>
+              <input id="inputPeriodoFin" type="month" />
+            </div>
+            <div class="ml-field ml-field-full">
+              <label for="inputObservaciones">Observaciones</label>
+              <textarea id="inputObservaciones" rows="3" placeholder="Fuente institucional, resolución, cambios relevantes..."></textarea>
+            </div>
+            <label class="ml-check ml-field-full"><input id="checkVigente" type="checkbox" checked /> Marcar esta versión como la malla vigente de la carrera</label>
+          </div>
+        </section>
+
+        <section class="ml-panel">
+          <div class="ml-panel-head">
+            <div><h2>Fuente de información</h2><p>El contenido siempre se presenta en una tabla editable antes de guardarse.</p></div>
+          </div>
+          <div class="ml-source-tabs">
+            <button class="ml-source-tab ml-source-tab-active" type="button" data-source="texto">Texto / manual</button>
+            <button class="ml-source-tab" type="button" data-source="excel">Excel</button>
+            <button class="ml-source-tab" type="button" data-source="documento">Imagen o PDF</button>
+          </div>
+
+          <div class="ml-source-pane" data-pane="texto">
+            <div class="ml-field">
+              <label for="inputTextoMalla">Pega la malla organizada por niveles</label>
+              <textarea id="inputTextoMalla" placeholder="MALLA CURRICULAR&#10;ADMINISTRACIÓN&#10;&#10;Primer Nivel&#10;Administración I&#10;Ofimática&#10;..."></textarea>
+            </div>
+            <div class="ml-row-actions"><button id="btnProcesarTexto" class="ml-btn" type="button">Convertir texto en materias</button></div>
+          </div>
+
+          <div class="ml-source-pane" data-pane="excel" hidden>
+            <div class="ml-upload">
+              <div class="ml-field"><label for="inputExcelMalla">Archivo Excel</label><input id="inputExcelMalla" type="file" accept=".xlsx,.xls,.csv" /></div>
+              <p class="ml-help">Encabezados reconocidos: nivel, orden, código, materia o asignatura. La primera hoja será analizada.</p>
+            </div>
+            <div class="ml-row-actions"><button id="btnProcesarExcel" class="ml-btn" type="button">Leer Excel</button></div>
+          </div>
+
+          <div class="ml-source-pane" data-pane="documento" hidden>
+            <div class="ml-upload">
+              <div class="ml-field"><label for="inputDocumentoMalla">Imagen o PDF de respaldo</label><input id="inputDocumentoMalla" type="file" accept="image/*,.pdf,application/pdf" /></div>
+              <div id="previewDocumento" class="ml-source-preview"><p>Selecciona un archivo para visualizarlo.</p></div>
+            </div>
+            <div class="ml-field" style="margin-top:12px">
+              <label for="inputTextoDocumento">Transcripción o texto extraído para revisión</label>
+              <textarea id="inputTextoDocumento" placeholder="Pega o transcribe aquí los niveles y materias del documento."></textarea>
+            </div>
+            <div class="ml-inline-note">El archivo se utiliza como referencia visual. La tabla resultante debe revisarse antes de guardar la malla oficial.</div>
+            <div class="ml-row-actions" style="margin-top:12px"><button id="btnProcesarDocumento" class="ml-btn" type="button">Convertir transcripción</button></div>
+          </div>
+        </section>
+
+        <section class="ml-panel">
+          <h2>Requisitos complementarios</h2>
+          <p class="ml-help">Escribe un requisito por línea. No se contarán como materias de la malla.</p>
+          <div class="ml-field"><textarea id="inputRequisitos" rows="5" placeholder="Nivel A2 de idioma extranjero&#10;Certificación de competencias digitales&#10;Prácticas preprofesionales y vinculación con la sociedad"></textarea></div>
+        </section>
+      </div>
+
+      <div>
+        <section class="ml-panel">
+          <div class="ml-panel-head">
+            <div><h2>Materias oficiales</h2><p>Edita nombres, códigos, niveles y orden antes de guardar.</p></div>
+            <div class="ml-row-actions"><button id="btnAgregarMateria" class="ml-btn ml-btn-light" type="button">Agregar materia</button><button id="btnOrdenarMaterias" class="ml-btn ml-btn-light" type="button">Ordenar</button></div>
+          </div>
+
+          <div class="ml-stats">
+            <article class="ml-stat"><span>Niveles</span><strong id="statNivelesMalla">0</strong></article>
+            <article class="ml-stat"><span>Materias</span><strong id="statMateriasMalla">0</strong></article>
+            <article class="ml-stat"><span>Requisitos</span><strong id="statRequisitosMalla">0</strong></article>
+            <article class="ml-stat"><span>Versión</span><strong id="statVersionMalla">1</strong></article>
+          </div>
+
+          <div class="ml-table-wrap">
+            <table class="ml-table">
+              <thead><tr><th class="ml-col-level">Nivel</th><th class="ml-col-order">Orden</th><th class="ml-col-code">Código</th><th>Nombre oficial</th><th>Tipo</th><th>Acción</th></tr></thead>
+              <tbody id="tablaMateriasMalla"><tr><td colspan="6" class="ml-empty">Todavía no se han registrado materias.</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="ml-panel">
+          <div class="ml-panel-head"><div><h2>Versiones registradas</h2><p>Solo una versión puede estar vigente para cada carrera.</p></div><button id="btnRecargarMallas" class="ml-btn ml-btn-light" type="button">Recargar</button></div>
+          <div id="listaVersiones" class="ml-version-list"><p class="ml-muted">Cargando versiones...</p></div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <script src="../menu-superior/menu-superior.js?v=20260804-1"></script>
+  <script src="../libs/xlsx.min.js?v=20260713-7"></script>
+  <script src="../firebase/firebase.inteligencia.js?v=20260728-1"></script>
+  <script src="../firebase/firebase.inteligencia-v2.js?v=20260728-2"></script>
+  <script src="../firebase/firebase.inteligencia-v2-ajustes.js?v=20260728-3"></script>
+  <script src="../firebase/firebase.curriculo.js?v=20260728-1"></script>
+  <script src="../firebase/firebase.mallas.js?v=20260804-1"></script>
+  <script src="./mallas.parser.js?v=20260804-1"></script>
+  <script src="./mallas.main.js?v=20260804-1"></script>
+</body>
+</html>
