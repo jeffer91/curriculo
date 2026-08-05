@@ -3,6 +3,7 @@ Nombre completo: comunicados.html
 Ruta o ubicación: /Curriculo/comunicados/comunicados.html
 Funciones:
 - Generar comunicados institucionales desde Firebase.
+- Generar comunicados por materia, carrera o todas las carreras.
 - Reservar la numeración antes de crear los PDF.
 ========================================================= -->
 <!DOCTYPE html>
@@ -58,7 +59,8 @@ Funciones:
         <button id="btnSeleccionarTodas" type="button" class="com-btn com-btn-light">Seleccionar todas</button>
         <button id="btnLimpiarSeleccion" type="button" class="com-btn com-btn-light">Limpiar</button>
         <button id="btnGenerarSeleccionadas" type="button" class="com-btn com-btn-primary">Generar selección</button>
-        <button id="btnGenerarTodas" type="button" class="com-btn com-btn-dark">Generar todas</button>
+        <button id="btnGenerarTodas" type="button" class="com-btn com-btn-dark">Generar carrera</button>
+        <button id="btnGenerarTodasCarreras" type="button" class="com-btn com-btn-dark">Todas las carreras</button>
       </div>
     </section>
 
@@ -95,5 +97,6 @@ Funciones:
   <script src="./comunicados.main.js?v=20260728-1"></script>
   <script src="./comunicados.reservas-ui.js?v=20260728-2"></script>
   <script src="./comunicados.firebase-ui.js?v=20260728-1"></script>
+  <script src="./comunicados.todas-carreras.js?v=20260805-1"></script>
 </body>
 </html>
