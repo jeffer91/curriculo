@@ -12,14 +12,16 @@
       "Corregir nombres oficiales de carreras y materias.",
       "Comparar mallas mediante nombres, niveles y equivalencias, sin depender de códigos.",
       "Crear versiones de mallas automáticamente al guardar cambios.",
+      "Generar comunicados por materia, carrera o todas las carreras.",
+      "Crear un ZIP general organizado en carpetas por carrera.",
       "Evitar bloqueos indefinidos cuando Firebase o la red no responden.",
       "Mantener una interfaz simple y directa.",
       "Ejecutar pruebas de Firebase, mallas, conciliación, estabilidad, interfaz, concurrencia, importación parcial, estados y comunicados."
     ]
   },
   "name": "curriculo",
-  "version": "1.4.3",
-  "description": "App de Gestión Curricular CCC con Firebase y conciliación automática de mallas.",
+  "version": "1.5.0",
+  "description": "App de Gestión Curricular CCC con Firebase, mallas y comunicados organizados por carrera.",
   "main": "electron/main.js",
   "private": true,
   "author": "ITSQMET",
@@ -37,7 +39,7 @@
     "dev": "electron . --devtools",
     "electron": "electron .",
     "reset": "electron . --reset-local-data",
-    "test": "node scripts/mallas-curriculares.test.js && node scripts/mallas-conciliacion.test.js && node scripts/mallas-ui.test.js && node scripts/mallas-estabilidad.test.js && node scripts/firebase-inteligencia.test.js && node scripts/firebase-robustez.test.js && node scripts/firebase-ajustes.test.js && node scripts/firebase-importacion-parcial.test.js && node scripts/comunicados-contador-firebase.test.js && node scripts/sync-rules.test.js && node scripts/subir-observaciones.test.js && node scripts/subir-advertencias.test.js && node scripts/subir-estados.test.js && node scripts/subir-advertencias-ui.test.js && node scripts/subir-estados-ui.test.js && node scripts/subir-acciones.test.js && node scripts/subir-flujo-integral.test.js && node scripts/comunicados-zip.test.js",
+    "test": "node scripts/mallas-curriculares.test.js && node scripts/mallas-conciliacion.test.js && node scripts/mallas-ui.test.js && node scripts/mallas-estabilidad.test.js && node scripts/firebase-inteligencia.test.js && node scripts/firebase-robustez.test.js && node scripts/firebase-ajustes.test.js && node scripts/firebase-importacion-parcial.test.js && node scripts/comunicados-contador-firebase.test.js && node scripts/sync-rules.test.js && node scripts/subir-observaciones.test.js && node scripts/subir-advertencias.test.js && node scripts/subir-estados.test.js && node scripts/subir-advertencias-ui.test.js && node scripts/subir-estados-ui.test.js && node scripts/subir-acciones.test.js && node scripts/subir-flujo-integral.test.js && node scripts/comunicados-zip.test.js && node scripts/comunicados-todas-carreras.test.js",
     "test:firebase": "node scripts/firebase-inteligencia.test.js && node scripts/firebase-robustez.test.js && node scripts/firebase-ajustes.test.js && node scripts/firebase-importacion-parcial.test.js && node scripts/comunicados-contador-firebase.test.js",
     "test:mallas": "node scripts/mallas-curriculares.test.js && node scripts/mallas-conciliacion.test.js && node scripts/mallas-ui.test.js && node scripts/mallas-estabilidad.test.js",
     "test:subir": "node scripts/subir-observaciones.test.js && node scripts/subir-advertencias.test.js && node scripts/subir-estados.test.js && node scripts/subir-advertencias-ui.test.js && node scripts/subir-estados-ui.test.js && node scripts/subir-acciones.test.js && node scripts/subir-flujo-integral.test.js",
@@ -47,7 +49,7 @@
     "test:estados-ui": "node scripts/subir-estados-ui.test.js",
     "test:acciones": "node scripts/subir-acciones.test.js",
     "test:flujo": "node scripts/subir-flujo-integral.test.js",
-    "test:comunicados": "node scripts/comunicados-contador-firebase.test.js && node scripts/comunicados-zip.test.js"
+    "test:comunicados": "node scripts/comunicados-contador-firebase.test.js && node scripts/comunicados-zip.test.js && node scripts/comunicados-todas-carreras.test.js"
   },
   "dependencies": {
     "jszip": "3.10.1",
