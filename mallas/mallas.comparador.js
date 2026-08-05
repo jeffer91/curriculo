@@ -3,7 +3,7 @@ Nombre completo: mallas.comparador.js
 Ruta o ubicación: /Curriculo/mallas/mallas.comparador.js
 Funciones:
 - Comparar materias detectadas en un ZIP contra una malla oficial.
-- Priorizar código, equivalencias guardadas, nombre normalizado y nivel.
+- Usar equivalencias, nombre normalizado y nivel, sin depender de códigos.
 - Proponer coincidencias por similitud sin confirmarlas automáticamente.
 - Garantizar relaciones uno a uno entre materia detectada y oficial.
 ========================================================= */
@@ -15,7 +15,7 @@ Funciones:
 })(typeof window !== "undefined" ? window : globalThis, function () {
   "use strict";
 
-  var VERSION = "1.0.0";
+  var VERSION = "1.0.1";
 
   function texto(valor) {
     return String(valor === null || typeof valor === "undefined" ? "" : valor).trim();
@@ -30,11 +30,6 @@ Funciones:
       .replace(/\s+/g, " ")
       .trim()
       .toLowerCase();
-  }
-
-  function codigo(valor) {
-    var salida = texto(valor).toUpperCase().replace(/\s+/g, "").replace(/[–—]/g, "-");
-    return /^(S\/?C|SINCODIGO|SIN-CODIGO)$/i.test(salida) ? "" : salida;
   }
 
   function nivel(item) {
@@ -81,7 +76,6 @@ Funciones:
         __id: idOficial(item, indice),
         __nombre: nombreOficial(item),
         __nombreNormalizado: normalizar(item && (item.nombreNormalizado || nombreOficial(item))),
-        __codigo: codigo(item && (item.codigo || item.codigoMateria)),
         __nivel: nivel(item)
       });
     });
@@ -95,7 +89,6 @@ Funciones:
         id: texto(item && item.id) || "detectada_" + indice,
         nombre: nombreDetectado(item),
         nombreNormalizado: normalizar(nombreDetectado(item)),
-        codigo: codigo(item && (item.codigo || item.codigoMateria)),
         nivel: nivel(item)
       };
     });
@@ -151,19 +144,8 @@ Funciones:
 
     detectadas.forEach(function (detectada) {
       var oficial = null;
-      var equivalencia = null;
+      var equivalencia = equivalenciasMapa[claveEquivalencia(detectada.nombre, detectada.nivel)] || null;
 
-      if (detectada.codigo) {
-        oficial = unico(disponibles(function (item) {
-          return item.__codigo && item.__codigo === detectada.codigo && item.__nivel === detectada.nivel;
-        }));
-        if (oficial) {
-          vincular(detectada, oficial, "codigo_y_nivel", 1);
-          return;
-        }
-      }
-
-      equivalencia = equivalenciasMapa[claveEquivalencia(detectada.nombre, detectada.nivel)] || null;
       if (equivalencia) {
         oficial = disponibles(function (item) {
           return item.__id === texto(equivalencia.mallaMateriaId || equivalencia.oficialId);
