@@ -75,7 +75,7 @@ const assert = require("assert");
 
   window.navigator.onLine = false;
   await assert.rejects(
-    Firebase.obtenerCarreras(),
+    Promise.resolve().then(() => Firebase.obtenerCarreras()),
     /No hay conexión a internet/,
     "La falta de conexión debe informarse inmediatamente"
   );
