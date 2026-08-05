@@ -2,8 +2,9 @@
 Nombre completo: mallas-ui.test.js
 Ruta o ubicación: /Curriculo/scripts/mallas-ui.test.js
 Funciones:
-- Verificar que la pantalla simple de mallas conserve todos los controles requeridos.
-- Confirmar que el módulo cargue materias desde Firebase y permita agregar y guardar.
+- Verificar la pantalla simple de mallas.
+- Confirmar nombres editables, materias sin código y versiones automáticas.
+- Evitar que regresen fechas, requisitos o controles manuales de versión.
 ========================================================= */
 "use strict";
 
@@ -14,9 +15,11 @@ const assert = require("assert");
 const raiz = path.resolve(__dirname, "..");
 const html = fs.readFileSync(path.join(raiz, "mallas", "mallas.html"), "utf8");
 const js = fs.readFileSync(path.join(raiz, "mallas", "mallas.main.js"), "utf8");
+const firebase = fs.readFileSync(path.join(raiz, "firebase", "firebase.mallas.js"), "utf8");
 
 const idsRequeridos = [
   "inputCarrera",
+  "inputNombreCarrera",
   "panelMaterias",
   "listaMateriasMalla",
   "btnAgregarMateria",
@@ -25,20 +28,39 @@ const idsRequeridos = [
   "formAgregarMateria",
   "modalOpciones",
   "modalHistorial",
-  "inputVersion",
-  "inputEstadoMalla",
-  "inputRequisitos"
+  "inputObservaciones"
 ];
 
 idsRequeridos.forEach((id) => {
   assert.match(html, new RegExp(`id=["']${id}["']`), `Falta el control #${id} en mallas.html`);
-  assert.match(js, new RegExp(`["']${id}["']`), `mallas.main.js no hace referencia a #${id}`);
+  assert.match(js, new RegExp(`["']${id}["']`), `mallas.main.js no utiliza #${id}`);
 });
 
-assert.match(js, /Firebase\.obtenerMateriasPorCarrera/, "La malla debe cargar materias existentes desde Firebase.");
-assert.match(js, /Firebase\.Mallas\.obtenerMallaVigenteParaCarrera/, "La malla debe abrir la versión vigente cuando exista.");
-assert.match(js, /Firebase\.Mallas\.guardarMalla/, "La pantalla debe guardar la malla en Firebase.");
-assert.match(js, /function agregarMateriaNueva\(/, "Debe existir el flujo para agregar materias.");
-assert.match(js, /function fusionarMaterias\(/, "Debe evitar duplicar materias al combinar Firebase y la malla.");
+const idsEliminados = [
+  "inputNuevaCodigo",
+  "inputVersion",
+  "inputEstadoMalla",
+  "inputPeriodoInicio",
+  "inputPeriodoFin",
+  "inputRequisitos",
+  "checkVigente",
+  "btnNuevaVersion"
+];
 
-console.log("✓ Flujo simple de mallas verificado");
+idsEliminados.forEach((id) => {
+  assert.doesNotMatch(html, new RegExp(`id=["']${id}["']`), `El control eliminado #${id} volvió a la interfaz`);
+  assert.doesNotMatch(js, new RegExp(`["']${id}["']`), `mallas.main.js todavía usa #${id}`);
+});
+
+assert.doesNotMatch(html, />Código</i, "La interfaz de mallas no debe solicitar códigos.");
+assert.doesNotMatch(html, /Requisitos adicionales/i, "La interfaz no debe mostrar requisitos adicionales.");
+assert.match(js, /Firebase\.obtenerMateriasPorCarrera/, "La malla debe cargar materias desde Firebase.");
+assert.match(js, /inputNombreCarrera/, "Debe permitir corregir el nombre oficial de la carrera.");
+assert.match(js, /data-campo=\\?"nombreOficial/, "Debe permitir corregir nombres de materias.");
+assert.match(firebase, /materiaFirebaseId/, "La malla debe conservar el vínculo con la materia original.");
+assert.match(firebase, /firmaMalla/, "Firebase debe comparar cambios reales antes de versionar.");
+assert.match(firebase, /version\s*=\s*versiones\.reduce/, "La versión debe calcularse automáticamente.");
+assert.match(firebase, /sinCambios/, "Guardar sin cambios no debe crear una nueva versión.");
+assert.doesNotMatch(firebase, /codigo:\s*texto\(materia\.codigo\)/, "Las nuevas materias de malla no deben guardar códigos.");
+
+console.log("✓ Mallas simples: nombres editables, sin códigos y con versiones automáticas");
