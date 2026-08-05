@@ -9,13 +9,14 @@
       "Subir únicamente materias completas y registrar las materias omitidas.",
       "Crear mallas a partir de las materias existentes en Firebase.",
       "Corregir nombres oficiales de carreras y materias.",
+      "Comparar mallas mediante nombres, niveles y equivalencias, sin depender de códigos.",
       "Crear versiones de mallas automáticamente al guardar cambios.",
       "Mantener una interfaz simple y directa.",
       "Ejecutar pruebas de Firebase, mallas, interfaz, concurrencia, importación parcial, estados y comunicados."
     ]
   },
   "name": "curriculo",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "App de Gestión Curricular CCC con Firebase, nombres oficiales y versionado automático de mallas.",
   "main": "electron/main.js",
   "private": true,
