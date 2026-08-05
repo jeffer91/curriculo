@@ -4,6 +4,7 @@ Ruta o ubicación: /Curriculo/scripts/mallas-ui.test.js
 Funciones:
 - Verificar la pantalla simple de mallas.
 - Confirmar nombres editables, materias sin código y versiones automáticas.
+- Confirmar que la conciliación se carga antes del módulo principal.
 - Evitar que regresen fechas, requisitos o controles manuales de versión.
 ========================================================= */
 "use strict";
@@ -15,6 +16,9 @@ const assert = require("assert");
 const raiz = path.resolve(__dirname, "..");
 const html = fs.readFileSync(path.join(raiz, "mallas", "mallas.html"), "utf8");
 const js = fs.readFileSync(path.join(raiz, "mallas", "mallas.main.js"), "utf8");
+const parser = fs.readFileSync(path.join(raiz, "mallas", "mallas.parser.js"), "utf8");
+const conciliador = fs.readFileSync(path.join(raiz, "mallas", "mallas.conciliador.js"), "utf8");
+const conciliacionUI = fs.readFileSync(path.join(raiz, "mallas", "mallas.conciliacion-ui.js"), "utf8");
 const firebase = fs.readFileSync(path.join(raiz, "firebase", "firebase.mallas.js"), "utf8");
 const comparador = fs.readFileSync(path.join(raiz, "mallas", "mallas.comparador.js"), "utf8");
 
@@ -67,4 +71,15 @@ assert.doesNotMatch(comparador, /codigo_y_nivel|__codigo|function codigo\(/, "El
 assert.match(comparador, /equivalencia_guardada/, "El comparador debe conservar las equivalencias confirmadas.");
 assert.match(comparador, /nombre_y_nivel/, "El comparador debe usar nombre y nivel.");
 
-console.log("✓ Mallas simples: nombres editables, sin códigos y con versiones automáticas");
+const posicionConciliador = html.indexOf("mallas.conciliador.js");
+const posicionConciliacionUI = html.indexOf("mallas.conciliacion-ui.js");
+const posicionPrincipal = html.indexOf("mallas.main.js");
+assert.ok(posicionConciliador >= 0, "La pantalla debe cargar el conciliador");
+assert.ok(posicionConciliacionUI > posicionConciliador, "La conciliación de interfaz debe cargarse después del conciliador");
+assert.ok(posicionPrincipal > posicionConciliacionUI, "La conciliación debe activarse antes del módulo principal");
+assert.match(parser, /ROMANOS/, "El parser debe normalizar números romanos");
+assert.match(conciliador, /sonIgualesSeguras/, "Debe reconocer coincidencias seguras");
+assert.match(conciliador, /buscarMejorPosible/, "Debe detectar coincidencias dudosas");
+assert.match(conciliacionUI, /window\.confirm/, "Las coincidencias dudosas deben solicitar confirmación");
+
+console.log("✓ Mallas simples: nombres editables, sin códigos, conciliación y versiones automáticas");
