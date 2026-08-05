@@ -5,6 +5,7 @@ Funciones:
 - Verificar la pantalla simple de mallas.
 - Confirmar nombres editables, materias sin código y versiones automáticas.
 - Confirmar que la conciliación se carga antes del módulo principal.
+- Confirmar que las ediciones se sincronicen antes de guardar.
 - Evitar que regresen fechas, requisitos o controles manuales de versión.
 ========================================================= */
 "use strict";
@@ -19,6 +20,7 @@ const js = fs.readFileSync(path.join(raiz, "mallas", "mallas.main.js"), "utf8");
 const parser = fs.readFileSync(path.join(raiz, "mallas", "mallas.parser.js"), "utf8");
 const conciliador = fs.readFileSync(path.join(raiz, "mallas", "mallas.conciliador.js"), "utf8");
 const conciliacionUI = fs.readFileSync(path.join(raiz, "mallas", "mallas.conciliacion-ui.js"), "utf8");
+const edicionUI = fs.readFileSync(path.join(raiz, "mallas", "mallas.edicion-ui.js"), "utf8");
 const firebase = fs.readFileSync(path.join(raiz, "firebase", "firebase.mallas.js"), "utf8");
 const comparador = fs.readFileSync(path.join(raiz, "mallas", "mallas.comparador.js"), "utf8");
 
@@ -74,12 +76,17 @@ assert.match(comparador, /nombre_y_nivel/, "El comparador debe usar nombre y niv
 const posicionConciliador = html.indexOf("mallas.conciliador.js");
 const posicionConciliacionUI = html.indexOf("mallas.conciliacion-ui.js");
 const posicionPrincipal = html.indexOf("mallas.main.js");
+const posicionEdicionUI = html.indexOf("mallas.edicion-ui.js");
 assert.ok(posicionConciliador >= 0, "La pantalla debe cargar el conciliador");
 assert.ok(posicionConciliacionUI > posicionConciliador, "La conciliación de interfaz debe cargarse después del conciliador");
 assert.ok(posicionPrincipal > posicionConciliacionUI, "La conciliación debe activarse antes del módulo principal");
+assert.ok(posicionEdicionUI > posicionPrincipal, "La protección de edición debe cargarse después del módulo principal");
 assert.match(parser, /ROMANOS/, "El parser debe normalizar números romanos");
 assert.match(conciliador, /sonIgualesSeguras/, "Debe reconocer coincidencias seguras");
 assert.match(conciliador, /buscarMejorPosible/, "Debe detectar coincidencias dudosas");
 assert.match(conciliacionUI, /window\.confirm/, "Las coincidencias dudosas deben solicitar confirmación");
+assert.match(edicionUI, /reenviarInput/, "La edición debe reenviar el valor al estado interno");
+assert.match(edicionUI, /btnGuardarMalla/, "Las ediciones deben sincronizarse antes de guardar");
+assert.match(edicionUI, /removeAttribute\("readonly"\)/, "Los nombres no deben quedar en modo de solo lectura");
 
-console.log("✓ Mallas simples: nombres editables, sin códigos, conciliación y versiones automáticas");
+console.log("✓ Mallas simples: nombres editables, sincronizados, sin códigos, conciliación y versiones automáticas");
