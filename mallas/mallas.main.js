@@ -2,10 +2,10 @@
 Nombre completo: mallas.main.js
 Ruta o ubicación: /Curriculo/mallas/mallas.main.js
 Funciones:
-- Cargar las materias existentes de Firebase al seleccionar una carrera.
-- Abrir la malla vigente cuando ya existe y añadir materias nuevas de Firebase.
-- Mostrar y editar materias agrupadas por nivel.
-- Agregar materias manualmente y guardar versiones de la malla.
+- Cargar materias existentes de Firebase al seleccionar una carrera.
+- Corregir el nombre oficial de la carrera y de las materias.
+- Agregar, ordenar y retirar materias sin utilizar códigos.
+- Guardar versiones automáticas únicamente cuando existen cambios reales.
 - Mantener importación e historial como opciones secundarias.
 ========================================================= */
 (function (window, document) {
@@ -16,10 +16,10 @@ Funciones:
   var estado = {
     carrera: null,
     mallaId: "",
+    mallaVersion: 0,
     carreras: [],
     mallas: [],
     materias: [],
-    requisitos: [],
     fuenteTipo: "firebase",
     archivoFuente: null,
     urlPreview: "",
@@ -65,17 +65,21 @@ Funciones:
     estado.guardando = !!valor;
     [
       "btnGuardarMalla", "btnAgregarMateria", "btnOrdenarMaterias", "btnProcesarTexto",
-      "btnProcesarExcel", "btnProcesarDocumento", "btnRecargarMallas", "btnNuevaVersion"
+      "btnProcesarExcel", "btnProcesarDocumento", "btnRecargarMallas"
     ].forEach(function (id) {
       var el = $(id);
       if (el) el.disabled = estado.guardando;
     });
     if ($("inputCarrera")) $("inputCarrera").disabled = estado.guardando;
+    if ($("inputNombreCarrera")) $("inputNombreCarrera").disabled = estado.guardando || !estado.carrera;
   }
 
   function nombreNivel(nivel) {
-    nivel = Math.max(1, numero(nivel, 1));
-    return "Nivel " + nivel;
+    return "Nivel " + Math.max(1, numero(nivel, 1));
+  }
+
+  function nombreCarreraFirebase(carrera) {
+    return texto(carrera && (carrera.nombreInstitucional || carrera.nombreCorregido || carrera.nombre));
   }
 
   function nombreMateriaFirebase(materia) {
@@ -86,9 +90,8 @@ Funciones:
   }
 
   function tipoMateria(nombre, tipo) {
-    var n = normalizar(nombre);
     if (texto(tipo)) return texto(tipo);
-    return /integracion curricular/.test(n) ? "integracion_curricular" : "asignatura";
+    return /integracion curricular/.test(normalizar(nombre)) ? "integracion_curricular" : "asignatura";
   }
 
   function normalizarOrdenes() {
@@ -103,17 +106,19 @@ Funciones:
       materia.nivelNombre = nombreNivel(materia.nivelNumero);
       porNivel[materia.nivelNumero] = (porNivel[materia.nivelNumero] || 0) + 1;
       materia.orden = porNivel[materia.nivelNumero];
+      delete materia.codigo;
     });
   }
 
   function convertirMateriaFirebase(materia, indice) {
+    var nombre = nombreMateriaFirebase(materia);
+    var nivel = Math.max(1, numero(materia.nivelNumero || materia.numeroNivel, 1));
     return {
-      nivelNumero: Math.max(1, numero(materia.nivelNumero || materia.numeroNivel, 1)),
-      nivelNombre: texto(materia.nivelNombre) || nombreNivel(materia.nivelNumero || materia.numeroNivel),
+      nivelNumero: nivel,
+      nivelNombre: nombreNivel(nivel),
       orden: numero(materia.orden, indice + 1),
-      codigo: texto(materia.codigo || materia.codigoMateria),
-      nombreOficial: nombreMateriaFirebase(materia),
-      tipo: tipoMateria(nombreMateriaFirebase(materia), materia.tipo),
+      nombreOficial: nombre,
+      tipo: tipoMateria(nombre, materia.tipo),
       obligatoria: materia.obligatoria !== false,
       activa: materia.activo !== false,
       materiaFirebaseId: texto(materia.id),
@@ -125,9 +130,8 @@ Funciones:
     return {
       id: texto(materia.id),
       nivelNumero: Math.max(1, numero(materia.nivelNumero, 1)),
-      nivelNombre: texto(materia.nivelNombre) || nombreNivel(materia.nivelNumero),
+      nivelNombre: nombreNivel(materia.nivelNumero),
       orden: numero(materia.orden, 1),
-      codigo: texto(materia.codigo),
       nombreOficial: texto(materia.nombreOficial),
       tipo: tipoMateria(materia.nombreOficial, materia.tipo),
       obligatoria: materia.obligatoria !== false,
@@ -138,14 +142,11 @@ Funciones:
   }
 
   function sonLaMismaMateria(a, b) {
-    if (texto(a.materiaFirebaseId) && texto(b.materiaFirebaseId) && texto(a.materiaFirebaseId) === texto(b.materiaFirebaseId)) return true;
-    var nivelA = numero(a.nivelNumero, 0);
-    var nivelB = numero(b.nivelNumero, 0);
-    if (nivelA !== nivelB) return false;
-    var codigoA = normalizar(a.codigo);
-    var codigoB = normalizar(b.codigo);
-    if (codigoA && codigoB && codigoA === codigoB) return true;
-    return normalizar(a.nombreOficial) === normalizar(b.nombreOficial);
+    if (texto(a.materiaFirebaseId) && texto(b.materiaFirebaseId)) {
+      return texto(a.materiaFirebaseId) === texto(b.materiaFirebaseId);
+    }
+    return numero(a.nivelNumero, 0) === numero(b.nivelNumero, 0) &&
+      normalizar(a.nombreOficial) === normalizar(b.nombreOficial);
   }
 
   function fusionarMaterias(base, nuevas, origenNuevo) {
@@ -153,7 +154,11 @@ Funciones:
     var agregadas = 0;
     arr(nuevas).forEach(function (materia) {
       if (!texto(materia.nombreOficial)) return;
-      if (resultado.some(function (existente) { return sonLaMismaMateria(existente, materia); })) return;
+      var existente = resultado.find(function (item) { return sonLaMismaMateria(item, materia); });
+      if (existente) {
+        if (!existente.materiaFirebaseId && materia.materiaFirebaseId) existente.materiaFirebaseId = materia.materiaFirebaseId;
+        return;
+      }
       materia.origen = origenNuevo || materia.origen || "nueva";
       resultado.push(materia);
       agregadas += 1;
@@ -165,7 +170,7 @@ Funciones:
     if (materia.origen === "firebase_nueva") return '<span class="ml-origin ml-origin-new">Nueva en Firebase</span>';
     if (materia.origen === "manual") return '<span class="ml-origin ml-origin-new">Agregada</span>';
     if (materia.origen === "importada") return '<span class="ml-origin ml-origin-new">Importada</span>';
-    if (materia.origen === "firebase") return '<span class="ml-origin">Firebase</span>';
+    if (materia.materiaFirebaseId) return '<span class="ml-origin">Firebase</span>';
     return "";
   }
 
@@ -193,8 +198,7 @@ Funciones:
         var materia = item.materia;
         return '<div class="ml-matter" data-index="' + item.indice + '">' +
           '<input class="ml-matter-level" data-campo="nivelNumero" type="number" min="1" max="20" value="' + escapar(materia.nivelNumero) + '" title="Nivel" />' +
-          '<input class="ml-matter-code" data-campo="codigo" type="text" value="' + escapar(materia.codigo) + '" placeholder="Código" />' +
-          '<div class="ml-matter-name-wrap"><input class="ml-matter-name" data-campo="nombreOficial" type="text" value="' + escapar(materia.nombreOficial) + '" />' + etiquetaOrigen(materia) + '</div>' +
+          '<div class="ml-matter-name-wrap"><input class="ml-matter-name" data-campo="nombreOficial" type="text" value="' + escapar(materia.nombreOficial) + '" aria-label="Nombre oficial de la materia" />' + etiquetaOrigen(materia) + '</div>' +
           '<div class="ml-matter-actions">' +
             '<button class="ml-icon-action" type="button" data-mover="arriba" title="Subir">↑</button>' +
             '<button class="ml-icon-action" type="button" data-mover="abajo" title="Bajar">↓</button>' +
@@ -214,59 +218,27 @@ Funciones:
     }).length;
     if ($("resumenTotalMaterias")) $("resumenTotalMaterias").textContent = total + (total === 1 ? " materia" : " materias");
     if ($("resumenOrigen")) {
-      $("resumenOrigen").textContent = estado.mallaId ? (nuevas ? nuevas + " nuevas" : "Malla vigente") : "Desde Firebase";
+      $("resumenOrigen").textContent = estado.mallaVersion > 0 ? (nuevas ? nuevas + " nuevas" : "Malla vigente") : "Desde Firebase";
     }
     if ($("mlResumenCarrera")) $("mlResumenCarrera").hidden = !estado.carrera;
     if ($("textoVersionActual")) {
-      $("textoVersionActual").textContent = estado.mallaId
-        ? "Versión " + numero($("inputVersion").value, 1) + " vigente"
-        : "Nueva malla · versión " + numero($("inputVersion").value, 1);
+      $("textoVersionActual").textContent = estado.mallaVersion > 0
+        ? "Versión " + estado.mallaVersion + " vigente"
+        : "La versión se asignará al guardar";
     }
   }
 
-  function leerRequisitos() {
-    return texto($("inputRequisitos") && $("inputRequisitos").value).split(/\r?\n/).map(function (linea) { return texto(linea); })
-      .filter(Boolean).map(function (nombre, indice) {
-        var n = normalizar(nombre);
-        return {
-          orden: indice + 1,
-          tipo: /idioma|nivel [a-c]\d/.test(n) ? "idioma" : (/digital/.test(n) ? "competencia_digital" : (/practica/.test(n) ? "practicas" : (/vinculacion/.test(n) ? "vinculacion" : "otro"))),
-          nombre: nombre,
-          activo: true
-        };
-      });
-  }
-
-  function escribirRequisitos(requisitos) {
-    estado.requisitos = arr(requisitos);
-    if ($("inputRequisitos")) $("inputRequisitos").value = estado.requisitos.map(function (item) { return texto(item.nombre || item); }).join("\n");
-  }
-
-  function siguienteVersion(carreraId) {
-    return estado.mallas.filter(function (malla) { return texto(malla.carreraId) === texto(carreraId); })
-      .reduce(function (max, malla) { return Math.max(max, numero(malla.version, 0)); }, 0) + 1;
-  }
-
-  function limpiarConfiguracion(carreraId) {
+  function limpiarConfiguracion() {
     estado.mallaId = "";
-    $("inputVersion").value = siguienteVersion(carreraId);
-    $("inputEstadoMalla").value = "vigente";
-    $("inputPeriodoInicio").value = "";
-    $("inputPeriodoFin").value = "";
-    $("inputObservaciones").value = "";
-    $("checkVigente").checked = true;
-    escribirRequisitos([]);
+    estado.mallaVersion = 0;
+    if ($("inputObservaciones")) $("inputObservaciones").value = "";
   }
 
   function aplicarDetalleMalla(detalle) {
     estado.mallaId = detalle.malla.id;
-    $("inputVersion").value = detalle.malla.version || 1;
-    $("inputEstadoMalla").value = detalle.malla.estado || "vigente";
-    $("inputPeriodoInicio").value = detalle.malla.periodoInicio || "";
-    $("inputPeriodoFin").value = detalle.malla.periodoFin || "";
-    $("inputObservaciones").value = detalle.malla.observaciones || "";
-    $("checkVigente").checked = detalle.malla.vigente === true || detalle.malla.estado === "vigente";
-    escribirRequisitos(detalle.requisitos || []);
+    estado.mallaVersion = numero(detalle.malla.version, 1);
+    $("inputNombreCarrera").value = texto(detalle.malla.carreraNombre) || nombreCarreraFirebase(estado.carrera);
+    $("inputObservaciones").value = texto(detalle.malla.observaciones);
   }
 
   async function obtenerMateriasFirebase(carrera) {
@@ -281,8 +253,10 @@ Funciones:
     estado.carrera = carrera;
 
     if (!carrera) {
-      estado.mallaId = "";
+      limpiarConfiguracion();
       estado.materias = [];
+      $("inputNombreCarrera").value = "";
+      $("inputNombreCarrera").disabled = true;
       $("panelMaterias").hidden = true;
       $("mlResumenCarrera").hidden = true;
       pintarEstado("neutral", "Selecciona una carrera", "Las materias se cargarán desde Firebase.");
@@ -293,7 +267,8 @@ Funciones:
       estado.cargandoCarrera = true;
       setOcupado(true);
       $("panelMaterias").hidden = false;
-      pintarEstado("neutral", "Cargando " + carrera.nombre, "Consultando materias y malla vigente.");
+      $("inputNombreCarrera").value = nombreCarreraFirebase(carrera);
+      pintarEstado("neutral", "Cargando " + nombreCarreraFirebase(carrera), "Consultando materias y malla vigente.");
 
       var resultados = await Promise.all([
         Firebase.Mallas.obtenerMallaVigenteParaCarrera(carrera),
@@ -304,18 +279,17 @@ Funciones:
 
       if (detalle) {
         aplicarDetalleMalla(detalle);
-        var materiasMalla = detalle.materias.map(convertirMateriaMalla);
-        var mezcla = fusionarMaterias(materiasMalla, materiasFirebase, "firebase_nueva");
+        var mezcla = fusionarMaterias(detalle.materias.map(convertirMateriaMalla), materiasFirebase, "firebase_nueva");
         estado.materias = mezcla.materias;
         pintarEstado(
           mezcla.agregadas ? "warn" : "ok",
-          mezcla.agregadas ? "Malla actualizada para revisión" : "Malla cargada",
+          mezcla.agregadas ? "Revisa las materias nuevas" : "Malla cargada",
           mezcla.agregadas
-            ? mezcla.agregadas + " materias de Firebase todavía no estaban en la malla. Revisa y guarda."
+            ? mezcla.agregadas + " materias de Firebase todavía no estaban en la malla."
             : detalle.materias.length + " materias cargadas."
         );
       } else {
-        limpiarConfiguracion(carrera.id);
+        limpiarConfiguracion();
         estado.materias = materiasFirebase;
         pintarEstado(
           materiasFirebase.length ? "ok" : "warn",
@@ -326,7 +300,6 @@ Funciones:
         );
       }
 
-      normalizarOrdenes();
       pintarMaterias();
     } catch (error) {
       estado.materias = [];
@@ -345,7 +318,6 @@ Funciones:
     }
     var ultimoNivel = estado.materias.reduce(function (max, materia) { return Math.max(max, numero(materia.nivelNumero, 0)); }, 1);
     $("inputNuevaNivel").value = ultimoNivel;
-    $("inputNuevaCodigo").value = "";
     $("inputNuevaNombre").value = "";
     abrirModal("modalAgregarMateria");
     window.setTimeout(function () { $("inputNuevaNombre").focus(); }, 50);
@@ -354,12 +326,11 @@ Funciones:
   function agregarMateriaNueva() {
     var nombre = texto($("inputNuevaNombre").value);
     var nivel = Math.max(1, numero($("inputNuevaNivel").value, 1));
-    var codigo = texto($("inputNuevaCodigo").value);
     if (!nombre) {
       pintarEstado("warn", "Nombre requerido", "Escribe el nombre de la materia.");
       return false;
     }
-    var candidata = { nivelNumero: nivel, codigo: codigo, nombreOficial: nombre };
+    var candidata = { nivelNumero: nivel, nombreOficial: nombre };
     if (estado.materias.some(function (materia) { return sonLaMismaMateria(materia, candidata); })) {
       pintarEstado("warn", "Materia duplicada", "La materia ya está en ese nivel.");
       return false;
@@ -369,11 +340,11 @@ Funciones:
       nivelNumero: nivel,
       nivelNombre: nombreNivel(nivel),
       orden: totalNivel + 1,
-      codigo: codigo,
       nombreOficial: nombre,
       tipo: tipoMateria(nombre),
       obligatoria: true,
       activa: true,
+      materiaFirebaseId: "",
       origen: "manual"
     });
     pintarMaterias();
@@ -397,6 +368,21 @@ Funciones:
     pintarMaterias();
   }
 
+  function ordenarMaterias() {
+    var niveles = {};
+    estado.materias.forEach(function (materia) {
+      var nivel = Math.max(1, numero(materia.nivelNumero, 1));
+      if (!niveles[nivel]) niveles[nivel] = [];
+      niveles[nivel].push(materia);
+    });
+    Object.keys(niveles).forEach(function (nivel) {
+      niveles[nivel].sort(function (a, b) { return texto(a.nombreOficial).localeCompare(texto(b.nombreOficial), "es"); });
+      niveles[nivel].forEach(function (materia, indice) { materia.orden = indice + 1; });
+    });
+    pintarMaterias();
+    pintarEstado("neutral", "Materias ordenadas", "Se organizaron alfabéticamente dentro de cada nivel.");
+  }
+
   function quitarMateria(indice) {
     var materia = estado.materias[indice];
     if (!materia) return;
@@ -417,12 +403,29 @@ Funciones:
     };
   }
 
+  function actualizarNombreCarreraLocal(nombreOficial) {
+    if (!estado.carrera) return;
+    estado.carrera.nombre = nombreOficial;
+    estado.carrera.nombreInstitucional = nombreOficial;
+    estado.carrera.nombreCorregido = nombreOficial;
+    var opcion = $("inputCarrera").querySelector('option[value="' + estado.carrera.id.replace(/"/g, '\\"') + '"]');
+    if (opcion) opcion.textContent = nombreOficial;
+  }
+
   async function guardarMalla() {
     if (estado.guardando) return;
     if (!estado.carrera) {
       pintarEstado("warn", "Selecciona una carrera", "No hay una carrera seleccionada.");
       return;
     }
+
+    var nombreCarrera = texto($("inputNombreCarrera").value);
+    if (!nombreCarrera) {
+      pintarEstado("warn", "Nombre requerido", "Escribe el nombre oficial de la carrera.");
+      $("inputNombreCarrera").focus();
+      return;
+    }
+
     normalizarOrdenes();
     var validacion = Parser.validarMaterias(estado.materias);
     if (!validacion.ok) {
@@ -432,53 +435,32 @@ Funciones:
 
     try {
       setOcupado(true);
-      pintarEstado("neutral", "Guardando", "Registrando la malla en Firebase.");
-      var vigente = $("checkVigente").checked && $("inputEstadoMalla").value === "vigente";
+      pintarEstado("neutral", "Guardando", "Comprobando cambios y actualizando Firebase.");
       var detalle = await Firebase.Mallas.guardarMalla({
-        id: estado.mallaId,
         carreraId: estado.carrera.id,
-        carreraNombre: estado.carrera.nombre,
-        nombre: "Malla curricular de " + estado.carrera.nombre,
-        version: numero($("inputVersion").value, 1),
-        periodoInicio: texto($("inputPeriodoInicio").value),
-        periodoFin: texto($("inputPeriodoFin").value),
-        estado: texto($("inputEstadoMalla").value),
-        vigente: vigente,
+        carreraNombre: nombreCarrera,
         observaciones: texto($("inputObservaciones").value),
         fuente: fuenteActual(),
-        materias: estado.materias,
-        requisitos: leerRequisitos()
+        materias: estado.materias
       });
+      actualizarNombreCarreraLocal(nombreCarrera);
       aplicarDetalleMalla(detalle);
       estado.materias = detalle.materias.map(convertirMateriaMalla);
       await cargarMallas();
       pintarMaterias();
-      pintarEstado("ok", "Malla guardada", detalle.materias.length + " materias · versión " + detalle.malla.version + ".");
+      cerrarModal("modalOpciones");
+      pintarEstado(
+        detalle.sinCambios ? "neutral" : "ok",
+        detalle.sinCambios ? "Sin cambios" : "Malla guardada",
+        detalle.sinCambios
+          ? "La malla ya estaba actualizada."
+          : detalle.materias.length + " materias · versión " + detalle.malla.version + " creada automáticamente."
+      );
     } catch (error) {
       pintarEstado("error", "No se pudo guardar", error.message || error);
     } finally {
       setOcupado(false);
     }
-  }
-
-  function crearNuevaVersion() {
-    if (!estado.carrera) {
-      pintarEstado("warn", "Selecciona una carrera", "Primero selecciona la carrera.");
-      return;
-    }
-    estado.mallaId = "";
-    estado.materias = estado.materias.map(function (materia) {
-      var copia = Object.assign({}, materia);
-      delete copia.id;
-      copia.origen = copia.origen === "malla" ? "firebase" : copia.origen;
-      return copia;
-    });
-    $("inputVersion").value = siguienteVersion(estado.carrera.id);
-    $("inputEstadoMalla").value = "vigente";
-    $("checkVigente").checked = true;
-    actualizarResumen();
-    cerrarModal("modalOpciones");
-    pintarEstado("neutral", "Nueva versión", "Revisa las materias y guarda la versión " + $("inputVersion").value + ".");
   }
 
   function aplicarResultadoParser(resultado) {
@@ -488,27 +470,22 @@ Funciones:
         nivelNumero: Math.max(1, numero(materia.nivelNumero, 1)),
         nivelNombre: nombreNivel(materia.nivelNumero),
         orden: numero(materia.orden, 1),
-        codigo: texto(materia.codigo),
         nombreOficial: texto(materia.nombreOficial),
         tipo: tipoMateria(materia.nombreOficial, materia.tipo),
         obligatoria: true,
         activa: true,
+        materiaFirebaseId: "",
         origen: "importada"
       };
     });
     var mezcla = fusionarMaterias(estado.materias, nuevas, "importada");
     estado.materias = mezcla.materias;
-    var requisitosNuevos = arr(resultado.requisitos);
-    if (requisitosNuevos.length) {
-      var existentes = leerRequisitos().map(function (item) { return item.nombre; });
-      requisitosNuevos.forEach(function (item) {
-        var nombre = texto(item.nombre || item);
-        if (nombre && !existentes.some(function (e) { return normalizar(e) === normalizar(nombre); })) existentes.push(nombre);
-      });
-      $("inputRequisitos").value = existentes.join("\n");
-    }
     pintarMaterias();
-    pintarEstado(mezcla.agregadas ? "ok" : "warn", mezcla.agregadas ? "Materias agregadas" : "Sin cambios", mezcla.agregadas ? mezcla.agregadas + " materias se añadieron para revisión." : "Todas las materias ya estaban registradas.");
+    pintarEstado(
+      mezcla.agregadas ? "ok" : "warn",
+      mezcla.agregadas ? "Materias agregadas" : "Sin cambios",
+      mezcla.agregadas ? mezcla.agregadas + " materias se añadieron para revisión." : "Todas las materias ya estaban registradas."
+    );
   }
 
   function procesarTexto(inputId) {
@@ -521,7 +498,7 @@ Funciones:
       pintarEstado("warn", "Sin contenido", "Pega el contenido antes de procesarlo.");
       return;
     }
-    aplicarResultadoParser(Parser.parsearTexto(contenido, { carrera: estado.carrera.nombre }));
+    aplicarResultadoParser(Parser.parsearTexto(contenido, { carrera: texto($("inputNombreCarrera").value) }));
   }
 
   async function procesarExcel() {
@@ -590,10 +567,9 @@ Funciones:
     contenedor.innerHTML = lista.map(function (malla) {
       var vigente = malla.vigente === true || malla.estado === "vigente";
       return '<article class="ml-version"><div><strong>' + escapar(malla.carreraNombre) + ' · versión ' + escapar(malla.version) +
-        '<span class="ml-badge ' + (vigente ? "ml-badge-ok" : "ml-badge-off") + '">' + (vigente ? "Vigente" : escapar(malla.estado || "Histórica")) + '</span></strong>' +
+        '<span class="ml-badge ' + (vigente ? "ml-badge-ok" : "ml-badge-off") + '">' + (vigente ? "Vigente" : "Histórica") + '</span></strong>' +
         '<small>' + escapar(malla.totalMaterias || 0) + ' materias</small></div>' +
-        '<div class="ml-row-actions"><button class="ml-mini" type="button" data-cargar-malla="' + escapar(malla.id) + '">Abrir</button>' +
-        (!vigente ? '<button class="ml-mini" type="button" data-activar-malla="' + escapar(malla.id) + '">Activar</button>' : "") + '</div></article>';
+        '<div class="ml-row-actions"><button class="ml-mini" type="button" data-cargar-malla="' + escapar(malla.id) + '">Abrir</button></div></article>';
     }).join("");
   }
 
@@ -617,9 +593,14 @@ Funciones:
       var materiasFirebase = await obtenerMateriasFirebase(carrera);
       estado.materias = fusionarMaterias(detalle.materias.map(convertirMateriaMalla), materiasFirebase, "firebase_nueva").materias;
       $("panelMaterias").hidden = false;
+      $("inputNombreCarrera").disabled = false;
       pintarMaterias();
       cerrarModal("modalHistorial");
-      pintarEstado("ok", "Versión cargada", carrera.nombre + " · versión " + detalle.malla.version + ".");
+      pintarEstado(
+        detalle.malla.vigente === true ? "ok" : "neutral",
+        detalle.malla.vigente === true ? "Versión vigente cargada" : "Versión histórica cargada",
+        "Al guardar cambios se creará automáticamente una nueva versión vigente."
+      );
     } catch (error) {
       pintarEstado("error", "No se pudo cargar", error.message || error);
     } finally {
@@ -631,7 +612,7 @@ Funciones:
     estado.carreras = typeof Firebase.obtenerCarreras === "function" ? await Firebase.obtenerCarreras() : [];
     var selector = $("inputCarrera");
     selector.innerHTML = '<option value="">Selecciona una carrera</option>' + estado.carreras.map(function (carrera) {
-      return '<option value="' + escapar(carrera.id) + '">' + escapar(carrera.nombre) + '</option>';
+      return '<option value="' + escapar(carrera.id) + '">' + escapar(nombreCarreraFirebase(carrera)) + '</option>';
     }).join("");
   }
 
@@ -639,10 +620,9 @@ Funciones:
     $("inputCarrera").addEventListener("change", function () { cargarCarrera(this.value); });
     $("btnGuardarMalla").addEventListener("click", guardarMalla);
     $("btnAgregarMateria").addEventListener("click", abrirAgregarMateria);
-    $("btnOrdenarMaterias").addEventListener("click", function () { pintarMaterias(); pintarEstado("neutral", "Materias ordenadas", "Se organizaron por nivel y nombre."); });
+    $("btnOrdenarMaterias").addEventListener("click", ordenarMaterias);
     $("btnMasOpciones").addEventListener("click", function () { abrirModal("modalOpciones"); });
     $("btnHistorial").addEventListener("click", function () { pintarVersiones(); abrirModal("modalHistorial"); });
-    $("btnNuevaVersion").addEventListener("click", crearNuevaVersion);
     $("btnRecargarMallas").addEventListener("click", function () {
       cargarMallas().catch(function (error) { pintarEstado("error", "No se pudo recargar", error.message || error); });
     });
@@ -673,14 +653,6 @@ Funciones:
 
       var cargar = event.target.closest && event.target.closest("[data-cargar-malla]");
       if (cargar) cargarDetalle(cargar.getAttribute("data-cargar-malla"));
-
-      var activar = event.target.closest && event.target.closest("[data-activar-malla]");
-      if (activar) {
-        Firebase.Mallas.activarMalla(activar.getAttribute("data-activar-malla"))
-          .then(cargarMallas)
-          .then(function () { pintarEstado("ok", "Malla activada", "La versión seleccionada quedó vigente."); })
-          .catch(function (error) { pintarEstado("error", "No se pudo activar", error.message || error); });
-      }
     });
 
     $("listaMateriasMalla").addEventListener("input", function (event) {
@@ -708,7 +680,6 @@ Funciones:
       estado.archivoFuente = event.target.files && event.target.files[0] || null;
       estado.fuenteTipo = "excel";
     });
-    $("inputVersion").addEventListener("input", actualizarResumen);
   }
 
   async function iniciar() {
