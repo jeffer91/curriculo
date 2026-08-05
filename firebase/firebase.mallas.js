@@ -2,10 +2,11 @@
 Nombre completo: firebase.mallas.js
 Ruta o ubicación: /Curriculo/firebase/firebase.mallas.js
 Funciones:
-- Guardar versiones de mallas curriculares en colecciones planas de Firestore.
-- Consultar y activar la malla vigente de cada carrera.
-- Administrar materias oficiales, requisitos y equivalencias de nombres.
-- Registrar resultados de comparación entre una malla y un ZIP curricular.
+- Guardar versiones automáticas de mallas curriculares en Firestore.
+- Crear una nueva versión únicamente cuando existen cambios reales.
+- Mantener una sola versión vigente por carrera.
+- Corregir nombres oficiales de carreras y materias vinculadas en Firebase.
+- Administrar equivalencias y resultados de comparación con ZIP.
 ========================================================= */
 (function (window) {
   "use strict";
@@ -14,14 +15,16 @@ Funciones:
   var NS = window.CurriculoFirebase;
   if (NS.Mallas && NS.Mallas.__instalada === true) return;
 
-  var VERSION = "1.0.0";
+  var VERSION = "1.1.0";
   var SDK_BASE = "https://www.gstatic.com/firebasejs/" + String(NS.SDK_VERSION || "12.16.0") + "/";
   var COLECCIONES = Object.freeze({
     MALLAS: "mallas_curriculares",
     MATERIAS: "malla_materias",
     REQUISITOS: "malla_requisitos",
     EQUIVALENCIAS: "malla_equivalencias",
-    COMPARACIONES: "malla_comparaciones"
+    COMPARACIONES: "malla_comparaciones",
+    CARRERAS: "carreras",
+    MATERIAS_FIREBASE: "materias"
   });
   var estado = { appSDK: null, firestoreSDK: null, app: null, db: null, promesa: null };
 
@@ -30,9 +33,7 @@ Funciones:
   }
 
   function arr(valor) {
-    if (Array.isArray(valor)) return valor;
-    if (valor === null || typeof valor === "undefined") return [];
-    return [valor];
+    return Array.isArray(valor) ? valor : [];
   }
 
   function numero(valor, defecto) {
@@ -128,20 +129,17 @@ Funciones:
 
   function carreraIdDe(datos) {
     var id = texto(datos && datos.carreraId);
-    if (/^carrera_[a-z0-9_]+$/i.test(id)) return id.toLowerCase();
-    return "carrera_" + slug(datos && (datos.carreraNombre || datos.nombreCarrera || id));
+    if (id) return id;
+    return "carrera_" + slug(datos && (datos.carreraNombre || datos.nombreCarrera));
   }
 
-  function crearMallaId(datos) {
-    if (texto(datos && datos.id)) return texto(datos.id);
-    var carreraId = carreraIdDe(datos);
-    var version = Math.max(1, numero(datos && datos.version, 1));
+  function crearMallaId(carreraId, version) {
     return "malla_" + slug(carreraId) + "_v" + pad(version, 3);
   }
 
   function crearMateriaId(mallaId, materia, indice) {
-    var nivel = Math.max(0, numero(materia && materia.nivelNumero, 0));
-    var identidad = texto(materia && materia.codigo) || texto(materia && materia.nombreOficial) || "materia";
+    var nivel = Math.max(1, numero(materia && materia.nivelNumero, 1));
+    var identidad = texto(materia && materia.materiaFirebaseId) || texto(materia && materia.nombreOficial) || "materia";
     return [mallaId, "n" + pad(nivel, 2), slug(identidad), pad(numero(materia && materia.orden, indice + 1), 3)].join("__").slice(0, 900);
   }
 
@@ -178,131 +176,132 @@ Funciones:
     return operaciones.length;
   }
 
-  async function operacionesEliminarPorMalla(nombreColeccion, mallaId) {
-    var existentes = await consultarCampo(nombreColeccion, "mallaId", mallaId);
-    return existentes.map(function (item) {
-      return { tipo: "delete", coleccion: nombreColeccion, id: item.id };
+  function prepararMaterias(materias) {
+    var salida = arr(materias).map(function (materia, indice) {
+      return {
+        id: texto(materia && materia.id),
+        materiaFirebaseId: texto(materia && materia.materiaFirebaseId),
+        nivelNumero: Math.max(1, numero(materia && materia.nivelNumero, 1)),
+        nivelNombre: texto(materia && materia.nivelNombre),
+        orden: Math.max(1, numero(materia && materia.orden, indice + 1)),
+        nombreOficial: texto(materia && materia.nombreOficial),
+        tipo: texto(materia && materia.tipo || "asignatura"),
+        obligatoria: materia && materia.obligatoria !== false,
+        activa: materia && materia.activa !== false
+      };
     });
+
+    salida.sort(function (a, b) {
+      return a.nivelNumero - b.nivelNumero || a.orden - b.orden || a.nombreOficial.localeCompare(b.nombreOficial, "es");
+    });
+
+    var ordenes = {};
+    salida.forEach(function (materia) {
+      ordenes[materia.nivelNumero] = (ordenes[materia.nivelNumero] || 0) + 1;
+      materia.orden = ordenes[materia.nivelNumero];
+      materia.nivelNombre = materia.nivelNombre || "Nivel " + materia.nivelNumero;
+    });
+    return salida;
   }
 
   function validarMalla(datos) {
     var errores = [];
-    if (!texto(datos && (datos.carreraNombre || datos.nombreCarrera))) errores.push("La carrera es obligatoria.");
-    if (!arr(datos && datos.materias).length) errores.push("La malla debe contener al menos una materia.");
+    var carreraNombre = texto(datos && (datos.carreraNombre || datos.nombreCarrera));
+    var materias = prepararMaterias(datos && datos.materias);
+    if (!carreraNombre) errores.push("El nombre oficial de la carrera es obligatorio.");
+    if (!materias.length) errores.push("La malla debe contener al menos una materia.");
     var vistos = {};
-    arr(datos && datos.materias).forEach(function (materia, indice) {
-      var nombre = texto(materia && materia.nombreOficial);
-      var nivel = numero(materia && materia.nivelNumero, 0);
-      if (!nombre) errores.push("La materia de la fila " + (indice + 1) + " no tiene nombre.");
-      if (nivel < 1) errores.push("La materia " + (nombre || indice + 1) + " no tiene nivel válido.");
-      var clave = nivel + "|" + normalizar(nombre);
-      if (nombre && vistos[clave]) errores.push("Materia duplicada en el nivel " + nivel + ": " + nombre + ".");
+    materias.forEach(function (materia, indice) {
+      if (!materia.nombreOficial) errores.push("La materia de la fila " + (indice + 1) + " no tiene nombre.");
+      var clave = materia.nivelNumero + "|" + normalizar(materia.nombreOficial);
+      if (materia.nombreOficial && vistos[clave]) errores.push("Materia duplicada en el nivel " + materia.nivelNumero + ": " + materia.nombreOficial + ".");
       vistos[clave] = true;
     });
     if (errores.length) throw new Error(errores.join(" | "));
+    return materias;
   }
 
-  async function guardarMalla(datos) {
-    datos = datos || {};
-    validarMalla(datos);
-    await abrirSDK();
-
-    var mallaId = crearMallaId(datos);
-    var carreraId = carreraIdDe(datos);
-    var carreraNombre = texto(datos.carreraNombre || datos.nombreCarrera);
-    var version = Math.max(1, numero(datos.version, 1));
-    var vigente = datos.vigente !== false;
-    var materias = arr(datos.materias);
-    var requisitos = arr(datos.requisitos);
-    var niveles = {};
-    materias.forEach(function (materia) { niveles[numero(materia.nivelNumero, 0)] = true; });
-
-    var operaciones = [];
-    operaciones = operaciones.concat(await operacionesEliminarPorMalla(COLECCIONES.MATERIAS, mallaId));
-    operaciones = operaciones.concat(await operacionesEliminarPorMalla(COLECCIONES.REQUISITOS, mallaId));
-
-    if (vigente) {
-      var versionesCarrera = await consultarCampo(COLECCIONES.MALLAS, "carreraId", carreraId);
-      versionesCarrera.forEach(function (malla) {
-        if (malla.id !== mallaId && malla.estado === "vigente") {
-          operaciones.push({
-            tipo: "set",
-            coleccion: COLECCIONES.MALLAS,
-            id: malla.id,
-            merge: true,
-            data: { estado: "historica", vigente: false, actualizadoEn: F().serverTimestamp() }
-          });
-        }
-      });
-    }
-
-    var mallaDoc = {
-      carreraId: carreraId,
-      carreraNombre: carreraNombre,
-      carreraNombreNormalizado: normalizar(carreraNombre),
-      nombre: texto(datos.nombre) || "Malla curricular de " + carreraNombre,
-      version: version,
-      periodoInicio: texto(datos.periodoInicio),
-      periodoFin: texto(datos.periodoFin),
-      estado: vigente ? "vigente" : texto(datos.estado || "borrador"),
-      vigente: vigente,
-      totalNiveles: Object.keys(niveles).filter(function (n) { return Number(n) > 0; }).length,
-      totalMaterias: materias.length,
-      totalRequisitos: requisitos.length,
-      fuente: limpiarObjeto(datos.fuente || { tipo: "manual" }),
-      observaciones: texto(datos.observaciones),
-      actualizadoEn: F().serverTimestamp()
-    };
-
-    var existente = await F().getDoc(doc(COLECCIONES.MALLAS, mallaId));
-    if (!existente.exists()) mallaDoc.creadoEn = F().serverTimestamp();
-    operaciones.push({ tipo: "set", coleccion: COLECCIONES.MALLAS, id: mallaId, data: mallaDoc, merge: true });
-
-    materias.forEach(function (materia, indice) {
-      var materiaId = texto(materia.id) || crearMateriaId(mallaId, materia, indice);
-      operaciones.push({
-        tipo: "set",
-        coleccion: COLECCIONES.MATERIAS,
-        id: materiaId,
-        data: {
-          mallaId: mallaId,
-          carreraId: carreraId,
-          carreraNombre: carreraNombre,
-          mallaVersion: version,
-          nivelNumero: numero(materia.nivelNumero, 0),
-          nivelNombre: texto(materia.nivelNombre) || numero(materia.nivelNumero, 0) + ". Nivel",
-          orden: numero(materia.orden, indice + 1),
-          codigo: texto(materia.codigo),
-          nombreOficial: texto(materia.nombreOficial),
-          nombreNormalizado: normalizar(materia.nombreOficial),
-          tipo: texto(materia.tipo || "asignatura"),
-          obligatoria: materia.obligatoria !== false,
-          activa: materia.activa !== false,
-          actualizadoEn: F().serverTimestamp(),
-          creadoEn: F().serverTimestamp()
-        }
-      });
+  function firmaMalla(datos) {
+    return JSON.stringify({
+      carreraNombre: texto(datos && datos.carreraNombre),
+      observaciones: texto(datos && datos.observaciones),
+      materias: prepararMaterias(datos && datos.materias).map(function (materia) {
+        return {
+          materiaFirebaseId: materia.materiaFirebaseId,
+          nivelNumero: materia.nivelNumero,
+          orden: materia.orden,
+          nombreOficial: materia.nombreOficial,
+          tipo: materia.tipo,
+          obligatoria: materia.obligatoria,
+          activa: materia.activa
+        };
+      })
     });
+  }
 
-    requisitos.forEach(function (requisito, indice) {
+  async function actualizarNombreCarrera(carreraId, nombreOficial) {
+    await abrirSDK();
+    carreraId = texto(carreraId);
+    nombreOficial = texto(nombreOficial);
+    if (!carreraId || !nombreOficial) throw new Error("No se pudo actualizar el nombre de la carrera.");
+    var ref = doc(COLECCIONES.CARRERAS, carreraId);
+    var snap = await F().getDoc(ref);
+    var actual = snap.exists() ? snap.data() : {};
+    await F().setDoc(ref, {
+      nombreOriginalImportado: texto(actual.nombreOriginalImportado || actual.nombre),
+      nombre: nombreOficial,
+      nombreInstitucional: nombreOficial,
+      nombreCorregido: nombreOficial,
+      actualizadoEn: F().serverTimestamp()
+    }, { merge: true });
+    return nombreOficial;
+  }
+
+  async function actualizarNombreMateria(materiaFirebaseId, nombreOficial) {
+    await abrirSDK();
+    materiaFirebaseId = texto(materiaFirebaseId);
+    nombreOficial = texto(nombreOficial);
+    if (!materiaFirebaseId || !nombreOficial) return false;
+    await F().setDoc(doc(COLECCIONES.MATERIAS_FIREBASE, materiaFirebaseId), {
+      nombreInstitucional: nombreOficial,
+      nombreCorregido: nombreOficial,
+      actualizadoEn: F().serverTimestamp()
+    }, { merge: true });
+    return true;
+  }
+
+  async function operacionesNombresBase(carreraId, carreraNombre, materias) {
+    var operaciones = [];
+    var carreraSnap = await F().getDoc(doc(COLECCIONES.CARRERAS, carreraId));
+    var carreraActual = carreraSnap.exists() ? carreraSnap.data() : {};
+    operaciones.push({
+      tipo: "set",
+      coleccion: COLECCIONES.CARRERAS,
+      id: carreraId,
+      merge: true,
+      data: {
+        nombreOriginalImportado: texto(carreraActual.nombreOriginalImportado || carreraActual.nombre),
+        nombre: carreraNombre,
+        nombreInstitucional: carreraNombre,
+        nombreCorregido: carreraNombre,
+        actualizadoEn: F().serverTimestamp()
+      }
+    });
+    prepararMaterias(materias).forEach(function (materia) {
+      if (!materia.materiaFirebaseId) return;
       operaciones.push({
         tipo: "set",
-        coleccion: COLECCIONES.REQUISITOS,
-        id: mallaId + "__req_" + pad(indice + 1, 3),
+        coleccion: COLECCIONES.MATERIAS_FIREBASE,
+        id: materia.materiaFirebaseId,
+        merge: true,
         data: {
-          mallaId: mallaId,
-          carreraId: carreraId,
-          orden: numero(requisito.orden, indice + 1),
-          tipo: texto(requisito.tipo || "otro"),
-          nombre: texto(requisito.nombre || requisito),
-          activo: requisito.activo !== false,
+          nombreInstitucional: materia.nombreOficial,
+          nombreCorregido: materia.nombreOficial,
           actualizadoEn: F().serverTimestamp()
         }
       });
     });
-
-    await ejecutarOperaciones(operaciones);
-    return await obtenerDetalleMalla(mallaId);
+    return operaciones;
   }
 
   async function obtenerMallas(opciones) {
@@ -312,7 +311,7 @@ Funciones:
       ? await consultarCampo(COLECCIONES.MALLAS, "carreraId", opciones.carreraId)
       : lista(await F().getDocs(col(COLECCIONES.MALLAS)));
     return items.sort(function (a, b) {
-      if (a.carreraNombre !== b.carreraNombre) return texto(a.carreraNombre).localeCompare(texto(b.carreraNombre), "es");
+      if (texto(a.carreraNombre) !== texto(b.carreraNombre)) return texto(a.carreraNombre).localeCompare(texto(b.carreraNombre), "es");
       return numero(b.version, 0) - numero(a.version, 0);
     });
   }
@@ -329,7 +328,9 @@ Funciones:
     if (!malla) throw new Error("No se encontró la malla curricular.");
     return {
       malla: malla,
-      materias: resultados[1].sort(function (a, b) { return numero(a.nivelNumero, 0) - numero(b.nivelNumero, 0) || numero(a.orden, 0) - numero(b.orden, 0); }),
+      materias: resultados[1].sort(function (a, b) {
+        return numero(a.nivelNumero, 0) - numero(b.nivelNumero, 0) || numero(a.orden, 0) - numero(b.orden, 0);
+      }),
       requisitos: resultados[2].sort(function (a, b) { return numero(a.orden, 0) - numero(b.orden, 0); }),
       equivalencias: resultados[3]
     };
@@ -341,17 +342,117 @@ Funciones:
     var id = texto(carrera.id || carrera.carreraId);
     var nombre = texto(carrera.nombre || carrera.carreraNombre || carrera.carrera);
     var candidatas = [];
-
     if (id) candidatas = await consultarCampo(COLECCIONES.MALLAS, "carreraId", id);
     if (!candidatas.length && nombre) {
       var todas = await obtenerMallas();
       var clave = normalizar(nombre);
       candidatas = todas.filter(function (item) { return normalizar(item.carreraNombre) === clave; });
     }
-
     var vigente = candidatas.filter(function (item) { return item.vigente === true || item.estado === "vigente"; })
       .sort(function (a, b) { return numero(b.version, 0) - numero(a.version, 0); })[0] || null;
     return vigente ? await obtenerDetalleMalla(vigente.id) : null;
+  }
+
+  async function guardarMalla(datos) {
+    datos = datos || {};
+    await abrirSDK();
+    var materias = validarMalla(datos);
+    var carreraId = carreraIdDe(datos);
+    var carreraNombre = texto(datos.carreraNombre || datos.nombreCarrera);
+    var observaciones = texto(datos.observaciones);
+    var versiones = await consultarCampo(COLECCIONES.MALLAS, "carreraId", carreraId);
+    var vigenteMeta = versiones.filter(function (item) { return item.vigente === true || item.estado === "vigente"; })
+      .sort(function (a, b) { return numero(b.version, 0) - numero(a.version, 0); })[0] || null;
+    var detalleVigente = vigenteMeta ? await obtenerDetalleMalla(vigenteMeta.id) : null;
+    var propuesta = { carreraNombre: carreraNombre, observaciones: observaciones, materias: materias };
+
+    if (detalleVigente && firmaMalla(propuesta) === firmaMalla({
+      carreraNombre: detalleVigente.malla.carreraNombre,
+      observaciones: detalleVigente.malla.observaciones,
+      materias: detalleVigente.materias
+    })) {
+      await ejecutarOperaciones(await operacionesNombresBase(carreraId, carreraNombre, materias));
+      detalleVigente.sinCambios = true;
+      detalleVigente.versionCreada = false;
+      return detalleVigente;
+    }
+
+    var version = versiones.reduce(function (max, item) { return Math.max(max, numero(item.version, 0)); }, 0) + 1;
+    var mallaId = crearMallaId(carreraId, version);
+    while ((await F().getDoc(doc(COLECCIONES.MALLAS, mallaId))).exists()) {
+      version += 1;
+      mallaId = crearMallaId(carreraId, version);
+    }
+
+    var niveles = {};
+    materias.forEach(function (materia) { niveles[materia.nivelNumero] = true; });
+    var operaciones = [];
+    versiones.forEach(function (malla) {
+      if (malla.vigente === true || malla.estado === "vigente") {
+        operaciones.push({
+          tipo: "set",
+          coleccion: COLECCIONES.MALLAS,
+          id: malla.id,
+          merge: true,
+          data: { vigente: false, estado: "historica", actualizadoEn: F().serverTimestamp() }
+        });
+      }
+    });
+
+    operaciones.push({
+      tipo: "set",
+      coleccion: COLECCIONES.MALLAS,
+      id: mallaId,
+      data: {
+        carreraId: carreraId,
+        carreraNombre: carreraNombre,
+        carreraNombreNormalizado: normalizar(carreraNombre),
+        nombre: "Malla curricular de " + carreraNombre,
+        version: version,
+        estado: "vigente",
+        vigente: true,
+        totalNiveles: Object.keys(niveles).length,
+        totalMaterias: materias.length,
+        totalRequisitos: 0,
+        observaciones: observaciones,
+        fuente: limpiarObjeto(datos.fuente || { tipo: "firebase" }),
+        firmaEstructura: firmaMalla(propuesta),
+        creadoEn: F().serverTimestamp(),
+        actualizadoEn: F().serverTimestamp()
+      }
+    });
+
+    materias.forEach(function (materia, indice) {
+      operaciones.push({
+        tipo: "set",
+        coleccion: COLECCIONES.MATERIAS,
+        id: crearMateriaId(mallaId, materia, indice),
+        data: {
+          mallaId: mallaId,
+          carreraId: carreraId,
+          carreraNombre: carreraNombre,
+          mallaVersion: version,
+          materiaFirebaseId: materia.materiaFirebaseId,
+          nivelNumero: materia.nivelNumero,
+          nivelNombre: materia.nivelNombre || "Nivel " + materia.nivelNumero,
+          orden: materia.orden,
+          nombreOficial: materia.nombreOficial,
+          nombreNormalizado: normalizar(materia.nombreOficial),
+          tipo: materia.tipo,
+          obligatoria: materia.obligatoria,
+          activa: materia.activa,
+          creadoEn: F().serverTimestamp(),
+          actualizadoEn: F().serverTimestamp()
+        }
+      });
+    });
+
+    operaciones = operaciones.concat(await operacionesNombresBase(carreraId, carreraNombre, materias));
+    await ejecutarOperaciones(operaciones);
+    var detalle = await obtenerDetalleMalla(mallaId);
+    detalle.sinCambios = false;
+    detalle.versionCreada = true;
+    return detalle;
   }
 
   async function activarMalla(mallaId) {
@@ -425,6 +526,8 @@ Funciones:
     obtenerDetalleMalla: obtenerDetalleMalla,
     obtenerMallaVigenteParaCarrera: obtenerMallaVigenteParaCarrera,
     activarMalla: activarMalla,
+    actualizarNombreCarrera: actualizarNombreCarrera,
+    actualizarNombreMateria: actualizarNombreMateria,
     guardarEquivalencia: guardarEquivalencia,
     eliminarEquivalencia: eliminarEquivalencia,
     registrarComparacion: registrarComparacion
