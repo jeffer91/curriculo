@@ -3,7 +3,7 @@ Nombre completo: subir.malla-ui.js
 Ruta o ubicación: /Curriculo/subir/subir.malla-ui.js
 Funciones:
 - Comparar el ZIP validado con la malla vigente de cada carrera.
-- Aplicar automáticamente coincidencias seguras por código o nombre y nivel.
+- Aplicar automáticamente coincidencias seguras por nombre y nivel.
 - Mostrar materias faltantes y no vinculadas.
 - Permitir arrastrar una materia detectada hacia su nombre oficial.
 - Omitir materias no vinculadas hasta que se relacionen o aprueben como excepción.
@@ -205,7 +205,7 @@ Funciones:
     var sugerencia = item.sugerencia;
     return '<article class="subir-malla-item subir-malla-detectada" draggable="true" data-drag-carrera="' + escapar(entrada.carrera.id) + '" data-drag-materia="' + escapar(detectada.id) + '">' +
       '<strong>' + escapar(nombreMateria(detectada)) + '</strong>' +
-      '<small>Nivel detectado: ' + escapar(nivelMateria(detectada) || "Sin nivel") + (detectada.codigo ? ' · Código: ' + escapar(detectada.codigo) : "") + '</small>' +
+      '<small>Nivel detectado: ' + escapar(nivelMateria(detectada) || "Sin nivel") + '</small>' +
       (sugerencia ? '<div class="subir-malla-sugerencia">Posible relación: <b>' + escapar(sugerencia.nombreOficial) + '</b> · nivel ' + escapar(sugerencia.nivelNumero) + (item.motivo === "nivel_diferente" ? " · nivel diferente" : " · similitud " + Math.round(numero(item.similitud, 0) * 100) + "%") + '</div>' : "") +
       '<div class="subir-malla-actions">' +
         (sugerencia ? '<button class="subir-malla-mini" type="button" data-confirmar-carrera="' + escapar(entrada.carrera.id) + '" data-confirmar-detectada="' + escapar(detectada.id) + '" data-confirmar-oficial="' + escapar(sugerencia.id) + '">Relacionar sugerencia</button>' : "") +
@@ -216,7 +216,7 @@ Funciones:
   function renderFaltante(oficial, entrada) {
     return '<article class="subir-malla-item subir-malla-faltante" data-drop-carrera="' + escapar(entrada.carrera.id) + '" data-drop-oficial="' + escapar(oficial.id) + '">' +
       '<strong>' + escapar(oficial.nombreOficial) + '</strong>' +
-      '<small>Nivel oficial: ' + escapar(oficial.nivelNumero) + (oficial.codigo ? ' · Código: ' + escapar(oficial.codigo) : "") + '</small>' +
+      '<small>Nivel oficial: ' + escapar(oficial.nivelNumero) + '</small>' +
       '<small>Arrastra aquí una materia detectada para vincularla.</small>' +
     '</article>';
   }
@@ -242,7 +242,7 @@ Funciones:
     return '<section class="subir-malla-career"><div class="subir-malla-career-head"><div><h3>' + escapar(entrada.carrera.nombre) + '</h3><small>Malla vigente v' + escapar(entrada.detalle.malla.version) + ' · ' + escapar(entrada.detalle.malla.totalMaterias) + ' materias oficiales</small></div><span class="subir-malla-state ' + (r.resumen.completa ? "subir-malla-state-ok" : "subir-malla-state-warn") + '">' + (r.resumen.completa ? "Malla completa" : "Malla incompleta") + '</span></div>' +
       '<div class="subir-malla-columns"><div class="subir-malla-column"><h4>Materias no vinculadas</h4><p>Arrástralas hacia el nombre oficial o confirma la sugerencia.</p>' + noVinculadas + '</div><div class="subir-malla-column"><h4>Materias oficiales faltantes</h4><p>Están en la malla vigente, pero no se relacionaron con el ZIP.</p>' + faltantes + '</div></div>' +
       '<h4 style="margin:15px 0 7px">Coincidencias confirmadas</h4>' + matches +
-      (r.excepciones.length ? '<div class="subir-malla-manual-note"><b>Excepciones aprobadas:</b> ' + r.excepciones.map(function (m) { return escapar(nombreMateria(m)); }).join(", ") + ". Se podrán importar, pero no reemplazan ninguna materia oficial faltante.</div>' : "") +
+      (r.excepciones.length ? '<div class="subir-malla-manual-note"><b>Excepciones aprobadas:</b> ' + r.excepciones.map(function (m) { return escapar(nombreMateria(m)); }).join(", ") + '. Se podrán importar, pero no reemplazan ninguna materia oficial faltante.</div>' : "") +
     '</section>';
   }
 
