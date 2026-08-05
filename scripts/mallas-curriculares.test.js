@@ -53,18 +53,29 @@ const detectadas = oficiales.slice(0, 19).map((materia, index) => ({
   id: `detectada_${index + 1}`,
   nombre: materia.nombreOficial,
   nivelNumero: materia.nivelNumero,
-  codigo: materia.codigo
+  codigo: index === 0 ? "CODIGO-DIFERENTE" : ""
 }));
 
-detectadas[0].nombre = "Administración General";
 const comparacion = Comparador.comparar(detectadas, oficiales, []);
 assert.strictEqual(comparacion.resumen.totalOficiales, 21);
 assert.strictEqual(comparacion.resumen.totalDetectadas, 19);
 assert.strictEqual(comparacion.resumen.vinculadas, 19);
 assert.strictEqual(comparacion.resumen.faltantes, 2);
 assert.strictEqual(comparacion.resumen.noVinculadas, 0);
+assert.strictEqual(comparacion.coincidencias[0].criterio, "nombre_y_nivel");
 
-const distinta = [{ id: "x", nombre: "Gestión Empresarial Aplicada", nivelNumero: 3, codigo: "" }];
+const soloMismoCodigo = [{
+  id: "solo_codigo",
+  nombre: "Materia completamente distinta",
+  nivelNumero: 1,
+  codigo: "ADM-101"
+}];
+const comparacionCodigo = Comparador.comparar(soloMismoCodigo, oficiales, []);
+assert.strictEqual(comparacionCodigo.resumen.vinculadas, 0);
+assert.strictEqual(comparacionCodigo.resumen.noVinculadas, 1);
+assert.strictEqual(comparacionCodigo.resumen.faltantes, 21);
+
+const distinta = [{ id: "x", nombre: "Gestión Empresarial Aplicada", nivelNumero: 3 }];
 const comparacionDistinta = Comparador.comparar(distinta, oficiales, []);
 assert.strictEqual(comparacionDistinta.resumen.noVinculadas, 1);
 assert.strictEqual(comparacionDistinta.resumen.faltantes, 21);
@@ -78,4 +89,4 @@ assert.strictEqual(vinculada.nombre, "Gestión de procesos empresariales");
 assert.strictEqual(vinculada.nombreOriginalDetectado, "Gestión Empresarial Aplicada");
 assert.strictEqual(vinculada.mallaVinculada, true);
 
-console.log("✓ Mallas curriculares: parser, validación, comparación y vinculación correctos.");
+console.log("✓ Mallas curriculares: comparación por nombre y nivel, sin depender de códigos.");
