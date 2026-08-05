@@ -16,6 +16,7 @@ const raiz = path.resolve(__dirname, "..");
 const html = fs.readFileSync(path.join(raiz, "mallas", "mallas.html"), "utf8");
 const js = fs.readFileSync(path.join(raiz, "mallas", "mallas.main.js"), "utf8");
 const firebase = fs.readFileSync(path.join(raiz, "firebase", "firebase.mallas.js"), "utf8");
+const comparador = fs.readFileSync(path.join(raiz, "mallas", "mallas.comparador.js"), "utf8");
 
 const idsRequeridos = [
   "inputCarrera",
@@ -62,5 +63,8 @@ assert.match(firebase, /firmaMalla/, "Firebase debe comparar cambios reales ante
 assert.match(firebase, /version\s*=\s*versiones\.reduce/, "La versión debe calcularse automáticamente.");
 assert.match(firebase, /sinCambios/, "Guardar sin cambios no debe crear una nueva versión.");
 assert.doesNotMatch(firebase, /codigo:\s*texto\(materia\.codigo\)/, "Las nuevas materias de malla no deben guardar códigos.");
+assert.doesNotMatch(comparador, /codigo_y_nivel|__codigo|function codigo\(/, "El comparador no debe usar códigos para vincular materias.");
+assert.match(comparador, /equivalencia_guardada/, "El comparador debe conservar las equivalencias confirmadas.");
+assert.match(comparador, /nombre_y_nivel/, "El comparador debe usar nombre y nivel.");
 
 console.log("✓ Mallas simples: nombres editables, sin códigos y con versiones automáticas");
