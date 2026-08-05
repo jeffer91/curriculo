@@ -2,10 +2,9 @@
 Nombre completo: mallas.parser.js
 Ruta o ubicación: /Curriculo/mallas/mallas.parser.js
 Funciones:
-- Convertir texto libre de una malla curricular en niveles y materias.
-- Interpretar filas provenientes de Excel con encabezados variables.
-- Separar requisitos complementarios de las asignaturas.
-- Validar duplicados y datos mínimos antes de guardar.
+- Convertir texto libre y Excel en niveles y materias.
+- Normalizar tildes, signos y números romanos para evitar duplicados.
+- Validar nombres, niveles y duplicados antes de guardar.
 ========================================================= */
 (function (root, factory) {
   "use strict";
@@ -15,9 +14,9 @@ Funciones:
 })(typeof window !== "undefined" ? window : globalThis, function () {
   "use strict";
 
-  var VERSION = "1.0.0";
+  var VERSION = "1.1.0";
   var NIVELES = {
-    primer: 1, primero: 1, primero: 1,
+    primer: 1, primero: 1, primera: 1,
     segundo: 2, segunda: 2,
     tercer: 3, tercero: 3, tercera: 3,
     cuarto: 4, cuarta: 4,
@@ -28,6 +27,7 @@ Funciones:
     noveno: 9, novena: 9,
     decimo: 10, decima: 10
   };
+  var ROMANOS = Object.freeze({ x: "10", ix: "9", viii: "8", vii: "7", vi: "6", v: "5", iv: "4", iii: "3", ii: "2", i: "1" });
 
   function texto(valor) {
     return String(valor === null || typeof valor === "undefined" ? "" : valor).trim();
@@ -37,16 +37,21 @@ Funciones:
     return texto(valor)
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[_–—]+/g, " ")
-      .replace(/[^a-zA-Z0-9\s.-]/g, " ")
+      .toLowerCase()
+      .replace(/&/g, " y ")
+      .replace(/[_\-–—./,;:()[\]{}]+/g, " ")
+      .replace(/[^a-z0-9\s]/g, " ")
+      .replace(/\b(x|ix|viii|vii|vi|v|iv|iii|ii|i)\b/g, function (romano) {
+        return ROMANOS[romano] || romano;
+      })
       .replace(/\s+/g, " ")
-      .trim()
-      .toLowerCase();
+      .trim();
   }
 
   function limpiarLinea(valor) {
     return texto(valor)
       .replace(/^\s*(?:[-•*]+|\d+[.)-])\s*/, "")
+      .replace(/[.;,:]+\s*$/, "")
       .replace(/\s+/g, " ")
       .trim();
   }
@@ -61,12 +66,6 @@ Funciones:
       if (new RegExp("(?:^|\\s)" + claves[i] + "(?:\\s+|$)(?:nivel|semestre)").test(n)) {
         return NIVELES[claves[i]];
       }
-    }
-
-    var romano = n.match(/(?:nivel|semestre)\s+(i{1,3}|iv|v|vi{0,3}|ix|x)$/i);
-    if (romano) {
-      var tabla = { i: 1, ii: 2, iii: 3, iv: 4, v: 5, vi: 6, vii: 7, viii: 8, ix: 9, x: 10 };
-      return tabla[romano[1].toLowerCase()] || 0;
     }
     return 0;
   }
@@ -130,7 +129,6 @@ Funciones:
         nivelNumero: nivelActual,
         nivelNombre: nombreNivel(nivelActual),
         orden: ordenNivel[nivelActual],
-        codigo: "",
         nombreOficial: linea,
         nombreNormalizado: normalizar(linea),
         tipo: "asignatura",
@@ -154,7 +152,7 @@ Funciones:
     objeto = objeto || {};
     var claves = Object.keys(objeto);
     for (var i = 0; i < claves.length; i += 1) {
-      var n = normalizar(claves[i]).replace(/[.]/g, "");
+      var n = normalizar(claves[i]);
       if (aliases.indexOf(n) !== -1) return objeto[claves[i]];
     }
     return "";
@@ -168,7 +166,7 @@ Funciones:
 
     filas.forEach(function (fila, indice) {
       if (!fila || typeof fila !== "object") return;
-      var nombre = texto(buscarCampo(fila, ["materia", "asignatura", "nombre", "nombre oficial", "nombre de asignatura", "unidad curricular"]));
+      var nombre = limpiarLinea(buscarCampo(fila, ["materia", "asignatura", "nombre", "nombre oficial", "nombre de asignatura", "unidad curricular"]));
       var tipo = texto(buscarCampo(fila, ["tipo", "tipo de registro", "categoria"]));
       var requisito = texto(buscarCampo(fila, ["requisito", "requisitos", "requisito complementario"]));
 
@@ -179,9 +177,9 @@ Funciones:
       }
       if (!nombre) return;
 
-      var nivelValor = buscarCampo(fila, ["nivel", "nivel numero", "numero de nivel", "semestre", "nivel académico", "nivel academico"]);
+      var nivelValor = buscarCampo(fila, ["nivel", "nivel numero", "numero de nivel", "semestre", "nivel academico"]);
       var nivel = Number(nivelValor) || nivelDesdeTexto(nivelValor);
-      var orden = Number(buscarCampo(fila, ["orden", "nro", "numero", "número"])) || 0;
+      var orden = Number(buscarCampo(fila, ["orden", "nro", "numero"])) || 0;
       if (!orden) {
         ordenes[nivel] = (ordenes[nivel] || 0) + 1;
         orden = ordenes[nivel];
@@ -191,7 +189,6 @@ Funciones:
         nivelNumero: nivel,
         nivelNombre: nombreNivel(nivel),
         orden: orden,
-        codigo: texto(buscarCampo(fila, ["codigo", "código", "codigo asignatura", "código asignatura"])),
         nombreOficial: nombre,
         nombreNormalizado: normalizar(nombre),
         tipo: texto(tipo) || "asignatura",
@@ -236,6 +233,8 @@ Funciones:
   return {
     VERSION: VERSION,
     normalizar: normalizar,
+    normalizarMateria: normalizar,
+    limpiarLinea: limpiarLinea,
     nivelDesdeTexto: nivelDesdeTexto,
     parsearTexto: parsearTexto,
     parsearFilasExcel: parsearFilasExcel,
