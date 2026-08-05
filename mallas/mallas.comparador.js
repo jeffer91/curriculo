@@ -4,6 +4,7 @@ Ruta o ubicación: /Curriculo/mallas/mallas.comparador.js
 Funciones:
 - Comparar materias detectadas en un ZIP contra una malla oficial.
 - Usar equivalencias, nombre normalizado y nivel, sin depender de códigos.
+- Normalizar tildes, signos y números romanos de la misma forma que Mallas.
 - Proponer coincidencias por similitud sin confirmarlas automáticamente.
 - Garantizar relaciones uno a uno entre materia detectada y oficial.
 ========================================================= */
@@ -15,7 +16,8 @@ Funciones:
 })(typeof window !== "undefined" ? window : globalThis, function () {
   "use strict";
 
-  var VERSION = "1.0.1";
+  var VERSION = "1.0.2";
+  var ROMANOS = Object.freeze({ x: "10", ix: "9", viii: "8", vii: "7", vi: "6", v: "5", iv: "4", iii: "3", ii: "2", i: "1" });
 
   function texto(valor) {
     return String(valor === null || typeof valor === "undefined" ? "" : valor).trim();
@@ -25,11 +27,15 @@ Funciones:
     return texto(valor)
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[_\-–—./]+/g, " ")
-      .replace(/[^a-zA-Z0-9\s]/g, " ")
+      .toLowerCase()
+      .replace(/&/g, " y ")
+      .replace(/[_\-–—./,;:()[\]{}]+/g, " ")
+      .replace(/[^a-z0-9\s]/g, " ")
+      .replace(/\b(x|ix|viii|vii|vi|v|iv|iii|ii|i)\b/g, function (romano) {
+        return ROMANOS[romano] || romano;
+      })
       .replace(/\s+/g, " ")
-      .trim()
-      .toLowerCase();
+      .trim();
   }
 
   function nivel(item) {
