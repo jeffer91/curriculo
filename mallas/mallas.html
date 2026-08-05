@@ -3,9 +3,9 @@ Nombre completo: mallas.html
 Ruta o ubicación: /Curriculo/mallas/mallas.html
 Funciones:
 - Seleccionar una carrera y cargar sus materias desde Firebase.
-- Editar la malla agrupada por niveles.
-- Agregar materias nuevas y guardar la malla vigente.
-- Mantener importación e historial como opciones secundarias.
+- Corregir el nombre oficial de la carrera y de sus materias.
+- Agregar, ordenar y retirar materias de la malla.
+- Guardar automáticamente una nueva versión cuando existen cambios.
 ========================================================= -->
 <!DOCTYPE html>
 <html lang="es">
@@ -14,14 +14,14 @@ Funciones:
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mallas | Curriculo</title>
   <link rel="stylesheet" href="../menu-superior/menu-superior.css?v=20260804-1" />
-  <link rel="stylesheet" href="./mallas.css?v=20260804-2" />
+  <link rel="stylesheet" href="./mallas.css?v=20260805-3" />
 </head>
 <body>
   <main class="ml-page">
     <header class="ml-header">
       <div>
         <h1>Malla curricular</h1>
-        <p>Selecciona una carrera, revisa sus materias y guarda.</p>
+        <p>Selecciona una carrera, corrige los nombres y guarda.</p>
       </div>
       <div class="ml-actions">
         <button id="btnHistorial" class="ml-btn ml-btn-light" type="button">Historial</button>
@@ -37,10 +37,14 @@ Funciones:
 
     <section class="ml-panel ml-select-panel">
       <div class="ml-field">
-        <label for="inputCarrera">Carrera</label>
+        <label for="inputCarrera">Carrera en Firebase</label>
         <select id="inputCarrera">
           <option value="">Selecciona una carrera</option>
         </select>
+      </div>
+      <div class="ml-field">
+        <label for="inputNombreCarrera">Nombre oficial</label>
+        <input id="inputNombreCarrera" type="text" placeholder="Nombre correcto de la carrera" autocomplete="off" disabled />
       </div>
       <div id="mlResumenCarrera" class="ml-summary" hidden>
         <strong id="resumenTotalMaterias">0 materias</strong>
@@ -77,10 +81,6 @@ Funciones:
           <label for="inputNuevaNivel">Nivel</label>
           <input id="inputNuevaNivel" type="number" min="1" max="20" value="1" />
         </div>
-        <div class="ml-field">
-          <label for="inputNuevaCodigo">Código</label>
-          <input id="inputNuevaCodigo" type="text" placeholder="Opcional" />
-        </div>
         <div class="ml-field ml-field-full">
           <label for="inputNuevaNombre">Nombre</label>
           <input id="inputNuevaNombre" type="text" placeholder="Nombre de la materia" autocomplete="off" />
@@ -96,48 +96,14 @@ Funciones:
   <dialog id="modalOpciones" class="ml-modal">
     <div class="ml-modal-card">
       <div class="ml-modal-head">
-        <div><h2>Más opciones</h2><p>Configuración e importación.</p></div>
+        <div><h2>Más opciones</h2></div>
         <button class="ml-icon-btn" type="button" data-cerrar-modal="modalOpciones" aria-label="Cerrar">×</button>
       </div>
 
       <section class="ml-options-section">
-        <div class="ml-options-title">
-          <h3>Configuración</h3>
-          <button id="btnNuevaVersion" class="ml-mini" type="button">Crear nueva versión</button>
-        </div>
-        <div class="ml-form-grid">
-          <div class="ml-field">
-            <label for="inputVersion">Versión</label>
-            <input id="inputVersion" type="number" min="1" step="1" value="1" />
-          </div>
-          <div class="ml-field">
-            <label for="inputEstadoMalla">Estado</label>
-            <select id="inputEstadoMalla">
-              <option value="vigente">Vigente</option>
-              <option value="borrador">Borrador</option>
-              <option value="historica">Histórica</option>
-            </select>
-          </div>
-          <div class="ml-field">
-            <label for="inputPeriodoInicio">Desde</label>
-            <input id="inputPeriodoInicio" type="month" />
-          </div>
-          <div class="ml-field">
-            <label for="inputPeriodoFin">Hasta</label>
-            <input id="inputPeriodoFin" type="month" />
-          </div>
-          <div class="ml-field ml-field-full">
-            <label for="inputObservaciones">Observaciones</label>
-            <textarea id="inputObservaciones" rows="2" placeholder="Opcional"></textarea>
-          </div>
-          <label class="ml-check ml-field-full"><input id="checkVigente" type="checkbox" checked /> Usar como malla vigente</label>
-        </div>
-      </section>
-
-      <section class="ml-options-section">
-        <h3>Requisitos adicionales</h3>
         <div class="ml-field">
-          <textarea id="inputRequisitos" rows="4" placeholder="Un requisito por línea"></textarea>
+          <label for="inputObservaciones">Observaciones</label>
+          <textarea id="inputObservaciones" rows="3" placeholder="Opcional"></textarea>
         </div>
       </section>
 
@@ -174,7 +140,7 @@ Funciones:
   <dialog id="modalHistorial" class="ml-modal">
     <div class="ml-modal-card">
       <div class="ml-modal-head">
-        <div><h2>Historial</h2><p>Versiones guardadas.</p></div>
+        <div><h2>Historial</h2><p>Las versiones se crean automáticamente al guardar cambios.</p></div>
         <button class="ml-icon-btn" type="button" data-cerrar-modal="modalHistorial" aria-label="Cerrar">×</button>
       </div>
       <div class="ml-row-actions ml-history-actions">
@@ -190,8 +156,8 @@ Funciones:
   <script src="../firebase/firebase.inteligencia-v2.js?v=20260728-2"></script>
   <script src="../firebase/firebase.inteligencia-v2-ajustes.js?v=20260728-3"></script>
   <script src="../firebase/firebase.curriculo.js?v=20260728-1"></script>
-  <script src="../firebase/firebase.mallas.js?v=20260804-1"></script>
+  <script src="../firebase/firebase.mallas.js?v=20260805-3"></script>
   <script src="./mallas.parser.js?v=20260804-1"></script>
-  <script src="./mallas.main.js?v=20260804-2"></script>
+  <script src="./mallas.main.js?v=20260805-3"></script>
 </body>
 </html>
