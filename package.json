@@ -18,6 +18,7 @@
       "Comparar mallas mediante nombres, niveles y equivalencias, sin depender de códigos.",
       "Crear versiones de mallas automáticamente al guardar cambios.",
       "Generar comunicados por materia, carrera o todas las carreras.",
+      "Nombrar cada PDF con código del comunicado, carrera y materia.",
       "Crear un ZIP general organizado en carpetas por carrera.",
       "Descargar los comunicados válidos aunque otras materias tengan errores.",
       "Mostrar progreso y un reporte de materias omitidas.",
@@ -27,7 +28,7 @@
     ]
   },
   "name": "curriculo",
-  "version": "1.5.5",
+  "version": "1.5.6",
   "description": "App de Gestión Curricular CCC con Firebase, materias transversales, detección inteligente de PEA, mallas y comunicados por carrera.",
   "main": "electron/main.js",
   "private": true,
