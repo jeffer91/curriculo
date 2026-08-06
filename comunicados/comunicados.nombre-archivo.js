@@ -4,6 +4,7 @@ Ruta o ubicación: /Curriculo/comunicados/comunicados.nombre-archivo.js
 Funciones:
 - Nombrar cada PDF con código del comunicado, carrera y materia.
 - Aplicar el mismo formato al PDF individual, ZIP de selección, ZIP de carrera y ZIP general.
+- Eliminar prefijos duplicados como Comunicado No. 01 antes del código institucional.
 - Limpiar caracteres incompatibles con Windows sin perder tildes ni nombres institucionales.
 ========================================================= */
 (function (window) {
@@ -38,12 +39,16 @@ Funciones:
   }
 
   function obtenerCodigo(documento, data) {
-    return texto(
+    var codigo = texto(
       documento.numeroComunicado ||
       data.numeroComunicado ||
       documento.codigoComunicado ||
       data.codigoComunicado
-    ).replace(/^Comunicado\s+No\.\s*/i, "");
+    )
+      .replace(/^Comunicado\s+No\.\s*/i, "")
+      .trim();
+
+    return codigo.replace(/^01(?:\s+|-)+(?=COM-)/i, "").trim();
   }
 
   function obtenerCarrera(documento, data) {
