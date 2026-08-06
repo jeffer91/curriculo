@@ -54,6 +54,7 @@ jobs:
           node --check firebase/firebase.inteligencia.js
           node --check firebase/firebase.inteligencia-v2.js
           node --check firebase/firebase.inteligencia-v2-ajustes.js
+          node --check firebase/firebase.transversales.js
           node --check firebase/firebase.curriculo.js
           node --check firebase/firebase.robustez.js
           node --check firebase/firebase.robustez-ajustes.js
@@ -76,12 +77,15 @@ jobs:
       - name: Ejecutar pruebas de mallas
         run: node scripts/mallas-curriculares.test.js
 
-      - name: Ejecutar prueba de materias transversales
-        run: node scripts/subir-transversales.test.js
+      - name: Ejecutar pruebas de materias transversales
+        run: |
+          node scripts/subir-transversales.test.js
+          node scripts/firebase-transversales.test.js
 
       - name: Ejecutar pruebas de robustez
         run: |
           node scripts/firebase-inteligencia.test.js
+          node scripts/firebase-transversales.test.js
           node scripts/firebase-robustez.test.js
           node scripts/firebase-ajustes.test.js
           node scripts/firebase-importacion-parcial.test.js
