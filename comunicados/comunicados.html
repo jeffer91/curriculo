@@ -4,6 +4,7 @@ Ruta o ubicación: /Curriculo/comunicados/comunicados.html
 Funciones:
 - Generar comunicados institucionales desde Firebase.
 - Generar comunicados por materia, carrera o todas las carreras.
+- Mostrar el progreso del lote general y las materias omitidas.
 - Reservar la numeración antes de crear los PDF.
 ========================================================= -->
 <!DOCTYPE html>
@@ -16,6 +17,11 @@ Funciones:
   <link rel="stylesheet" href="./comunicados.css?v=20260713-7" />
   <style>
     .com-logo-ready{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #d8e2ef;border-radius:12px;background:#f8fafc}.com-logo-ready strong{display:block}.com-logo-mark{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:#e7f6ec;color:#087f5b;font-weight:900}
+    .com-batch-progress,.com-batch-report{margin:0 0 18px;padding:16px 18px;border:1px solid #d7e2ef;border-radius:17px;background:#fff;box-shadow:0 10px 28px rgba(31,50,78,.06)}
+    .com-progress-head,.com-report-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:10px}.com-progress-head strong,.com-report-head h3{margin:0;font-size:16px}.com-progress-head span,.com-report-head span{font-weight:900;color:#245a98}
+    .com-progress-track{height:13px;overflow:hidden;border-radius:999px;background:#e8eef6}.com-progress-fill{height:100%;width:0;border-radius:inherit;background:#1f5b9f;transition:width .22s ease}.com-progress-fill.com-progress-working{background-image:linear-gradient(45deg,rgba(255,255,255,.22) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.22) 50%,rgba(255,255,255,.22) 75%,transparent 75%,transparent);background-size:24px 24px;animation:comProgressMove 1s linear infinite}
+    .com-progress-detail{display:block;margin-top:9px;color:#64748b;line-height:1.4}.com-report-head{margin-bottom:8px}.com-report-list{margin:0;padding-left:22px;max-height:260px;overflow:auto}.com-report-list li{padding:7px 4px;color:#7a271a}.com-report-list strong{display:block;color:#842029}.com-report-list span{display:block;margin-top:2px;color:#7a271a;line-height:1.4}.com-batch-report{border-color:#f2c8c4;background:#fff8f7}
+    @keyframes comProgressMove{from{background-position:0 0}to{background-position:24px 0}}
   </style>
 </head>
 <body>
@@ -30,6 +36,25 @@ Funciones:
 
     <section id="comEstado" class="com-status com-status-neutral">
       <div class="com-status-dot"></div><div><strong>Inicializando</strong><span>Conectando...</span></div>
+    </section>
+
+    <section id="comProgresoTodas" class="com-batch-progress" hidden aria-live="polite">
+      <div class="com-progress-head">
+        <strong id="comProgresoTitulo">Preparando comunicados</strong>
+        <span id="comProgresoPorcentaje">0%</span>
+      </div>
+      <div class="com-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="comProgresoTrack">
+        <div id="comProgresoBarra" class="com-progress-fill"></div>
+      </div>
+      <small id="comProgresoDetalle" class="com-progress-detail">Esperando inicio.</small>
+    </section>
+
+    <section id="comReporteTodas" class="com-batch-report" hidden aria-live="polite">
+      <div class="com-report-head">
+        <h3>Materias que requieren revisión</h3>
+        <span id="comReporteTotal">0</span>
+      </div>
+      <ol id="comReporteLista" class="com-report-list"></ol>
     </section>
 
     <section class="com-panel">
@@ -97,6 +122,6 @@ Funciones:
   <script src="./comunicados.main.js?v=20260728-1"></script>
   <script src="./comunicados.reservas-ui.js?v=20260728-2"></script>
   <script src="./comunicados.firebase-ui.js?v=20260728-1"></script>
-  <script src="./comunicados.todas-carreras.js?v=20260805-1"></script>
+  <script src="./comunicados.todas-carreras.js?v=20260806-1"></script>
 </body>
 </html>
