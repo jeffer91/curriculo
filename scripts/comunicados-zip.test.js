@@ -106,7 +106,7 @@ async function ejecutar() {
   assert.strictEqual(
     PDF.nombreArchivoComunicado({
       data: {
-        numeroComunicado: "Comunicado No. COM-ITSQMET-UGPA-2026-07-17",
+        numeroComunicado: "Comunicado No. 01 COM-ITSQMET-UGPA-2026-07-17",
         carreraNombre: "Educación Básica",
         nombreMateria: "Didáctica en Acción"
       },
