@@ -65,6 +65,9 @@ async function ejecutar() {
   vm.runInContext(leer("comunicados/comunicados.portada-final.js"), context, {
     filename: "comunicados.portada-final.js"
   });
+  vm.runInContext(leer("comunicados/comunicados.nombre-archivo.js"), context, {
+    filename: "comunicados.nombre-archivo.js"
+  });
 
   const PDF = context.window.ComunicadosCCC.PDF;
   const documentos = [
@@ -94,17 +97,28 @@ async function ejecutar() {
 
   assert.strictEqual(
     PDF.nombreArchivoComunicado(documentos[0]),
-    "Comunicado No. 01 COM-ITSQMET-UGPA-2026-07-15 Contabilidad General.pdf"
+    "COM-ITSQMET-UGPA-2026-07-15 - Contabilidad - Contabilidad General.pdf"
   );
   assert.strictEqual(
     PDF.nombreArchivoComunicado(documentos[1]),
-    "Comunicado No. 01 COM-ITSQMET-UGPA-2026-07-16 Legislación Tributaria.pdf"
+    "COM-ITSQMET-UGPA-2026-07-16 - Contabilidad - Legislación Tributaria.pdf"
+  );
+  assert.strictEqual(
+    PDF.nombreArchivoComunicado({
+      data: {
+        numeroComunicado: "Comunicado No. COM-ITSQMET-UGPA-2026-07-17",
+        carreraNombre: "Educación Básica",
+        nombreMateria: "Didáctica en Acción"
+      },
+      html: "<article>Contenido</article>"
+    }),
+    "COM-ITSQMET-UGPA-2026-07-17 - Educación Básica - Didáctica en Acción.pdf"
   );
 
   await PDF.generarPDFDocumento(documentos[0], { mostrarArchivo: false });
   assert.strictEqual(
     payloadPDF.nombreArchivo,
-    "Comunicado No. 01 COM-ITSQMET-UGPA-2026-07-15 Contabilidad General.pdf"
+    "COM-ITSQMET-UGPA-2026-07-15 - Contabilidad - Contabilidad General.pdf"
   );
 
   const resultado = await PDF.generarZIPDocumentos(documentos, {
@@ -117,11 +131,11 @@ async function ejecutar() {
   assert.strictEqual(payloadZIP.documentos.length, 2);
   assert.strictEqual(
     payloadZIP.documentos[0].nombreArchivo,
-    "Comunicado No. 01 COM-ITSQMET-UGPA-2026-07-15 Contabilidad General.pdf"
+    "COM-ITSQMET-UGPA-2026-07-15 - Contabilidad - Contabilidad General.pdf"
   );
   assert.strictEqual(
     payloadZIP.documentos[1].nombreArchivo,
-    "Comunicado No. 01 COM-ITSQMET-UGPA-2026-07-16 Legislación Tributaria.pdf"
+    "COM-ITSQMET-UGPA-2026-07-16 - Contabilidad - Legislación Tributaria.pdf"
   );
   assert.match(payloadZIP.documentos[0].html, /materia_1/);
   assert.doesNotMatch(payloadZIP.documentos[0].html, /materia_2/);
@@ -145,7 +159,7 @@ async function ejecutar() {
     /Fallo controlado del ZIP/
   );
 
-  console.log("Comunicados: pruebas de PDF independientes y ZIP superadas.");
+  console.log("Comunicados: nombres código-carrera-materia y ZIP superados.");
 }
 
 ejecutar().catch(function (error) {
