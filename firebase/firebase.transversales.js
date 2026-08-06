@@ -5,6 +5,7 @@ Funciones:
 - Conservar en Firestore la clasificación de materias transversales institucionales.
 - Mantenerlas fuera de la malla curricular después de importar el ZIP.
 - Recalcular las huellas del contenido cuando se agregan los metadatos transversales.
+- Conservar la clasificación dentro del historial de versiones.
 ========================================================= */
 (function (window) {
   "use strict";
@@ -39,6 +40,18 @@ Funciones:
       /^\s*n(?:\s*[-–—._:]\s*|\s+)(?=\S)/i.test(texto(materia.nombreOriginal || materia.nombreOriginalDetectado));
   }
 
+  function metadatosTransversales() {
+    return {
+      tipoMateria: "transversal",
+      esTransversal: true,
+      perteneceMalla: false,
+      origenMateria: "institucional",
+      nivelAcademico: null,
+      nivelNumero: 0,
+      nivelNombre: "Transversal"
+    };
+  }
+
   function clave(carreraNombre, materiaNombre) {
     return normalizar(carreraNombre) + "|" + normalizar(materiaNombre);
   }
@@ -46,18 +59,11 @@ Funciones:
   function aplicarMetadatos(item, original) {
     if (!item || !item.materia || !esTransversal(original)) return item;
 
-    var metadatos = {
-      tipoMateria: "transversal",
-      esTransversal: true,
-      perteneceMalla: false,
-      origenMateria: "institucional",
-      nivelAcademico: null,
-      nivelNumero: 0,
-      nivelNombre: "Transversal",
+    var metadatos = Object.assign({}, metadatosTransversales(), {
       nombreOriginalImportado: texto(
         original.nombreOriginalDetectado || original.nombreOriginal || original.nombre || item.materia.nombre
       )
-    };
+    });
 
     item.materia = Object.assign({}, item.materia, metadatos);
 
@@ -92,15 +98,11 @@ Funciones:
     }
 
     item.snapshot = Object.assign({}, item.snapshot || {}, {
-      materia: Object.assign({}, item.snapshot && item.snapshot.materia || {}, {
-        tipoMateria: "transversal",
-        esTransversal: true,
-        perteneceMalla: false,
-        origenMateria: "institucional",
-        nivelAcademico: null,
-        nivelNumero: 0,
-        nivelNombre: "Transversal"
-      })
+      materia: Object.assign(
+        {},
+        item.snapshot && item.snapshot.materia || {},
+        metadatosTransversales()
+      )
     });
 
     item.materia.hashContenido = I.hashContenido(item.snapshot);
@@ -112,6 +114,17 @@ Funciones:
     });
 
     return item;
+  }
+
+  if (typeof I.crearSnapshot === "function") {
+    var crearSnapshotOriginal = I.crearSnapshot.bind(I);
+    I.crearSnapshot = function (materia, peaBase, unidades, peaActividades) {
+      var snapshot = crearSnapshotOriginal(materia, peaBase, unidades, peaActividades);
+      if (!esTransversal(materia)) return snapshot;
+      return Object.assign({}, snapshot, {
+        materia: Object.assign({}, snapshot && snapshot.materia || {}, metadatosTransversales())
+      });
+    };
   }
 
   var prepararOriginal = I.prepararPaquete.bind(I);
