@@ -14,14 +14,16 @@
       "Crear versiones de mallas automáticamente al guardar cambios.",
       "Generar comunicados por materia, carrera o todas las carreras.",
       "Crear un ZIP general organizado en carpetas por carrera.",
+      "Descargar los comunicados válidos aunque otras materias tengan errores.",
+      "Mostrar progreso y un reporte de materias omitidas.",
       "Evitar bloqueos indefinidos cuando Firebase o la red no responden.",
       "Mantener una interfaz simple y directa.",
       "Ejecutar pruebas de Firebase, mallas, conciliación, estabilidad, interfaz, concurrencia, importación parcial, estados y comunicados."
     ]
   },
   "name": "curriculo",
-  "version": "1.5.0",
-  "description": "App de Gestión Curricular CCC con Firebase, mallas y comunicados organizados por carrera.",
+  "version": "1.5.1",
+  "description": "App de Gestión Curricular CCC con Firebase, mallas y comunicados parciales organizados por carrera.",
   "main": "electron/main.js",
   "private": true,
   "author": "ITSQMET",
