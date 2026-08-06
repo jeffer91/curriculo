@@ -11,6 +11,7 @@ on:
       - "comunicados/**"
       - "scripts/firebase-*.test.js"
       - "scripts/mallas-*.test.js"
+      - "scripts/subir-*.test.js"
       - "scripts/comunicados-contador-firebase.test.js"
       - "package.json"
       - ".github/workflows/firebase-check.yml"
@@ -24,6 +25,7 @@ on:
       - "comunicados/**"
       - "scripts/firebase-*.test.js"
       - "scripts/mallas-*.test.js"
+      - "scripts/subir-*.test.js"
       - "scripts/comunicados-contador-firebase.test.js"
       - "package.json"
       - ".github/workflows/firebase-check.yml"
@@ -60,7 +62,9 @@ jobs:
           node --check firebase/firebase.mallas-integracion.js
           node --check mallas/mallas.parser.js
           node --check mallas/mallas.comparador.js
+          node --check mallas/mallas.transversales.js
           node --check mallas/mallas.main.js
+          node --check subir/subir.transversales.js
           node --check subir/subir.conexion-bdlocal.js
           node --check subir/subir.filtro-importacion.js
           node --check subir/subir.importacion-parcial-ui.js
@@ -71,6 +75,9 @@ jobs:
 
       - name: Ejecutar pruebas de mallas
         run: node scripts/mallas-curriculares.test.js
+
+      - name: Ejecutar prueba de materias transversales
+        run: node scripts/subir-transversales.test.js
 
       - name: Ejecutar pruebas de robustez
         run: |
