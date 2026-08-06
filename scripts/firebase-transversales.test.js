@@ -82,5 +82,8 @@ assert.ok(item.materia.hashSecciones.materia);
 assert.strictEqual(item.snapshot.materia.esTransversal, true);
 assert.strictEqual(item.snapshot.materia.perteneceMalla, false);
 assert.strictEqual(resultado.carreras[0].totalMateriasTransversales, 1);
+assert.strictEqual(resultado.carreras[0].totalNiveles, 0);
+assert.deepStrictEqual(Array.from(resultado.carreras[0].niveles), []);
+assert.strictEqual(resultado.carreras[0].totalMaterias, 1);
 
 console.log("OK: Firebase importa materias transversales sin nivel académico");
