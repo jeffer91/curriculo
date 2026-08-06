@@ -5,7 +5,7 @@ Funciones:
 - Conservar en Firestore la clasificación de materias transversales institucionales.
 - Permitir su preparación aunque no tengan un nivel académico numérico.
 - Mantenerlas fuera de la malla curricular después de importar el ZIP.
-- Recalcular identificadores y huellas sin conservar niveles técnicos temporales.
+- Recalcular identificadores, niveles y huellas sin conservar valores técnicos temporales.
 ========================================================= */
 (function (window) {
   "use strict";
@@ -24,6 +24,11 @@ Funciones:
     if (Array.isArray(valor)) return valor;
     if (valor === null || typeof valor === "undefined") return [];
     return [valor];
+  }
+
+  function numero(valor, defecto) {
+    var n = Number(valor);
+    return Number.isFinite(n) ? n : Number(defecto || 0);
   }
 
   function normalizar(valor) {
@@ -176,6 +181,31 @@ Funciones:
     return item;
   }
 
+  function actualizarResumenCarrera(carrera, materiasPreparadas) {
+    var materiasCarrera = arr(materiasPreparadas).filter(function (item) {
+      return item && item.materia && item.materia.carreraId === carrera.id;
+    });
+    var niveles = {};
+    var transversales = 0;
+
+    materiasCarrera.forEach(function (item) {
+      if (item.materia.esTransversal === true || item.materia.perteneceMalla === false) {
+        transversales += 1;
+        return;
+      }
+      var nivel = numero(item.materia.nivelNumero, 0);
+      if (nivel > 0 && nivel !== NIVEL_TECNICO_TEMPORAL) niveles[nivel] = true;
+    });
+
+    var nivelesAcademicos = Object.keys(niveles).map(Number).sort(function (a, b) { return a - b; });
+    return Object.assign({}, carrera, {
+      niveles: nivelesAcademicos,
+      totalNiveles: nivelesAcademicos.length,
+      totalMaterias: materiasCarrera.length,
+      totalMateriasTransversales: transversales
+    });
+  }
+
   var prepararOriginal = I.prepararPaquete.bind(I);
 
   I.prepararPaquete = function (paquete, cargaId) {
@@ -213,12 +243,7 @@ Funciones:
     });
 
     preparado.carreras = arr(preparado.carreras).map(function (carrera) {
-      var transversales = preparado.materias.filter(function (item) {
-        return item.materia.carreraId === carrera.id && item.materia.esTransversal === true;
-      }).length;
-      return Object.assign({}, carrera, {
-        totalMateriasTransversales: transversales
-      });
+      return actualizarResumenCarrera(carrera, preparado.materias);
     });
 
     return preparado;
