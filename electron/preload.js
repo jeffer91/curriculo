@@ -9,7 +9,8 @@ Funciones:
 - Permitir guardar PDF directamente en Descargas desde Comunicados.
 - Permitir guardar lotes de comunicados como PDF independientes dentro de un ZIP.
 - Permitir crear un ZIP general organizado en carpetas por carrera.
-- Permitir mostrar el archivo generado en el Explorador.
+- Continuar el lote organizado cuando un PDF individual presenta errores.
+- Reportar el progreso y las materias omitidas al módulo Comunicados.
 ========================================================= */
 
 "use strict";
@@ -19,7 +20,7 @@ const path = require("path");
 const JSZip = require("jszip");
 const { contextBridge, ipcRenderer } = require("electron");
 
-const BRIDGE_VERSION = "2.2.0";
+const BRIDGE_VERSION = "2.3.0";
 
 const RUTAS_PERMITIDAS = Object.freeze({
   inicio: true,
@@ -101,7 +102,8 @@ function normalizarPayloadComunicadosZIP(payload) {
         html: textoSeguro(documento.html),
         titulo: textoSeguro(documento.titulo || "Comunicado institucional"),
         nombreArchivo: textoSeguro(documento.nombreArchivo || "Comunicado.pdf"),
-        carpeta: textoSeguro(documento.carpeta || "Sin carrera")
+        carpeta: textoSeguro(documento.carpeta || "Sin carrera"),
+        referencia: textoSeguro(documento.referencia || "")
       };
     })
   };
@@ -129,6 +131,15 @@ async function invocar(canal, payload) {
   }
 }
 
+function reportarProgreso(callback, datos) {
+  if (typeof callback !== "function") return;
+  try {
+    callback(Object.assign({}, datos || {}));
+  } catch (error) {
+    console.warn("[Curriculo ZIP] No se pudo reportar el progreso:", error);
+  }
+}
+
 async function eliminarTemporal(rutaArchivo) {
   if (!rutaArchivo) return;
   try {
@@ -140,7 +151,25 @@ async function eliminarTemporal(rutaArchivo) {
   }
 }
 
-async function guardarComunicadosZIPOrganizado(payload) {
+function crearReporteOmitidos(omitidos) {
+  omitidos = Array.isArray(omitidos) ? omitidos : [];
+  if (!omitidos.length) return "";
+
+  return [
+    "REPORTE DE COMUNICADOS OMITIDOS",
+    "Generado: " + new Date().toLocaleString("es-EC"),
+    "Total: " + omitidos.length,
+    "",
+    ...omitidos.map(function (item, indice) {
+      return [
+        String(indice + 1) + ". " + textoSeguro(item.carpeta || "Sin carrera") + " - " + textoSeguro(item.nombreArchivo || "Comunicado"),
+        "   Motivo: " + textoSeguro(item.mensaje || "Error no identificado")
+      ].join("\n");
+    })
+  ].join("\n");
+}
+
+async function guardarComunicadosZIPOrganizado(payload, onProgress) {
   const datos = normalizarPayloadComunicadosZIP(payload);
   const documentos = datos.documentos;
   const temporales = [];
@@ -158,49 +187,112 @@ async function guardarComunicadosZIPOrganizado(payload) {
     const zip = new JSZip();
     const nombresUsados = Object.create(null);
     const archivos = [];
+    const omitidos = [];
+
+    reportarProgreso(onProgress, {
+      fase: "inicio",
+      actual: 0,
+      total: documentos.length,
+      porcentaje: 0,
+      titulo: "Generando PDF",
+      mensaje: "Preparando " + documentos.length + " comunicados."
+    });
 
     for (let i = 0; i < documentos.length; i += 1) {
       const documento = documentos[i];
-      const resultadoPDF = await invocar(
-        "curriculo:guardar-pdf-descargas",
-        normalizarPayloadPDF(documento)
+      const carpetaSolicitada = limpiarNombreArchivo(documento.carpeta, "Sin carrera");
+      const nombreSolicitado = asegurarExtension(
+        documento.nombreArchivo || "Comunicado " + (i + 1) + ".pdf",
+        ".pdf"
       );
 
-      if (!resultadoPDF || resultadoPDF.ok !== true || !resultadoPDF.ruta) {
-        throw new Error(
-          resultadoPDF && resultadoPDF.mensaje
-            ? resultadoPDF.mensaje
-            : "No se pudo generar uno de los comunicados."
+      reportarProgreso(onProgress, {
+        fase: "pdf",
+        actual: i,
+        total: documentos.length,
+        porcentaje: Math.round((i / documentos.length) * 92),
+        titulo: "Generando PDF",
+        mensaje: "Archivo " + (i + 1) + " de " + documentos.length + ": " + nombreSolicitado
+      });
+
+      try {
+        const resultadoPDF = await invocar(
+          "curriculo:guardar-pdf-descargas",
+          normalizarPayloadPDF(documento)
         );
+
+        if (!resultadoPDF || resultadoPDF.ok !== true || !resultadoPDF.ruta) {
+          throw new Error(
+            resultadoPDF && resultadoPDF.mensaje
+              ? resultadoPDF.mensaje
+              : "No se pudo generar el comunicado."
+          );
+        }
+
+        temporales.push(resultadoPDF.ruta);
+        const buffer = await fs.promises.readFile(resultadoPDF.ruta);
+        if (buffer.length < 100 || buffer.subarray(0, 5).toString("ascii") !== "%PDF-") {
+          throw new Error("El PDF generado no es válido.");
+        }
+
+        const claveBase = carpetaSolicitada + "|" + nombreSolicitado.toLowerCase();
+        let nombrePDF = nombreSolicitado;
+        const repeticion = nombresUsados[claveBase] || 0;
+
+        if (repeticion > 0) {
+          const ext = path.extname(nombreSolicitado);
+          const base = path.basename(nombreSolicitado, ext);
+          nombrePDF = base + "_" + (repeticion + 1) + ext;
+        }
+        nombresUsados[claveBase] = repeticion + 1;
+
+        zip.folder(carpetaSolicitada).file(nombrePDF, buffer, { binary: true });
+        archivos.push({
+          carpeta: carpetaSolicitada,
+          nombreArchivo: nombrePDF,
+          rutaZIP: carpetaSolicitada + "/" + nombrePDF,
+          referencia: documento.referencia,
+          bytes: buffer.length
+        });
+      } catch (error) {
+        omitidos.push({
+          carpeta: carpetaSolicitada,
+          nombreArchivo: nombreSolicitado,
+          referencia: documento.referencia,
+          mensaje: error && error.message ? error.message : "No se pudo crear el PDF."
+        });
       }
 
-      temporales.push(resultadoPDF.ruta);
-      const buffer = await fs.promises.readFile(resultadoPDF.ruta);
-      if (buffer.length < 100 || buffer.subarray(0, 5).toString("ascii") !== "%PDF-") {
-        throw new Error("Uno de los PDF generados no es válido.");
-      }
-
-      const carpeta = limpiarNombreArchivo(documento.carpeta, "Sin carrera");
-      const nombreBase = asegurarExtension(documento.nombreArchivo, ".pdf");
-      const claveBase = carpeta + "|" + nombreBase.toLowerCase();
-      let nombrePDF = nombreBase;
-      let repeticion = nombresUsados[claveBase] || 0;
-
-      if (repeticion > 0) {
-        const ext = path.extname(nombreBase);
-        const base = path.basename(nombreBase, ext);
-        nombrePDF = base + "_" + (repeticion + 1) + ext;
-      }
-      nombresUsados[claveBase] = repeticion + 1;
-
-      zip.folder(carpeta).file(nombrePDF, buffer, { binary: true });
-      archivos.push({
-        carpeta: carpeta,
-        nombreArchivo: nombrePDF,
-        rutaZIP: carpeta + "/" + nombrePDF,
-        bytes: buffer.length
+      reportarProgreso(onProgress, {
+        fase: "pdf",
+        actual: i + 1,
+        total: documentos.length,
+        porcentaje: Math.round(((i + 1) / documentos.length) * 92),
+        titulo: "Generando PDF",
+        mensaje: archivos.length + " creados y " + omitidos.length + " omitidos."
       });
     }
+
+    if (!archivos.length) {
+      const primerError = omitidos[0] && omitidos[0].mensaje
+        ? omitidos[0].mensaje
+        : "Ningún PDF pudo generarse.";
+      throw new Error("No se pudo crear ningún comunicado. " + primerError);
+    }
+
+    const reporte = crearReporteOmitidos(omitidos);
+    if (reporte) {
+      zip.file("REPORTE DE OMITIDOS.txt", reporte);
+    }
+
+    reportarProgreso(onProgress, {
+      fase: "zip",
+      actual: archivos.length,
+      total: documentos.length,
+      porcentaje: 95,
+      titulo: "Comprimiendo ZIP",
+      mensaje: "Organizando " + archivos.length + " PDF por carrera."
+    });
 
     const bufferZIP = await zip.generateAsync({
       type: "nodebuffer",
@@ -222,6 +314,15 @@ async function guardarComunicadosZIPOrganizado(payload) {
       throw new Error("El ZIP fue creado, pero quedó vacío.");
     }
 
+    reportarProgreso(onProgress, {
+      fase: "fin",
+      actual: archivos.length,
+      total: documentos.length,
+      porcentaje: 100,
+      titulo: "ZIP listo",
+      mensaje: archivos.length + " PDF guardados y " + omitidos.length + " omitidos."
+    });
+
     return {
       ok: true,
       modo: "electron",
@@ -231,11 +332,20 @@ async function guardarComunicadosZIPOrganizado(payload) {
       bytes: estadistica.size,
       cantidad: archivos.length,
       archivos: archivos,
+      omitidos: omitidos,
       bridgeVersion: BRIDGE_VERSION,
-      mensaje: "ZIP organizado por carreras generado correctamente."
+      mensaje: omitidos.length
+        ? "ZIP generado con los comunicados válidos y un reporte de omitidos."
+        : "ZIP organizado por carreras generado correctamente."
     };
   } catch (error) {
     console.error("[Curriculo ZIP] Error generando ZIP organizado:", error);
+    reportarProgreso(onProgress, {
+      fase: "error",
+      porcentaje: 100,
+      titulo: "No se pudo completar",
+      mensaje: error && error.message ? error.message : "No se pudo generar el ZIP organizado."
+    });
     return {
       ok: false,
       codigo: error && error.code ? error.code : "ERROR_ZIP_ORGANIZADO",
@@ -290,8 +400,11 @@ contextBridge.exposeInMainWorld("CurriculoElectron", {
     );
   },
 
-  guardarComunicadosZIPOrganizado: async function (payload) {
-    return await guardarComunicadosZIPOrganizado(payload);
+  guardarComunicadosZIPOrganizado: async function (payload, onProgress) {
+    return await guardarComunicadosZIPOrganizado(
+      payload,
+      typeof onProgress === "function" ? onProgress : null
+    );
   },
 
   guardarArchivoEnDescargas: async function (payload) {
