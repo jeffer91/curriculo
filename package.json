@@ -30,13 +30,14 @@
       "Analizar inputs institucionales sin permitir que la IA modifique el contenido de las materias.",
       "Actualizar tendencias bajo demanda y conservar sus fuentes.",
       "Generar una vista previa editable de la ficha y exportarla a Word y PDF.",
+      "Configurar el repositorio local para que git pull use rebase y no abra un editor de merge.",
       "Evitar bloqueos indefinidos cuando Firebase o la red no responden.",
       "Mantener una interfaz simple y directa.",
       "Ejecutar pruebas de Firebase, mallas, materias transversales, detección por contenido, Excel inteligente, conciliación, estabilidad, interfaz, concurrencia, importación parcial, estados, comunicados, fichas e IA."
     ]
   },
   "name": "curriculo",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "description": "App de Gestión Curricular CCC con Firebase, mallas, comunicados, fichas por nivel e inteligencia artificial configurable.",
   "main": "electron/main.js",
   "private": true,
@@ -51,6 +52,7 @@
     "url": "https://github.com/jeffer91/curriculo/issues"
   },
   "scripts": {
+    "prestart": "node scripts/configurar-git-pull.js",
     "start": "electron .",
     "dev": "electron . --devtools",
     "electron": "electron .",
