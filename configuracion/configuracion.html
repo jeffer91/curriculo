@@ -1,0 +1,51 @@
+<!-- =========================================================
+Nombre completo: configuracion.html
+Ruta o ubicación: /Curriculo/configuracion/configuracion.html
+Funciones:
+- Configurar múltiples proveedores de IA.
+- Definir principal y respaldos mediante orden.
+- Guardar las API Keys cifradas localmente.
+- Probar conexión y generación real.
+========================================================= -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Configuración | Curriculo</title>
+  <link rel="stylesheet" href="../menu-superior/menu-superior.css?v=20260804-1" />
+  <link rel="stylesheet" href="./configuracion.css?v=20260807-1" />
+</head>
+<body>
+  <main class="config-app">
+    <header class="config-head">
+      <div>
+        <h1>Configuración</h1>
+        <p>Inteligencia artificial para análisis y generación de fichas.</p>
+      </div>
+      <div class="actions">
+        <button class="btn btn-light" id="btnAgregar" type="button">Agregar IA</button>
+        <button class="btn btn-primary" id="btnGuardar" type="button">Guardar</button>
+      </div>
+    </header>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h2>Inteligencia Artificial</h2>
+        </div>
+        <span class="badge" id="estadoGeneral">Sin configurar</span>
+      </div>
+      <div class="provider-list" id="providerList"></div>
+    </section>
+
+    <div class="note">
+      Las API Keys no se guardan en Firebase ni en GitHub. Se cifran localmente en este equipo. El proveedor activo con menor orden funciona como principal; los demás se utilizan como respaldo si el anterior falla.
+    </div>
+  </main>
+
+  <script src="../menu-superior/menu-superior.js?v=20260807-1"></script>
+  <script src="./ia.motor.js?v=20260807-1"></script>
+  <script src="./configuracion.js?v=20260807-1"></script>
+</body>
+</html>
