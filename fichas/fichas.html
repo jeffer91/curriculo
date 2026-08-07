@@ -1,0 +1,160 @@
+<!-- =========================================================
+Nombre completo: fichas.html
+Ruta o ubicación: /Curriculo/fichas/fichas.html
+Funciones:
+- Crear una ficha por carrera, nivel y período.
+- Diagnosticar materias, PEA, inputs, datos generales e IA.
+- Cargar y analizar inputs institucionales.
+- Actualizar tendencias bajo demanda.
+- Generar vista previa editable y exportar Word/PDF.
+========================================================= -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fichas | Curriculo</title>
+  <link rel="stylesheet" href="../menu-superior/menu-superior.css?v=20260804-1" />
+  <link rel="stylesheet" href="./fichas.css?v=20260807-1" />
+</head>
+<body>
+  <main class="fichas-app">
+    <header class="head">
+      <div>
+        <h1>Fichas</h1>
+        <p>Una ficha por carrera, nivel y período.</p>
+      </div>
+    </header>
+
+    <section class="selector">
+      <div class="field">
+        <label>Carrera</label>
+        <select id="carreraSelect"><option value="">Seleccionar carrera</option></select>
+      </div>
+      <div class="field">
+        <label>Nivel</label>
+        <select id="nivelSelect" disabled><option value="">Seleccionar nivel</option></select>
+      </div>
+      <div class="field">
+        <label>Período</label>
+        <input id="periodoInput" placeholder="Ej. Abril - Septiembre 2026" />
+      </div>
+      <button class="btn btn-primary" id="btnRevisar" type="button">Revisar</button>
+    </section>
+
+    <section class="dashboard">
+      <aside class="side">
+        <section class="card">
+          <div class="card-head"><h2>Estado</h2><span class="state neutral" id="estadoFicha">Pendiente</span></div>
+          <div class="card-body">
+            <div class="score"><strong id="porcentaje">0%</strong><span>completo</span></div>
+            <div class="progress"><span id="barraProgreso"></span></div>
+            <div class="check-list" id="resumenChecks"></div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-head"><h3>Faltantes</h3></div>
+          <div class="card-body missing" id="faltantes"><div class="empty">Selecciona carrera y nivel.</div></div>
+        </section>
+      </aside>
+
+      <section class="main-panel">
+        <div class="tabs">
+          <button class="tab active" data-tab="materias" type="button">Materias</button>
+          <button class="tab" data-tab="inputs" type="button">Inputs</button>
+          <button class="tab" data-tab="datos" type="button">Datos</button>
+          <button class="tab" data-tab="analisis" type="button">Análisis</button>
+          <button class="tab" data-tab="vista" type="button">Vista previa</button>
+        </div>
+
+        <section class="card tab-panel active" data-panel="materias">
+          <div class="card-head"><h2>Materias del nivel</h2><span class="muted" id="materiasResumen">Sin revisar</span></div>
+          <div class="card-body subjects" id="materiasLista"><div class="empty">Selecciona una carrera y un nivel.</div></div>
+        </section>
+
+        <section class="card tab-panel" data-panel="inputs">
+          <div class="card-head"><h2>Inputs institucionales</h2><span class="muted">Carrera + nivel</span></div>
+          <div class="card-body inputs-grid" id="inputsGrid"></div>
+        </section>
+
+        <section class="card tab-panel" data-panel="datos">
+          <div class="card-head"><h2>Datos generales</h2><button class="btn btn-light" id="btnGuardarDatos" type="button">Guardar</button></div>
+          <div class="card-body form-grid">
+            <div class="field"><label>Código documental</label><input id="codigoDocumento" placeholder="UGPA-RGI2-01-PRO-60-..." /></div>
+            <div class="field"><label>Coordinador de carrera</label><input id="coordinador" /></div>
+            <div class="field span-2"><label>Docentes que intervienen</label><textarea id="docentes" placeholder="Un docente por línea"></textarea></div>
+            <div class="field"><label>Fecha de inicio</label><input id="fechaInicio" type="date" /></div>
+            <div class="field"><label>Fecha de finalización</label><input id="fechaFin" type="date" /></div>
+            <div class="field"><label>Elaborado por</label><input id="elaboradoPor" /></div>
+            <div class="field"><label>Revisado por</label><input id="revisadoPor" /></div>
+            <div class="field"><label>Aprobado por</label><input id="aprobadoPor" /></div>
+            <div class="field"><label>Cargo del elaborador</label><input id="cargoElaborador" /></div>
+          </div>
+        </section>
+
+        <section class="card tab-panel" data-panel="analisis">
+          <div class="card-head"><h2>Análisis</h2><span class="muted" id="iaEstado">IA sin revisar</span></div>
+          <div class="card-body">
+            <div class="actions-row">
+              <button class="btn btn-light" id="btnTendencias" type="button">Actualizar tendencias</button>
+              <button class="btn btn-primary" id="btnGenerar" type="button" disabled>Generar ficha</button>
+              <span class="status-line" id="analisisEstado"></span>
+            </div>
+            <div class="analysis-box" style="margin-top:14px" id="tendenciasResumen">Las tendencias se actualizan solo cuando se solicita. No bloquean el diagnóstico de materias e inputs.</div>
+          </div>
+        </section>
+
+        <section class="card tab-panel" data-panel="vista">
+          <div class="card-head">
+            <h2>Vista previa</h2>
+            <div class="actions-row">
+              <button class="btn btn-light" id="btnWord" type="button" disabled>Word</button>
+              <button class="btn btn-good" id="btnPDF" type="button" disabled>PDF</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="preview" id="preview" contenteditable="true"><div class="empty">Genera la ficha para ver y editar el contenido.</div></div>
+          </div>
+        </section>
+      </section>
+    </section>
+  </main>
+
+  <div class="modal-backdrop" id="inputModal" aria-hidden="true">
+    <section class="modal">
+      <div class="modal-head"><h3 id="modalTitulo">Input institucional</h3><button class="btn btn-light" id="btnCerrarModal" type="button">Cerrar</button></div>
+      <div class="modal-body">
+        <div class="file-box">
+          <div class="field"><label>Documento</label><input id="inputArchivo" type="file" accept=".pdf,.docx,.doc,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain" /></div>
+          <div class="file-meta" id="archivoMeta">No se ha seleccionado archivo.</div>
+        </div>
+        <div class="form-grid">
+          <div class="field"><label>Código del informe</label><input id="inputCodigo" /></div>
+          <div class="field"><label>Período del informe</label><input id="inputPeriodo" /></div>
+          <div class="field"><label>Vigencia desde</label><input id="inputVigenciaDesde" type="date" /></div>
+          <div class="field"><label>Vigencia hasta</label><input id="inputVigenciaHasta" type="date" /></div>
+        </div>
+        <label class="field"><span>Texto extraído / contenido para analizar</span><textarea id="inputTexto" style="min-height:180px" placeholder="Se completa al leer PDF, DOCX o TXT. También puedes pegar texto manualmente."></textarea></label>
+        <div class="actions-row">
+          <button class="btn btn-light" id="btnAnalizarInput" type="button">Analizar con IA</button>
+          <label class="switch"><input id="inputNoAplica" type="checkbox" /> No aplica</label>
+        </div>
+        <div class="field"><label>Justificación de “No aplica”</label><textarea id="inputJustificacion" placeholder="Obligatoria si se marca No aplica"></textarea></div>
+        <div class="analysis-box" id="inputAnalisis">Todavía no se ha realizado análisis.</div>
+      </div>
+      <div class="modal-foot"><button class="btn btn-primary" id="btnGuardarInput" type="button">Guardar información</button></div>
+    </section>
+  </div>
+
+  <script src="../menu-superior/menu-superior.js?v=20260807-1"></script>
+  <script src="../libs/jszip.min.js?v=20260713-7"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="../firebase/firebase.inteligencia.js?v=20260728-1"></script>
+  <script src="../firebase/firebase.curriculo.js?v=20260728-1"></script>
+  <script src="../firebase/firebase.mallas.js?v=20260804-1"></script>
+  <script src="../firebase/firebase.fichas.js?v=20260807-1"></script>
+  <script src="../configuracion/ia.motor.js?v=20260807-1"></script>
+  <script src="./fichas.js?v=20260807-1"></script>
+</body>
+</html>
