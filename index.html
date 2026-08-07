@@ -3,7 +3,7 @@ Nombre completo: index.html
 Ruta o ubicación: /Curriculo/index.html
 Funciones:
 - Servir como menú principal de Gestión Curricular CCC.
-- Permitir ingresar a Subir, Firebase, Mallas y Comunicados.
+- Permitir ingresar a Subir, Firebase, Mallas, Comunicados, Fichas y Configuración.
 ========================================================= -->
 <!DOCTYPE html>
 <html lang="es">
@@ -11,10 +11,10 @@ Funciones:
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Curriculo | Gestión Curricular</title>
-  <link rel="stylesheet" href="./menu-superior/menu-superior.css?v=20260804-1" />
+  <link rel="stylesheet" href="./menu-superior/menu-superior.css?v=20260807-1" />
   <style>
-    :root{--bg:#f4f7fb;--surface:#fff;--border:#dbe3ef;--text:#142033;--muted:#64748b;--primary:#184f90;--green:#087f5b;--gold:#6d5017;--shadow:0 18px 45px rgba(31,50,78,.08)}
-    *{box-sizing:border-box}body{margin:0;min-height:100vh;font-family:Arial,Helvetica,sans-serif;color:var(--text);background:linear-gradient(180deg,#f8fbff 0%,var(--bg) 100%)}.app{width:min(1240px,calc(100% - 32px));margin:0 auto;padding:48px 0}.hero{margin-bottom:24px}.hero h1{margin:0;font-size:clamp(34px,5vw,54px);line-height:1.05;letter-spacing:-.04em}.hero p{margin:10px 0 0;color:var(--muted);font-size:17px}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}.module{min-height:205px;display:flex;flex-direction:column;justify-content:space-between;padding:22px;border:1px solid var(--border);border-radius:22px;background:var(--surface);box-shadow:var(--shadow);text-decoration:none;color:inherit;transition:.15s}.module:hover{transform:translateY(-3px);border-color:var(--primary);box-shadow:0 22px 54px rgba(24,79,144,.14)}.module h2{margin:0;font-size:27px;letter-spacing:-.03em}.module p{margin:9px 0 0;color:var(--muted);line-height:1.45}.module-footer{display:flex;justify-content:flex-end;align-items:center;margin-top:22px}.circle{width:43px;height:43px;display:grid;place-items:center;border-radius:50%;color:#fff;background:var(--primary);font-weight:900;font-size:20px}.circle-green{background:var(--green)}.circle-gold{background:var(--gold)}@media(max-width:1000px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:600px){.app{width:min(100% - 20px,1240px);padding-top:28px}.grid{grid-template-columns:1fr}.module{min-height:155px}}
+    :root{--bg:#f4f7fb;--surface:#fff;--border:#dbe3ef;--text:#142033;--muted:#64748b;--primary:#184f90;--green:#087f5b;--gold:#6d5017;--purple:#6741d9;--slate:#475569;--shadow:0 18px 45px rgba(31,50,78,.08)}
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;font-family:Arial,Helvetica,sans-serif;color:var(--text);background:linear-gradient(180deg,#f8fbff 0%,var(--bg) 100%)}.app{width:min(1240px,calc(100% - 32px));margin:0 auto;padding:48px 0}.hero{margin-bottom:24px}.hero h1{margin:0;font-size:clamp(34px,5vw,54px);line-height:1.05;letter-spacing:-.04em}.hero p{margin:10px 0 0;color:var(--muted);font-size:17px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.module{min-height:190px;display:flex;flex-direction:column;justify-content:space-between;padding:22px;border:1px solid var(--border);border-radius:22px;background:var(--surface);box-shadow:var(--shadow);text-decoration:none;color:inherit;transition:.15s}.module:hover{transform:translateY(-3px);border-color:var(--primary);box-shadow:0 22px 54px rgba(24,79,144,.14)}.module h2{margin:0;font-size:27px;letter-spacing:-.03em}.module p{margin:9px 0 0;color:var(--muted);line-height:1.45}.module-footer{display:flex;justify-content:flex-end;align-items:center;margin-top:22px}.circle{width:43px;height:43px;display:grid;place-items:center;border-radius:50%;color:#fff;background:var(--primary);font-weight:900;font-size:20px}.circle-green{background:var(--green)}.circle-gold{background:var(--gold)}.circle-purple{background:var(--purple)}.circle-slate{background:var(--slate)}@media(max-width:1000px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:600px){.app{width:min(100% - 20px,1240px);padding-top:28px}.grid{grid-template-columns:1fr}.module{min-height:155px}}
   </style>
 </head>
 <body>
@@ -44,10 +44,20 @@ Funciones:
         <div><h2>Comunicados</h2><p>Genera los documentos.</p></div>
         <div class="module-footer"><span class="circle circle-gold">→</span></div>
       </a>
+
+      <a class="module" href="./fichas/fichas.html">
+        <div><h2>Fichas</h2><p>Revisa faltantes y genera una ficha por nivel.</p></div>
+        <div class="module-footer"><span class="circle circle-purple">→</span></div>
+      </a>
+
+      <a class="module" href="./configuracion/configuracion.html">
+        <div><h2>Configuración</h2><p>Configura y prueba las inteligencias artificiales.</p></div>
+        <div class="module-footer"><span class="circle circle-slate">→</span></div>
+      </a>
     </section>
   </main>
 
-  <script src="./menu-superior/menu-superior.js?v=20260804-2"></script>
+  <script src="./menu-superior/menu-superior.js?v=20260807-1"></script>
   <script>
     (function () {
       document.addEventListener("click", function (event) {
