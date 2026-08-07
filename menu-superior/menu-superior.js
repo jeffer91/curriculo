@@ -3,7 +3,7 @@ Nombre completo: menu-superior.js
 Ruta o ubicación: /Curriculo/menu-superior/menu-superior.js
 Funciones:
 - Crear el menú superior reutilizable.
-- Navegar entre Inicio, Subir, Firebase, Mallas y Comunicados.
+- Navegar entre Inicio, Subir, Firebase, Mallas, Comunicados, Fichas y Configuración.
 - Mostrar la versión instalada.
 - Cargar la comparación de mallas en Subir ZIP.
 ========================================================= */
@@ -13,25 +13,29 @@ Funciones:
   var MENU_ID = "curriculoMenuSuperior";
   var ROOT_CLASS = "cms-menu-mounted";
   var REPOSITORIO_OFICIAL = "jeffer91/curriculo";
-  var VERSION_INTERFAZ = "firebase-mallas-simple-1";
+  var VERSION_INTERFAZ = "firebase-mallas-fichas-1";
   var LINKS = [
     { id: "inicio", label: "Inicio", shortLabel: "Inicio", root: "index.html", child: "../index.html", icon: "⌂", electron: true },
     { id: "subir", label: "Subir", shortLabel: "Subir", root: "subir/subir.html", child: "../subir/subir.html", icon: "ZIP", electron: true },
     { id: "bdlocal", label: "Firebase", shortLabel: "Firebase", root: "bdlocal/bdlocal.html", child: "../bdlocal/bdlocal.html", icon: "FB", electron: true },
     { id: "mallas", label: "Mallas", shortLabel: "Mallas", root: "mallas/mallas.html", child: "../mallas/mallas.html", icon: "MC", electron: false },
-    { id: "comunicados", label: "Comunicados", shortLabel: "Com.", root: "comunicados/comunicados.html", child: "../comunicados/comunicados.html", icon: "COM", electron: true }
+    { id: "comunicados", label: "Comunicados", shortLabel: "Com.", root: "comunicados/comunicados.html", child: "../comunicados/comunicados.html", icon: "COM", electron: true },
+    { id: "fichas", label: "Fichas", shortLabel: "Fichas", root: "fichas/fichas.html", child: "../fichas/fichas.html", icon: "FIC", electron: false },
+    { id: "configuracion", label: "Configuración", shortLabel: "Config.", root: "configuracion/configuracion.html", child: "../configuracion/configuracion.html", icon: "IA", electron: false }
   ];
 
   function texto(v) { return String(v === null || typeof v === "undefined" ? "" : v).trim(); }
   function escapar(v) { return texto(v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;").replace(/'/g, "&#039;"); }
   function pathActual() { return String(window.location.pathname || "").replace(/\\/g, "/").toLowerCase(); }
-  function estaEnSubcarpeta() { return /\/(subir|bdlocal|comunicados|firebase|mallas|menu-superior)\//.test(pathActual()); }
+  function estaEnSubcarpeta() { return /\/(subir|bdlocal|comunicados|firebase|mallas|fichas|configuracion|menu-superior)\//.test(pathActual()); }
   function pantallaActual() {
     var p = pathActual();
     if (p.indexOf("/subir/") !== -1) return "subir";
     if (p.indexOf("/bdlocal/") !== -1 || p.indexOf("/firebase/") !== -1) return "bdlocal";
     if (p.indexOf("/mallas/") !== -1) return "mallas";
     if (p.indexOf("/comunicados/") !== -1) return "comunicados";
+    if (p.indexOf("/fichas/") !== -1) return "fichas";
+    if (p.indexOf("/configuracion/") !== -1) return "configuracion";
     return "inicio";
   }
   function hrefDe(link) { return estaEnSubcarpeta() ? link.child : link.root; }
