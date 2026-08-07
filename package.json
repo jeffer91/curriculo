@@ -22,14 +22,22 @@
       "Crear un ZIP general organizado en carpetas por carrera.",
       "Descargar los comunicados válidos aunque otras materias tengan errores.",
       "Mostrar progreso y un reporte de materias omitidas.",
+      "Crear una ficha por carrera, nivel y período a partir de la malla y los PEA.",
+      "Diagnosticar materias, PEA, inputs institucionales, datos generales e IA antes de generar una ficha.",
+      "Guardar información estructurada de fichas e inputs sin almacenar el archivo final en Firebase.",
+      "Configurar múltiples proveedores de IA con principal y respaldos.",
+      "Cifrar las API Keys localmente y evitar guardarlas en Firebase o GitHub.",
+      "Analizar inputs institucionales sin permitir que la IA modifique el contenido de las materias.",
+      "Actualizar tendencias bajo demanda y conservar sus fuentes.",
+      "Generar una vista previa editable de la ficha y exportarla a Word y PDF.",
       "Evitar bloqueos indefinidos cuando Firebase o la red no responden.",
       "Mantener una interfaz simple y directa.",
-      "Ejecutar pruebas de Firebase, mallas, materias transversales, detección por contenido, Excel inteligente, conciliación, estabilidad, interfaz, concurrencia, importación parcial, estados y comunicados."
+      "Ejecutar pruebas de Firebase, mallas, materias transversales, detección por contenido, Excel inteligente, conciliación, estabilidad, interfaz, concurrencia, importación parcial, estados, comunicados, fichas e IA."
     ]
   },
   "name": "curriculo",
-  "version": "1.5.6",
-  "description": "App de Gestión Curricular CCC con Firebase, materias transversales, detección inteligente de PEA, mallas y comunicados por carrera.",
+  "version": "1.6.0",
+  "description": "App de Gestión Curricular CCC con Firebase, mallas, comunicados, fichas por nivel e inteligencia artificial configurable.",
   "main": "electron/main.js",
   "private": true,
   "author": "ITSQMET",
@@ -47,7 +55,7 @@
     "dev": "electron . --devtools",
     "electron": "electron .",
     "reset": "electron . --reset-local-data",
-    "test": "node scripts/mallas-curriculares.test.js && node scripts/mallas-conciliacion.test.js && node scripts/mallas-ui.test.js && node scripts/mallas-estabilidad.test.js && node scripts/firebase-inteligencia.test.js && node scripts/firebase-transversales.test.js && node scripts/firebase-robustez.test.js && node scripts/firebase-ajustes.test.js && node scripts/firebase-importacion-parcial.test.js && node scripts/comunicados-contador-firebase.test.js && node scripts/sync-rules.test.js && node scripts/subir-observaciones.test.js && node scripts/subir-transversales.test.js && node scripts/subir-detector-contenido.test.js && node scripts/subir-excel-inteligente.test.js && node scripts/subir-advertencias.test.js && node scripts/subir-estados.test.js && node scripts/subir-advertencias-ui.test.js && node scripts/subir-estados-ui.test.js && node scripts/subir-acciones.test.js && node scripts/subir-flujo-integral.test.js && node scripts/comunicados-zip.test.js && node scripts/comunicados-todas-carreras.test.js",
+    "test": "node scripts/mallas-curriculares.test.js && node scripts/mallas-conciliacion.test.js && node scripts/mallas-ui.test.js && node scripts/mallas-estabilidad.test.js && node scripts/firebase-inteligencia.test.js && node scripts/firebase-transversales.test.js && node scripts/firebase-robustez.test.js && node scripts/firebase-ajustes.test.js && node scripts/firebase-importacion-parcial.test.js && node scripts/comunicados-contador-firebase.test.js && node scripts/sync-rules.test.js && node scripts/subir-observaciones.test.js && node scripts/subir-transversales.test.js && node scripts/subir-detector-contenido.test.js && node scripts/subir-excel-inteligente.test.js && node scripts/subir-advertencias.test.js && node scripts/subir-estados.test.js && node scripts/subir-advertencias-ui.test.js && node scripts/subir-estados-ui.test.js && node scripts/subir-acciones.test.js && node scripts/subir-flujo-integral.test.js && node scripts/comunicados-zip.test.js && node scripts/comunicados-todas-carreras.test.js && node scripts/fichas-estructura.test.js",
     "test:firebase": "node scripts/firebase-inteligencia.test.js && node scripts/firebase-transversales.test.js && node scripts/firebase-robustez.test.js && node scripts/firebase-ajustes.test.js && node scripts/firebase-importacion-parcial.test.js && node scripts/comunicados-contador-firebase.test.js",
     "test:mallas": "node scripts/mallas-curriculares.test.js && node scripts/mallas-conciliacion.test.js && node scripts/mallas-ui.test.js && node scripts/mallas-estabilidad.test.js",
     "test:subir": "node scripts/subir-observaciones.test.js && node scripts/subir-transversales.test.js && node scripts/subir-detector-contenido.test.js && node scripts/subir-excel-inteligente.test.js && node scripts/subir-advertencias.test.js && node scripts/subir-estados.test.js && node scripts/subir-advertencias-ui.test.js && node scripts/subir-estados-ui.test.js && node scripts/subir-acciones.test.js && node scripts/subir-flujo-integral.test.js",
@@ -57,7 +65,8 @@
     "test:estados-ui": "node scripts/subir-estados-ui.test.js",
     "test:acciones": "node scripts/subir-acciones.test.js",
     "test:flujo": "node scripts/subir-flujo-integral.test.js",
-    "test:comunicados": "node scripts/comunicados-contador-firebase.test.js && node scripts/comunicados-zip.test.js && node scripts/comunicados-todas-carreras.test.js"
+    "test:comunicados": "node scripts/comunicados-contador-firebase.test.js && node scripts/comunicados-zip.test.js && node scripts/comunicados-todas-carreras.test.js",
+    "test:fichas": "node scripts/fichas-estructura.test.js"
   },
   "dependencies": {
     "jszip": "3.10.1",
