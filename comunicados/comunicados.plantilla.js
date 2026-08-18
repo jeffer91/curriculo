@@ -413,6 +413,7 @@ Función o funciones:
       materiaId: texto(materia.id),
       carreraId: texto(carrera.id),
       numeroComunicado: texto(reserva.numero),
+      fechaEmisionTexto: texto(reserva.fechaTexto),
       numeroFijo: "01",
       carrera: texto(carrera.nombre || "No registrada"),
       codigo: texto(materia.codigo || materia.codigoMateria || "S/C"),
