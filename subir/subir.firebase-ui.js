@@ -5,13 +5,15 @@ Funciones:
 - Mostrar el resultado combinado de Base local + Firebase.
 - Informar cuando Firebase no recibió operaciones por no existir cambios.
 - Informar cuando la base local quedó guardada pero Firebase quedó pendiente.
+- Mostrar por separado el estado de IndexedDB y Firebase al probar conexiones.
 ========================================================= */
 (function (window, document) {
   "use strict";
 
   window.SubirCCC = window.SubirCCC || {};
   var NS = window.SubirCCC;
-  var VERSION = "2.0.0";
+  var VERSION = "2.1.0";
+  var pruebaInstalada = false;
 
   function texto(valor) {
     return String(valor === null || typeof valor === "undefined" ? "" : valor);
@@ -107,6 +109,39 @@ Funciones:
     return true;
   }
 
+  async function probarBases() {
+    if (!NS.ConexionBDLocal || typeof NS.ConexionBDLocal.probarConexion !== "function") return;
+    try {
+      NS.Preview.pintarEstado("neutral", "Probando bases", "Verificando IndexedDB y Firebase.");
+      var res = await NS.ConexionBDLocal.probarConexion();
+      if (res.localOk && res.firebaseOk) {
+        NS.Preview.pintarEstado("ok", "Bases disponibles", "Base local lista y Firebase conectado.");
+      } else if (res.localOk) {
+        NS.Preview.pintarEstado(
+          "warn",
+          "Base local disponible · Firebase fuera de línea",
+          "Puedes guardar el ZIP en este equipo. Firebase se volverá a intentar en una próxima sincronización."
+        );
+      } else {
+        NS.Preview.pintarEstado("error", "Base local no disponible", res.mensaje || "No se pudo abrir IndexedDB.");
+      }
+    } catch (error) {
+      NS.Preview.pintarEstado("error", "No se pudieron probar las bases", error && error.message ? error.message : error);
+    }
+  }
+
+  function instalarPruebaBases() {
+    if (pruebaInstalada) return;
+    pruebaInstalada = true;
+    document.addEventListener("click", function (event) {
+      var boton = event.target && event.target.closest ? event.target.closest("#btnProbarBD") : null;
+      if (!boton) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      probarBases();
+    }, true);
+  }
+
   function actualizarEtiquetas() {
     var textos = {
       linkBDLocal: "Firebase",
@@ -119,8 +154,9 @@ Funciones:
     });
   }
 
-  NS.FirebaseUI = { VERSION: VERSION, instalar: instalar };
+  NS.FirebaseUI = { VERSION: VERSION, instalar: instalar, probarBases: probarBases };
   instalar();
+  instalarPruebaBases();
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", actualizarEtiquetas, { once: true });
   else actualizarEtiquetas();
 })(window, document);
