@@ -1,0 +1,169 @@
+<!-- =========================================================
+Nombre completo: estadisticas.html
+Ruta o ubicación: /Curriculo/estadisticas/estadisticas.html
+Funciones:
+- Mostrar cobertura curricular institucional por carrera.
+- Filtrar por niveles, núcleos, transversales, estado y PEA.
+- Identificar materias completas, incompletas, faltantes y no vinculadas.
+========================================================= -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Estadísticas | Curriculo</title>
+  <link rel="stylesheet" href="../menu-superior/menu-superior.css?v=20260821-2" />
+  <link rel="stylesheet" href="./estadisticas.css?v=20260821-1" />
+</head>
+<body>
+  <main class="est-page">
+    <header class="est-header">
+      <div>
+        <h1>Estadísticas</h1>
+        <p>Qué tenemos, qué está incompleto y qué falta por carrera.</p>
+      </div>
+      <div class="est-note">
+        Niveles y núcleos se comparan con la malla vigente. Las transversales muestran la carga actual; para calcular faltantes institucionales se requiere un catálogo esperado de transversales.
+      </div>
+    </header>
+
+    <section id="estadisticasEstado" class="est-status est-status-loading">
+      <strong>Cargando estadísticas</strong>
+      <span>Consultando Firebase.</span>
+    </section>
+
+    <section class="est-panel">
+      <div class="est-panel-head">
+        <h2>Filtros</h2>
+        <span>Combina los filtros para encontrar faltantes específicos.</span>
+      </div>
+
+      <div class="est-filters">
+        <div class="est-field">
+          <label for="filtroCarrera">Carrera</label>
+          <select id="filtroCarrera"><option value="">Todas las carreras</option></select>
+        </div>
+
+        <div class="est-field">
+          <label for="filtroTipo">Tipo</label>
+          <select id="filtroTipo">
+            <option value="">Todos</option>
+            <option value="nivel">Niveles</option>
+            <option value="nucleo">Núcleos</option>
+            <option value="transversal">Transversales</option>
+          </select>
+        </div>
+
+        <div class="est-field">
+          <label for="filtroEstructura">Nivel / Núcleo</label>
+          <select id="filtroEstructura"><option value="">Todos los niveles / núcleos</option></select>
+        </div>
+
+        <div class="est-field">
+          <label for="filtroEstado">Estado</label>
+          <select id="filtroEstado">
+            <option value="">Todos</option>
+            <option value="completo">Completo</option>
+            <option value="incompleto">Incompleto</option>
+            <option value="faltante">Faltante</option>
+            <option value="no_vinculado">No vinculado</option>
+          </select>
+        </div>
+
+        <div class="est-field">
+          <label for="filtroPEA">PEA</label>
+          <select id="filtroPEA">
+            <option value="">Todos</option>
+            <option value="base">Base</option>
+            <option value="unidades">Unidades</option>
+            <option value="actividades">Actividades</option>
+          </select>
+        </div>
+
+        <div class="est-field">
+          <label for="filtroBuscar">Buscar materia</label>
+          <input id="filtroBuscar" type="search" placeholder="Nombre o código..." autocomplete="off" />
+        </div>
+
+        <button id="btnLimpiarFiltros" class="est-clear" type="button">Limpiar</button>
+      </div>
+
+      <div class="est-shortcuts">
+        <label class="est-check"><input id="soloProblemas" type="checkbox" /> Solo con problemas</label>
+        <label class="est-check"><input id="soloFaltantes" type="checkbox" /> Solo faltantes</label>
+        <label class="est-check"><input id="soloCompletos" type="checkbox" /> Solo completos</label>
+      </div>
+    </section>
+
+    <section class="est-cards" aria-label="Resumen estadístico">
+      <article class="est-card est-card-primary"><span>Carreras</span><strong id="statCarreras">0</strong></article>
+      <article class="est-card"><span>Esperadas</span><strong id="statEsperadas">0</strong></article>
+      <article class="est-card est-card-ok"><span>Completas</span><strong id="statCompletas">0</strong></article>
+      <article class="est-card est-card-warn"><span>Incompletas</span><strong id="statIncompletas">0</strong></article>
+      <article class="est-card est-card-error"><span>Faltantes</span><strong id="statFaltantes">0</strong></article>
+      <article class="est-card est-card-purple"><span>No vinculadas</span><strong id="statNoVinculadas">0</strong></article>
+      <article class="est-card est-card-primary"><span>Cobertura</span><strong id="statCobertura">—</strong></article>
+    </section>
+
+    <section class="est-panel">
+      <div class="est-panel-head">
+        <h2>Resumen por carrera</h2>
+        <span>Completo / esperado para niveles y núcleos.</span>
+      </div>
+      <div class="est-table-wrap">
+        <table class="est-table">
+          <thead>
+            <tr>
+              <th>Carrera</th>
+              <th>Niveles</th>
+              <th>Núcleos</th>
+              <th>Transversales</th>
+              <th>Completas</th>
+              <th>Incompletas</th>
+              <th>Faltantes</th>
+              <th>Cobertura</th>
+              <th>Detalle</th>
+            </tr>
+          </thead>
+          <tbody id="tablaCarreras">
+            <tr><td colspan="9" class="est-empty">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="panelDetalle" class="est-panel">
+      <div class="est-panel-head">
+        <h2>Detalle curricular</h2>
+        <span id="detalleConteo">0 resultados</span>
+      </div>
+      <div class="est-table-wrap">
+        <table class="est-table">
+          <thead>
+            <tr>
+              <th>Carrera</th>
+              <th>Tipo</th>
+              <th>Nivel / Núcleo</th>
+              <th>Materia</th>
+              <th>Base</th>
+              <th>Unidades</th>
+              <th>Actividades</th>
+              <th>Estado</th>
+              <th>Referencia</th>
+            </tr>
+          </thead>
+          <tbody id="tablaDetalle">
+            <tr><td colspan="9" class="est-empty">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="../menu-superior/menu-superior.js?v=20260821-2"></script>
+  <script src="../firebase/firebase.inteligencia.js?v=20260728-1"></script>
+  <script src="../firebase/firebase.curriculo.js?v=20260728-1"></script>
+  <script src="../firebase/firebase.mallas.js?v=20260804-1"></script>
+  <script src="./estadisticas.js?v=20260821-1"></script>
+</body>
+</html>
