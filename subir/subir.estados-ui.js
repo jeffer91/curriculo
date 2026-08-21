@@ -4,6 +4,8 @@ Ruta o ubicación: /Curriculo/subir/subir.estados-ui.js
 Funciones:
 - Mostrar contadores separados de materias completas, con advertencia y con error.
 - Sustituir el estado técnico de la tabla por etiquetas comprensibles.
+- Mostrar el estado específico de PEA Base, Unidades y Actividades.
+- Diferenciar archivos faltantes, contenido inexistente e información incompleta.
 - Mantener los estados visibles después de búsquedas o repintados.
 - Diferenciar el mensaje general cuando existen errores o advertencias.
 ========================================================= */
@@ -20,6 +22,15 @@ Funciones:
 
   function texto(valor) {
     return String(valor === null || typeof valor === "undefined" ? "" : valor).trim();
+  }
+
+  function escapar(valor) {
+    return texto(valor)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
   }
 
   function arr(valor) {
@@ -56,6 +67,217 @@ Funciones:
     return arr(paquete && paquete.materias).find(function (materia) {
       return materia && texto(materia.id) === texto(materiaId);
     }) || null;
+  }
+
+  function obtenerEvaluacionMateria(paquete, materiaId) {
+    return arr(paquete && paquete.evaluacionesMaterias).find(function (evaluacion) {
+      return evaluacion && texto(evaluacion.materiaId) === texto(materiaId);
+    }) || null;
+  }
+
+  function resultadoTipo(evaluacion, tipo) {
+    var resultados = arr(evaluacion && evaluacion.resultadosArchivos).filter(function (resultado) {
+      return resultado && texto(resultado.tipo) === tipo;
+    });
+
+    return resultados.find(function (resultado) {
+      return resultado.contenidoValido === true;
+    }) || resultados[0] || null;
+  }
+
+  function contieneTipo(lista, tipo) {
+    return arr(lista).some(function (item) {
+      return texto(item) === tipo;
+    });
+  }
+
+  function unidadTieneContenido(unidad) {
+    unidad = unidad || {};
+    var contenidos = arr(unidad.contenidos).filter(function (item) {
+      return texto(item) !== "";
+    });
+
+    return contenidos.length > 0 || !!texto(
+      unidad.temaDetectado ||
+      unidad.tema ||
+      unidad.contenido ||
+      unidad.titulo ||
+      unidad.resultadoDetectado ||
+      unidad.resultadoAprendizaje ||
+      unidad.competencia
+    );
+  }
+
+  function numeroUnidad(unidad) {
+    var numero = Number(
+      unidad && (
+        unidad.unidadNumero ||
+        unidad.numeroUnidad ||
+        unidad.nivel ||
+        unidad.ordenComponente ||
+        unidad.unidad
+      )
+    );
+
+    return Number.isFinite(numero) ? numero : 0;
+  }
+
+  function estadoUnidades(resultado) {
+    var datos = resultado && resultado.archivo ? resultado.archivo.datosProcesados : null;
+    var registros = Array.isArray(datos)
+      ? datos
+      : arr(datos && datos.unidades);
+    var validas = registros.filter(unidadTieneContenido);
+    var numeros = [];
+
+    validas.forEach(function (unidad) {
+      var numero = numeroUnidad(unidad);
+      if (numero >= 1 && numero <= 4 && numeros.indexOf(numero) === -1) numeros.push(numero);
+    });
+
+    numeros.sort(function (a, b) { return a - b; });
+
+    if (!validas.length) {
+      return {
+        etiqueta: "No hay contenido",
+        clase: "error",
+        mensaje: "El PEA Unidades existe, pero no hay contenido en ninguna unidad."
+      };
+    }
+
+    var faltantes = [1, 2, 3, 4].filter(function (numero) {
+      return numeros.indexOf(numero) === -1;
+    });
+
+    if (numeros.length > 0 && faltantes.length > 0) {
+      return {
+        etiqueta: "Unidades incompletas",
+        clase: "error",
+        mensaje: "Hay contenido en " + numeros.length + " de 4 unidades. Faltan: " +
+          faltantes.map(function (numero) { return "Unidad " + numero; }).join(", ") + "."
+      };
+    }
+
+    if (numeros.length === 0 && validas.length < 4) {
+      return {
+        etiqueta: "Unidades incompletas",
+        clase: "error",
+        mensaje: "Se encontraron " + validas.length + " unidad(es) con contenido, pero deben existir 4 unidades completas."
+      };
+    }
+
+    return {
+      etiqueta: "Correctas",
+      clase: "ok",
+      mensaje: "Las 4 unidades tienen contenido curricular."
+    };
+  }
+
+  function estadoBase(resultado) {
+    var detalle = resultado && resultado.detalleContenido ? resultado.detalleContenido : {};
+    var faltan = [];
+
+    if (detalle && detalle.tieneDescripcion === false) faltan.push("descripción");
+    if (detalle && detalle.tieneObjetivo === false) faltan.push("objetivo");
+
+    if (resultado && resultado.contenidoValido !== true) {
+      return {
+        etiqueta: "Sin contenido",
+        clase: "error",
+        mensaje: "El PEA Base existe, pero no contiene información curricular válida."
+      };
+    }
+
+    if (faltan.length) {
+      return {
+        etiqueta: "Base incompleta",
+        clase: "warn",
+        mensaje: "Falta " + faltan.join(" y ") + " de la asignatura."
+      };
+    }
+
+    return {
+      etiqueta: "Correcto",
+      clase: "ok",
+      mensaje: "El PEA Base contiene información curricular válida."
+    };
+  }
+
+  function estadoActividades(resultado) {
+    var detalle = resultado && resultado.detalleContenido ? resultado.detalleContenido : {};
+    var total = Number(detalle.totalRegistros || 0);
+    var validas = Number(detalle.actividadesValidas || 0);
+
+    if (!resultado || resultado.contenidoValido !== true || validas <= 0) {
+      return {
+        etiqueta: "No hay actividades",
+        clase: "error",
+        mensaje: "El PEA Actividades existe, pero no contiene actividades curriculares válidas."
+      };
+    }
+
+    if (total > validas) {
+      return {
+        etiqueta: "Actividades incompletas",
+        clase: "warn",
+        mensaje: validas + " de " + total + " actividades tienen contenido válido."
+      };
+    }
+
+    return {
+      etiqueta: "Correcto",
+      clase: "ok",
+      mensaje: validas + " actividad(es) con contenido válido."
+    };
+  }
+
+  function estadoPEA(paquete, materia, tipo) {
+    var evaluacion = obtenerEvaluacionMateria(paquete, materia && materia.id);
+    var resultado = resultadoTipo(evaluacion, tipo);
+    var nombre = tipo === "pea_base"
+      ? "PEA Base"
+      : (tipo === "pea_unidades" ? "PEA Unidades" : "PEA Actividades");
+
+    if (!evaluacion || contieneTipo(evaluacion.faltantes, tipo) || !resultado) {
+      return {
+        etiqueta: tipo === "pea_unidades"
+          ? "Faltan unidades"
+          : (tipo === "pea_actividades" ? "Faltan actividades" : "Falta Base"),
+        clase: "error",
+        mensaje: "No existe el archivo " + nombre + "."
+      };
+    }
+
+    if (resultado.error) {
+      return {
+        etiqueta: "Error de lectura",
+        clase: "error",
+        mensaje: nombre + " existe, pero no pudo leerse correctamente."
+      };
+    }
+
+    if (resultado.leido !== true) {
+      return {
+        etiqueta: "No leído",
+        clase: "error",
+        mensaje: nombre + " fue detectado, pero no pudo procesarse."
+      };
+    }
+
+    if (tipo === "pea_unidades") return estadoUnidades(resultado);
+    if (tipo === "pea_actividades") return estadoActividades(resultado);
+    return estadoBase(resultado);
+  }
+
+  function renderEstadoPEA(info) {
+    info = info || { etiqueta: "Pendiente", clase: "neutral", mensaje: "Sin información." };
+
+    return (
+      '<div class="subir-pea-status subir-pea-status-' + escapar(info.clase) + '">' +
+        '<span class="subir-badge subir-badge-' + escapar(info.clase) + '">' + escapar(info.etiqueta) + '</span>' +
+        '<small>' + escapar(info.mensaje) + '</small>' +
+      '</div>'
+    );
   }
 
   function normalizarEstado(materia) {
@@ -207,7 +429,7 @@ Funciones:
       NS.Preview.pintarEstado(
         "error",
         "ZIP con errores",
-        errores + " materia" + (errores === 1 ? " tiene" : "s tienen") + " archivos faltantes, ilegibles o sin contenido válido."
+        errores + " materia" + (errores === 1 ? " tiene" : "s tienen") + " archivos faltantes, ilegibles, incompletos o sin contenido."
       );
       return;
     }
@@ -255,6 +477,12 @@ Funciones:
       var debeRepintar = !badgeActual ||
         badgeActual.getAttribute("data-estado-clasificado") !== estado.codigo ||
         texto(badgeActual.textContent) !== estado.etiqueta;
+
+      if (fila.children.length >= 7) {
+        fila.children[4].innerHTML = renderEstadoPEA(estadoPEA(paquete, materia, "pea_base"));
+        fila.children[5].innerHTML = renderEstadoPEA(estadoPEA(paquete, materia, "pea_unidades"));
+        fila.children[6].innerHTML = renderEstadoPEA(estadoPEA(paquete, materia, "pea_actividades"));
+      }
 
       if (debeRepintar) {
         celdaEstado.innerHTML = renderBadgeEstado(materia);
@@ -350,7 +578,9 @@ Funciones:
     normalizarEstado: normalizarEstado,
     resumirMaterias: resumirMaterias,
     sincronizarResumen: sincronizarResumen,
-    renderBadgeEstado: renderBadgeEstado
+    renderBadgeEstado: renderBadgeEstado,
+    estadoPEA: estadoPEA,
+    renderEstadoPEA: renderEstadoPEA
   };
 
   instalar();
