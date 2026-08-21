@@ -161,4 +161,41 @@ assert.strictEqual(paqueteEstadoAnterior.resumenValidacion.materiasAdvertencia, 
 assert.strictEqual(paqueteEstadoAnterior.resumenValidacion.materiasRevision, 0);
 assert.strictEqual(paqueteEstadoAnterior.resumenValidacion.contadoresConsistentes, true);
 
+const paqueteUnidadesIncompletas = context.window.SubirCCC.Validador.validarPaquete({
+  materias: [{
+    id: "materia_unidades_incompletas",
+    nombre: "Materia con unidades incompletas",
+    estadoValidacion: "completo"
+  }],
+  evaluacionesMaterias: [{
+    materiaId: "materia_unidades_incompletas",
+    faltantes: [],
+    resultadosArchivos: [{
+      tipo: "pea_unidades",
+      leido: true,
+      error: "",
+      contenidoValido: true,
+      archivo: {
+        datosProcesados: [
+          { unidadNumero: 1, contenidos: ["Tema 1"] },
+          { unidadNumero: 2, contenidos: ["Tema 2"] }
+        ]
+      }
+    }]
+  }],
+  validacionesSubida: [],
+  resumenValidacion: {},
+  carga: {}
+});
+
+const materiaUnidades = paqueteUnidadesIncompletas.materias[0];
+assert.strictEqual(materiaUnidades.estadoValidacion, "incompleto");
+assert.strictEqual(materiaUnidades.estadoClasificado, "error");
+assert.strictEqual(materiaUnidades.requiereRevision, true);
+assert.match(materiaUnidades.motivosEstado.join(" "), /Unidades incompletas/);
+assert.match(materiaUnidades.motivosEstado.join(" "), /Unidad 3/);
+assert.match(materiaUnidades.motivosEstado.join(" "), /Unidad 4/);
+assert.strictEqual(paqueteUnidadesIncompletas.resumenValidacion.materiasError, 1);
+assert.strictEqual(paqueteUnidadesIncompletas.resumenValidacion.materiasCompletas, 0);
+
 console.log("Subir ZIP: clasificación y contadores de estados superados.");
