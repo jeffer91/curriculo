@@ -6,6 +6,7 @@ Funciones:
 - Subir únicamente materias completas, sin bloquearlas por errores ajenos.
 - Conservar intactas las versiones existentes de materias defectuosas.
 - Registrar en la carga cuántas materias se detectaron, subieron y omitieron.
+- Mantener un registro vigente de materias pendientes para Estadísticas.
 ========================================================= */
 (function (window) {
   "use strict";
@@ -13,10 +14,11 @@ Funciones:
   var NS = window.CurriculoFirebase || {};
   if (!NS.importarPaquete || NS.__importacionParcialInstalada === true) return;
 
-  var VERSION = "1.0.0";
+  var VERSION = "1.1.0";
   var importarOriginal = NS.importarPaquete;
   var SDK_BASE = "https://www.gstatic.com/firebasejs/" +
     String(NS.SDK_VERSION || "12.16.0") + "/";
+  var COLECCION_PENDIENTES = "materias_pendientes";
 
   function texto(valor) {
     return String(valor === null || typeof valor === "undefined" ? "" : valor).trim();
@@ -31,6 +33,16 @@ Funciones:
   function numero(valor, defecto) {
     var n = Number(valor);
     return Number.isFinite(n) ? n : Number(defecto || 0);
+  }
+
+  function normalizar(valor) {
+    return texto(valor)
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-zA-Z0-9]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
   }
 
   function estadoMateria(materia) {
@@ -96,15 +108,57 @@ Funciones:
       : "La materia tiene errores o información incompleta.";
   }
 
-  function detalleOmitida(materia, validaciones) {
+  function contieneTipo(lista, tipo) {
+    var buscado = normalizar(tipo);
+    return arr(lista).some(function (item) {
+      var valor = normalizar(item);
+      return valor === buscado || valor === buscado.replace(/^pea\s+/, "");
+    });
+  }
+
+  function estadoPEADesdeEvaluacion(evaluacion, tipo) {
+    if (!evaluacion) return "incompleto";
+    if (contieneTipo(evaluacion.faltantes, tipo)) return "faltante";
+
+    var resultado = arr(evaluacion.resultadosArchivos).find(function (item) {
+      return normalizar(item && item.tipo) === normalizar(tipo);
+    }) || null;
+
+    if (!resultado) return "faltante";
+    if (resultado.error || resultado.leido !== true) return "incompleto";
+    return resultado.contenidoValido === true ? "completo" : "incompleto";
+  }
+
+  function detalleOmitida(materia, validaciones, evaluacion) {
+    materia = materia || {};
+    var tipoMateria = texto(materia.tipoMateria || materia.estructuraTipo || materia.tipo);
     return {
-      materiaId: texto(materia && materia.id),
-      carreraId: texto(materia && materia.carreraId),
-      nivelId: texto(materia && materia.nivelId),
-      codigo: texto(materia && (materia.codigo || materia.codigoMateria)),
-      nombre: texto(materia && (materia.nombre || materia.nombreMateria || materia.materia)),
+      materiaId: texto(materia.id),
+      carreraId: texto(materia.carreraId),
+      nivelId: texto(materia.nivelId),
+      nivelNumero: numero(materia.nivelNumero || materia.numeroNivel, 0),
+      nivelNombre: texto(materia.nivelNombre || materia.nivel),
+      codigo: texto(materia.codigo || materia.codigoMateria),
+      nombre: texto(materia.nombre || materia.nombreMateria || materia.materia),
       estado: estadoMateria(materia) || "error",
-      motivo: motivoMateria(materia, validaciones)
+      estadoValidacion: estadoMateria(materia) || "incompleto",
+      motivo: motivoMateria(materia, validaciones),
+      motivosEstado: arr(materia.motivosEstado).map(texto).filter(Boolean),
+      archivosFaltantes: arr(materia.archivosFaltantes).map(texto).filter(Boolean),
+      archivosSinContenido: arr(materia.archivosSinContenido).map(texto).filter(Boolean),
+      tipoMateria: tipoMateria,
+      estructuraTipo: texto(materia.estructuraTipo),
+      esTransversal: materia.esTransversal === true,
+      perteneceMalla: materia.perteneceMalla !== false,
+      origenMateria: texto(materia.origenMateria),
+      esNucleo: materia.esNucleo === true || normalizar(tipoMateria) === "nucleo",
+      nucleoNumero: numero(materia.nucleoNumero, 0),
+      nucleoNombre: texto(materia.nucleoNombre),
+      pea: {
+        base: estadoPEADesdeEvaluacion(evaluacion, "pea_base"),
+        unidades: estadoPEADesdeEvaluacion(evaluacion, "pea_unidades"),
+        actividades: estadoPEADesdeEvaluacion(evaluacion, "pea_actividades")
+      }
     };
   }
 
@@ -118,12 +172,19 @@ Funciones:
     paquete = paquete || {};
     var materiasOriginales = arr(paquete.materias);
     var validaciones = arr(paquete.validacionesSubida);
+    var evaluaciones = {};
+
+    arr(paquete.evaluacionesMaterias).forEach(function (evaluacion) {
+      var materiaId = texto(evaluacion && evaluacion.materiaId);
+      if (materiaId) evaluaciones[materiaId] = evaluacion;
+    });
+
     var completas = materiasOriginales.filter(esMateriaCompleta);
     var omitidasMaterias = materiasOriginales.filter(function (materia) {
       return !esMateriaCompleta(materia);
     });
     var omitidas = omitidasMaterias.map(function (materia) {
-      return detalleOmitida(materia, validaciones);
+      return detalleOmitida(materia, validaciones, evaluaciones[texto(materia && materia.id)] || null);
     });
 
     var materiasIds = {};
@@ -181,16 +242,8 @@ Funciones:
       }),
       materias: completas,
       archivos: filtrarPorIds(paquete.archivos, "materiaId", materiasIds),
-      evaluacionesMaterias: filtrarPorIds(
-        paquete.evaluacionesMaterias,
-        "materiaId",
-        materiasIds
-      ),
-      estadosMaterias: filtrarPorIds(
-        paquete.estadosMaterias,
-        "materiaId",
-        materiasIds
-      ),
+      evaluacionesMaterias: filtrarPorIds(paquete.evaluacionesMaterias, "materiaId", materiasIds),
+      estadosMaterias: filtrarPorIds(paquete.estadosMaterias, "materiaId", materiasIds),
       validacionesSubida: validacionesGlobales.concat(registrosOmitidas),
       advertencias: arr(paquete.advertencias).filter(function (advertencia) {
         return !texto(advertencia && advertencia.materiaId) ||
@@ -228,33 +281,87 @@ Funciones:
     return dinamico(url);
   }
 
+  async function abrirFirebase() {
+    if (!NS.CONFIG || !NS.CONFIG.projectId) throw new Error("Firebase no tiene configuración disponible.");
+    var modulos = await Promise.all([
+      importarModulo(SDK_BASE + "firebase-app.js"),
+      importarModulo(SDK_BASE + "firebase-firestore.js")
+    ]);
+    var appSDK = modulos[0];
+    var firestoreSDK = modulos[1];
+    var app = appSDK.getApps().length ? appSDK.getApp() : appSDK.initializeApp(NS.CONFIG);
+    return {
+      firestoreSDK: firestoreSDK,
+      db: firestoreSDK.getFirestore(app)
+    };
+  }
+
+  async function sincronizarPendientes(conexion, separacion, cargaId) {
+    var F = conexion.firestoreSDK;
+    var db = conexion.db;
+    var operaciones = [];
+
+    separacion.completas.forEach(function (materia) {
+      var id = texto(materia && materia.id);
+      if (id) operaciones.push({ tipo: "delete", id: id });
+    });
+
+    separacion.omitidas.forEach(function (item) {
+      var id = texto(item && item.materiaId);
+      if (!id) return;
+      operaciones.push({
+        tipo: "set",
+        id: id,
+        data: Object.assign({}, item, {
+          id: id,
+          activo: true,
+          cargaId: texto(cargaId),
+          origen: "importacion_parcial",
+          actualizadoEn: F.serverTimestamp()
+        })
+      });
+    });
+
+    for (var inicio = 0; inicio < operaciones.length; inicio += 400) {
+      var lote = operaciones.slice(inicio, inicio + 400);
+      var batch = F.writeBatch(db);
+      lote.forEach(function (op) {
+        var ref = F.doc(db, COLECCION_PENDIENTES, op.id);
+        if (op.tipo === "delete") batch.delete(ref);
+        else batch.set(ref, op.data, { merge: true });
+      });
+      await batch.commit();
+    }
+
+    return operaciones.length;
+  }
+
+  async function guardarPendientesSinImportacion(separacion) {
+    try {
+      var conexion = await abrirFirebase();
+      await sincronizarPendientes(conexion, separacion, "");
+      return true;
+    } catch (error) {
+      console.warn("[FirebaseImportacionParcial] No se pudieron registrar las materias pendientes.", error);
+      return false;
+    }
+  }
+
   async function registrarAuditoriaParcial(resultado, separacion) {
-    if (
-      !resultado || !resultado.cargaId ||
-      !NS.CONFIG || !NS.CONFIG.projectId ||
-      separacion.omitidas.length < 1
-    ) return false;
+    if (!resultado || !resultado.cargaId || !NS.CONFIG || !NS.CONFIG.projectId) return false;
 
     try {
-      var modulos = await Promise.all([
-        importarModulo(SDK_BASE + "firebase-app.js"),
-        importarModulo(SDK_BASE + "firebase-firestore.js")
-      ]);
-      var appSDK = modulos[0];
-      var firestoreSDK = modulos[1];
-      var app = appSDK.getApps().length
-        ? appSDK.getApp()
-        : appSDK.initializeApp(NS.CONFIG);
-      var db = firestoreSDK.getFirestore(app);
-      var referencia = firestoreSDK.doc(
+      var conexion = await abrirFirebase();
+      var F = conexion.firestoreSDK;
+      var db = conexion.db;
+      var referencia = F.doc(
         db,
         (NS.COLECCIONES && NS.COLECCIONES.CARGAS) || "cargas",
         resultado.cargaId
       );
-
-      await firestoreSDK.updateDoc(referencia, {
-        estado: "completado_parcial",
-        importacionParcial: true,
+      var parcial = separacion.omitidas.length > 0;
+      var actualizacion = {
+        importacionParcial: parcial,
         totalMateriasDetectadas: separacion.totalDetectadas,
         totalMateriasSubidas: separacion.completas.length,
         totalMateriasOmitidas: separacion.omitidas.length,
@@ -262,13 +369,17 @@ Funciones:
         "resumen.totalMateriasDetectadas": separacion.totalDetectadas,
         "resumen.totalMateriasSubidas": separacion.completas.length,
         "resumen.materiasOmitidas": separacion.omitidas.length,
-        "resumen.importacionParcial": true,
-        actualizadoEn: firestoreSDK.serverTimestamp()
-      });
+        "resumen.importacionParcial": parcial,
+        actualizadoEn: F.serverTimestamp()
+      };
+      if (parcial) actualizacion.estado = "completado_parcial";
+
+      await F.updateDoc(referencia, actualizacion);
+      await sincronizarPendientes(conexion, separacion, resultado.cargaId);
       return true;
     } catch (error) {
       console.warn(
-        "[FirebaseImportacionParcial] La carga se completó, pero no se pudo ampliar su auditoría.",
+        "[FirebaseImportacionParcial] La carga se completó, pero no se pudo ampliar su auditoría o pendientes.",
         error
       );
       return false;
@@ -285,8 +396,9 @@ Funciones:
     }
 
     if (!separacion.completas.length) {
+      await guardarPendientesSinImportacion(separacion);
       throw new Error(
-        "No se encontró ninguna materia completa para subir. Corrige al menos una materia y vuelve a analizar el ZIP."
+        "No se encontró ninguna materia completa para subir. Las materias con problemas quedaron registradas como pendientes."
       );
     }
 
@@ -312,22 +424,16 @@ Funciones:
     resultado.totalMateriasOmitidas = separacion.omitidas.length;
     resultado.materiasOmitidas = separacion.omitidas;
     resultado.importacionParcial = separacion.omitidas.length > 0;
-    resultado.estadoCarga = resultado.importacionParcial
-      ? "completado_parcial"
-      : "completado";
+    resultado.estadoCarga = resultado.importacionParcial ? "completado_parcial" : "completado";
 
     if (resultado.importacionParcial) {
       resultado.mensaje =
         "Se procesaron " + separacion.completas.length +
         " materias completas. " + separacion.omitidas.length +
-        " materias no se subieron porque tienen errores o advertencias.";
+        " materias quedaron pendientes porque tienen errores o advertencias.";
     }
 
-    resultado.auditoriaParcialActualizada = await registrarAuditoriaParcial(
-      resultado,
-      separacion
-    );
-
+    resultado.auditoriaParcialActualizada = await registrarAuditoriaParcial(resultado, separacion);
     return resultado;
   };
 
@@ -336,6 +442,8 @@ Funciones:
     VERSION: VERSION,
     separarPaquete: separarPaquete,
     esMateriaCompleta: esMateriaCompleta,
-    esBloqueoGlobal: esBloqueoGlobal
+    esBloqueoGlobal: esBloqueoGlobal,
+    detalleOmitida: detalleOmitida,
+    sincronizarPendientes: sincronizarPendientes
   };
 })(window);
