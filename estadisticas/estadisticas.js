@@ -3,18 +3,21 @@ Nombre completo: estadisticas.js
 Ruta o ubicación: /Curriculo/estadisticas/estadisticas.js
 Funciones:
 - Construir un tablero institucional de cobertura curricular por carrera.
-- Comparar materias cargadas en Firebase contra la malla vigente.
+- Comparar Firebase contra la malla vigente usando equivalencias aprobadas.
+- Incorporar materias pendientes que no fueron importadas por estar incompletas.
 - Separar Niveles, Núcleos y Transversales.
-- Mostrar materias completas, incompletas, faltantes y no vinculadas.
+- Mostrar completas, incompletas, faltantes y no vinculadas.
 - Filtrar por carrera, tipo, nivel/núcleo, estado, PEA y búsqueda.
 ========================================================= */
 (function (window, document) {
   "use strict";
 
   var Firebase = window.CurriculoFirebase;
+  var Comparador = window.MallasComparador;
   var estado = {
     carreras: [],
     carrerasDetalle: [],
+    pendientes: [],
     filas: [],
     cargando: false
   };
@@ -82,6 +85,10 @@ Funciones:
     );
   }
 
+  function esPendiente(materia) {
+    return !!(materia && materia.esPendienteCurricular === true);
+  }
+
   function esTransversal(materia) {
     materia = materia || {};
     return materia.esTransversal === true ||
@@ -122,13 +129,16 @@ Funciones:
     if (tipo === "transversal") return "Transversal";
     var n = numeroEstructura(materia, tipo);
     var nombre = texto(tipo === "nucleo" ? materia.nucleoNombre : materia.nivelNombre);
-    if (nombre && normalizar(nombre) !== "transversal") return nombre;
+    if (nombre && normalizar(nombre) !== "transversal" && !(tipo === "nucleo" && !/^nucleo/i.test(nombre))) {
+      return nombre;
+    }
     if (tipo === "nucleo") return n > 0 ? "Núcleo " + n : "Núcleo";
     return n > 0 ? "Nivel " + n : "Sin nivel";
   }
 
   function estadoMateria(materia) {
     if (!materia) return "faltante";
+    if (esPendiente(materia)) return "incompleto";
     var valor = normalizar(
       materia.estadoValidacion ||
       materia.estadoClasificado ||
@@ -155,6 +165,10 @@ Funciones:
 
   function estadoPEA(materia, tipo) {
     if (!materia) return "faltante";
+
+    var directo = normalizar(materia.pea && materia.pea[tipo]);
+    if (["completo", "incompleto", "faltante"].indexOf(directo) !== -1) return directo;
+
     if (listaContieneTipo(materia.archivosFaltantes, tipo)) return "faltante";
     if (listaContieneTipo(materia.archivosSinContenido, tipo)) return "incompleto";
 
@@ -185,37 +199,24 @@ Funciones:
     return "incompleto";
   }
 
-  function coinciden(esperado, actual, tipo) {
-    var idEsperado = texto(esperado && esperado.materiaFirebaseId);
-    var idActual = texto(actual && (actual.id || actual.materiaFirebaseId));
-    if (idEsperado && idActual && idEsperado === idActual) return true;
-
-    if (normalizar(nombreMateria(esperado)) !== normalizar(nombreMateria(actual))) return false;
-    if (tipoElemento(actual) !== tipo) return false;
-
-    var nEsperado = numeroEstructura(esperado, tipo);
-    var nActual = numeroEstructura(actual, tipo);
-    if (nEsperado > 0 && nActual > 0 && nEsperado !== nActual) return false;
-    return true;
-  }
-
   function crearFila(carrera, tipo, esperado, actual, estadoForzado, referenciaForzada) {
     var base = actual || esperado || {};
+    var pendiente = esPendiente(actual);
     return {
       id: [texto(carrera.id), tipo, texto((actual && actual.id) || (esperado && esperado.id) || nombreMateria(base))].join("|"),
       carreraId: texto(carrera.id),
       carrera: texto(carrera.nombre || carrera.carrera),
       tipo: tipo,
-      estructuraNumero: numeroEstructura(base, tipo),
-      estructura: etiquetaEstructura(base, tipo),
-      materia: nombreMateria(base) || "Sin nombre",
-      codigo: texto(base.codigo || base.codigoMateria),
+      estructuraNumero: numeroEstructura(esperado || actual, tipo),
+      estructura: etiquetaEstructura(esperado || actual, tipo),
+      materia: nombreMateria(esperado || actual) || nombreMateria(actual) || "Sin nombre",
+      codigo: texto((actual && (actual.codigo || actual.codigoMateria)) || (esperado && esperado.codigo)),
       estado: estadoForzado || estadoMateria(actual),
       esperada: !!esperado,
-      cargada: !!actual,
-      referencia: referenciaForzada || (esperado
-        ? "Malla vigente"
-        : (tipo === "transversal" ? "Sin catálogo institucional" : "No vinculada a la malla")),
+      detectada: !!actual,
+      cargada: !!actual && !pendiente,
+      pendiente: pendiente,
+      referencia: referenciaForzada || (esperado ? "Malla vigente" : "Sin referencia"),
       pea: {
         base: actual ? estadoPEA(actual, "base") : "faltante",
         unidades: actual ? estadoPEA(actual, "unidades") : "faltante",
@@ -226,43 +227,142 @@ Funciones:
     };
   }
 
-  function construirFilasCarrera(carrera, materias, detalleMalla) {
-    materias = arr(materias).filter(function (materia) {
-      return materia && materia.activo !== false;
+  function claveActual(item) {
+    return texto(item && (item.id || item.materiaId));
+  }
+
+  function fusionarMaterias(materias, pendientes) {
+    materias = arr(materias).filter(function (item) { return item && item.activo !== false; });
+    pendientes = arr(pendientes).filter(Boolean);
+    var actuales = {};
+    var pendientesActuales = {};
+
+    materias.forEach(function (item) {
+      var id = claveActual(item);
+      if (id) actuales[id] = item;
     });
-    var esperadas = arr(detalleMalla && detalleMalla.materias).filter(function (materia) {
-      return materia && materia.activa !== false;
+
+    pendientes.forEach(function (item) {
+      var id = claveActual(item);
+      if (!id) return;
+      if (item.origenPendiente === "registro_actual") pendientesActuales[id] = true;
+    });
+
+    var salida = materias.filter(function (item) {
+      var id = claveActual(item);
+      return !id || !pendientesActuales[id];
+    });
+
+    pendientes.forEach(function (item) {
+      var id = claveActual(item);
+      if (!id) return;
+      if (item.origenPendiente === "auditoria_historica" && actuales[id]) return;
+      if (actuales[id]) item = Object.assign({}, item, { tieneVersionFirebaseAnterior: true });
+      salida.push(item);
+    });
+
+    return salida;
+  }
+
+  function compararCurriculares(actuales, esperadas, equivalencias) {
+    if (Comparador && typeof Comparador.comparar === "function") {
+      return Comparador.comparar(actuales, esperadas, equivalencias || []);
+    }
+
+    var usados = {};
+    var coincidencias = [];
+    actuales.forEach(function (actual) {
+      var indice = esperadas.findIndex(function (esperado, idx) {
+        return !usados[idx] &&
+          normalizar(nombreMateria(esperado)) === normalizar(nombreMateria(actual)) &&
+          numeroEstructura(esperado, tipoElemento(esperado)) === numeroEstructura(actual, tipoElemento(actual));
+      });
+      if (indice >= 0) {
+        usados[indice] = true;
+        coincidencias.push({ detectada: actual, oficial: esperadas[indice], criterio: "nombre_y_nivel" });
+      }
+    });
+    return {
+      coincidencias: coincidencias,
+      faltantes: esperadas.filter(function (_, idx) { return !usados[idx]; }),
+      noVinculadas: actuales.filter(function (actual) {
+        return !coincidencias.some(function (item) { return item.detectada === actual; });
+      })
+    };
+  }
+
+  function construirFilasCarrera(carrera, materias, detalleMalla, pendientes) {
+    var detectadas = fusionarMaterias(materias, pendientes);
+    var transversales = detectadas.filter(esTransversal);
+    var curriculares = detectadas.filter(function (item) { return !esTransversal(item); });
+    var esperadas = arr(detalleMalla && detalleMalla.materias).filter(function (item) {
+      return item && item.activa !== false && !esTransversal(item);
     });
     var tieneMalla = !!(detalleMalla && detalleMalla.malla);
-    var usados = {};
     var filas = [];
 
-    esperadas.forEach(function (esperado) {
-      var tipo = tipoElemento(esperado);
-      var indice = materias.findIndex(function (actual, idx) {
-        return !usados[idx] && coinciden(esperado, actual, tipo);
+    if (tieneMalla) {
+      var comparacion = compararCurriculares(
+        curriculares,
+        esperadas,
+        arr(detalleMalla && detalleMalla.equivalencias)
+      );
+
+      arr(comparacion.coincidencias).forEach(function (item) {
+        var actual = item.detectada || item.referencia || null;
+        var esperado = item.oficial || null;
+        var tipo = tipoElemento(esperado || actual);
+        var referencia = item.criterio === "equivalencia_guardada"
+          ? "Malla vigente · equivalencia aprobada"
+          : "Malla vigente";
+        if (esPendiente(actual)) {
+          referencia += actual.tieneVersionFirebaseAnterior
+            ? " · pendiente de corrección (hay versión anterior)"
+            : " · pendiente de corrección";
+        }
+        filas.push(crearFila(carrera, tipo, esperado, actual, esPendiente(actual) ? "incompleto" : null, referencia));
       });
-      var actual = indice >= 0 ? materias[indice] : null;
-      if (indice >= 0) usados[indice] = true;
-      filas.push(crearFila(carrera, tipo, esperado, actual, actual ? null : "faltante"));
-    });
 
-    materias.forEach(function (actual, indice) {
-      if (usados[indice]) return;
-      var tipo = tipoElemento(actual);
-      var estadoForzado = null;
-      var referencia = "";
+      arr(comparacion.faltantes).forEach(function (esperado) {
+        filas.push(crearFila(carrera, tipoElemento(esperado), esperado, null, "faltante", "Malla vigente"));
+      });
 
-      if (tipo === "transversal") {
-        referencia = "Sin catálogo institucional";
-      } else if (tieneMalla) {
-        estadoForzado = "no_vinculado";
-        referencia = "No vinculada a la malla";
-      } else {
-        referencia = "Sin malla vigente";
-      }
+      arr(comparacion.noVinculadas).forEach(function (item) {
+        var actual = item.detectada || item.referencia || item;
+        var pendiente = esPendiente(actual);
+        filas.push(crearFila(
+          carrera,
+          tipoElemento(actual),
+          null,
+          actual,
+          pendiente ? "incompleto" : "no_vinculado",
+          pendiente ? "Pendiente de corrección · no vinculada a la malla" : "No vinculada a la malla"
+        ));
+      });
+    } else {
+      curriculares.forEach(function (actual) {
+        filas.push(crearFila(
+          carrera,
+          tipoElemento(actual),
+          null,
+          actual,
+          esPendiente(actual) ? "incompleto" : null,
+          esPendiente(actual) ? "Pendiente de corrección · sin malla vigente" : "Sin malla vigente"
+        ));
+      });
+    }
 
-      filas.push(crearFila(carrera, tipo, null, actual, estadoForzado, referencia));
+    transversales.forEach(function (actual) {
+      filas.push(crearFila(
+        carrera,
+        "transversal",
+        null,
+        actual,
+        esPendiente(actual) ? "incompleto" : null,
+        esPendiente(actual)
+          ? "Pendiente de corrección · sin catálogo institucional"
+          : "Sin catálogo institucional"
+      ));
     });
 
     return filas.sort(function (a, b) {
@@ -300,6 +400,9 @@ Funciones:
       soloCompletas: false,
       incluirRetiradas: false
     });
+    var pendientes = estado.pendientes.filter(function (item) {
+      return texto(item && item.carreraId) === texto(carrera.id);
+    });
     var detalleMalla = null;
     var errorMalla = "";
 
@@ -314,9 +417,10 @@ Funciones:
     return {
       carrera: carrera,
       materias: materias,
+      pendientes: pendientes,
       detalleMalla: detalleMalla,
       errorMalla: errorMalla,
-      filas: construirFilasCarrera(carrera, materias, detalleMalla)
+      filas: construirFilasCarrera(carrera, materias, detalleMalla, pendientes)
     };
   }
 
@@ -354,10 +458,18 @@ Funciones:
     if (opciones.indexOf(actual) !== -1) select.value = actual;
   }
 
+  function peaSeleccionado() {
+    return texto($("filtroPEA") && $("filtroPEA").value);
+  }
+
   function estadoEfectivo(fila, pea) {
     if (fila.estado === "no_vinculado") return "no_vinculado";
     if (!pea) return fila.estado;
     return fila.pea[pea] || fila.estado;
+  }
+
+  function estadoVista(fila) {
+    return estadoEfectivo(fila, peaSeleccionado());
   }
 
   function filasFiltradas() {
@@ -365,7 +477,7 @@ Funciones:
     var tipo = texto($("filtroTipo") && $("filtroTipo").value);
     var estructura = texto($("filtroEstructura") && $("filtroEstructura").value);
     var estadoFiltro = texto($("filtroEstado") && $("filtroEstado").value);
-    var pea = texto($("filtroPEA") && $("filtroPEA").value);
+    var pea = peaSeleccionado();
     var buscar = normalizar($("filtroBuscar") && $("filtroBuscar").value);
     var soloProblemas = !!($("soloProblemas") && $("soloProblemas").checked);
 
@@ -379,7 +491,7 @@ Funciones:
       if (soloProblemas && estadoActual === "completo") return false;
 
       if (buscar) {
-        var bolsa = normalizar([fila.carrera, fila.estructura, fila.codigo, fila.materia, fila.estado].join(" "));
+        var bolsa = normalizar([fila.carrera, fila.estructura, fila.codigo, fila.materia, fila.estado, fila.referencia].join(" "));
         if (bolsa.indexOf(buscar) === -1) return false;
       }
       return true;
@@ -404,13 +516,13 @@ Funciones:
   function resumenGrupo(filas, tipo) {
     var lista = filas.filter(function (fila) { return fila.tipo === tipo; });
     var esperadas = lista.filter(function (fila) { return fila.esperada; }).length;
-    var completasEsperadas = lista.filter(function (fila) { return fila.esperada && fila.estado === "completo"; }).length;
-    var cargadas = lista.filter(function (fila) { return fila.cargada; }).length;
-    var completasCargadas = lista.filter(function (fila) { return fila.cargada && fila.estado === "completo"; }).length;
+    var completasEsperadas = lista.filter(function (fila) { return fila.esperada && estadoVista(fila) === "completo"; }).length;
+    var detectadas = lista.filter(function (fila) { return fila.detectada; }).length;
+    var completasDetectadas = lista.filter(function (fila) { return fila.detectada && estadoVista(fila) === "completo"; }).length;
 
     if (!esperadas) {
-      if (tipo === "transversal") return cargadas ? completasCargadas + "/" + cargadas + " cargadas" : "0 cargadas";
-      return cargadas ? completasCargadas + "/" + cargadas + " sin referencia" : "—";
+      if (tipo === "transversal") return detectadas ? completasDetectadas + "/" + detectadas + " detectadas" : "0 detectadas";
+      return detectadas ? completasDetectadas + "/" + detectadas + " sin referencia" : "—";
     }
     return completasEsperadas + "/" + esperadas;
   }
@@ -437,10 +549,10 @@ Funciones:
     tbody.innerHTML = ids.map(function (id) {
       var grupo = grupos[id];
       var esperadas = grupo.filter(function (fila) { return fila.esperada; }).length;
-      var completas = grupo.filter(function (fila) { return fila.esperada && fila.estado === "completo"; }).length;
-      var incompletas = grupo.filter(function (fila) { return fila.estado === "incompleto"; }).length;
-      var faltantes = grupo.filter(function (fila) { return fila.estado === "faltante"; }).length;
-      var noVinculadas = grupo.filter(function (fila) { return fila.estado === "no_vinculado"; }).length;
+      var completas = grupo.filter(function (fila) { return fila.esperada && estadoVista(fila) === "completo"; }).length;
+      var incompletas = grupo.filter(function (fila) { return estadoVista(fila) === "incompleto"; }).length;
+      var faltantes = grupo.filter(function (fila) { return estadoVista(fila) === "faltante"; }).length;
+      var noVinculadas = grupo.filter(function (fila) { return estadoVista(fila) === "no_vinculado"; }).length;
       var cobertura = porcentaje(completas, esperadas);
 
       return '<tr>' +
@@ -497,10 +609,10 @@ Funciones:
     filas.forEach(function (fila) { carreras[fila.carreraId] = true; });
 
     var esperadas = filas.filter(function (fila) { return fila.esperada; }).length;
-    var completas = filas.filter(function (fila) { return fila.esperada && fila.estado === "completo"; }).length;
-    var incompletas = filas.filter(function (fila) { return fila.estado === "incompleto"; }).length;
-    var faltantes = filas.filter(function (fila) { return fila.estado === "faltante"; }).length;
-    var noVinculadas = filas.filter(function (fila) { return fila.estado === "no_vinculado"; }).length;
+    var completas = filas.filter(function (fila) { return fila.esperada && estadoVista(fila) === "completo"; }).length;
+    var incompletas = filas.filter(function (fila) { return estadoVista(fila) === "incompleto"; }).length;
+    var faltantes = filas.filter(function (fila) { return estadoVista(fila) === "faltante"; }).length;
+    var noVinculadas = filas.filter(function (fila) { return estadoVista(fila) === "no_vinculado"; }).length;
     var cobertura = porcentaje(completas, esperadas);
 
     setTexto("statCarreras", Object.keys(carreras).length);
@@ -602,7 +714,7 @@ Funciones:
   async function cargar() {
     if (estado.cargando) return;
     estado.cargando = true;
-    setEstado("loading", "Cargando estadísticas", "Consultando carreras, materias y mallas vigentes.");
+    setEstado("loading", "Cargando estadísticas", "Consultando carreras, materias, pendientes y mallas vigentes.");
 
     try {
       if (!Firebase || typeof Firebase.obtenerCarreras !== "function") {
@@ -610,7 +722,14 @@ Funciones:
       }
 
       await Firebase.ready();
-      estado.carreras = await Firebase.obtenerCarreras();
+      var iniciales = await Promise.all([
+        Firebase.obtenerCarreras(),
+        Firebase.Estadisticas && typeof Firebase.Estadisticas.obtenerPendientes === "function"
+          ? Firebase.Estadisticas.obtenerPendientes()
+          : Promise.resolve([])
+      ]);
+      estado.carreras = iniciales[0];
+      estado.pendientes = iniciales[1];
       llenarCarreras();
 
       estado.carrerasDetalle = await cargarConcurrencia(estado.carreras, 4, cargarCarrera);
@@ -624,12 +743,19 @@ Funciones:
       var sinMalla = estado.carrerasDetalle.filter(function (detalle) {
         return !detalle.detalleMalla;
       }).length;
+      var pendientesActuales = estado.pendientes.filter(function (item) {
+        return item.origenPendiente === "registro_actual";
+      }).length;
+      var partes = [];
+      if (pendientesActuales) partes.push(pendientesActuales + " materia(s) pendientes de corrección");
+      if (sinMalla) partes.push(sinMalla + " carrera(s) sin malla vigente");
+
       setEstado(
-        sinMalla ? "warn" : "ok",
+        partes.length ? "warn" : "ok",
         "Estadísticas actualizadas",
-        sinMalla
-          ? sinMalla + " carrera(s) no tienen malla vigente; se muestran sus cargas, pero no se calculan faltantes de malla."
-          : "La cobertura fue comparada contra las mallas vigentes."
+        partes.length
+          ? partes.join(" · ") + "."
+          : "La cobertura fue comparada contra las mallas vigentes y sus equivalencias aprobadas."
       );
     } catch (error) {
       console.error("[Estadisticas]", error);
@@ -647,6 +773,7 @@ Funciones:
     cargar: cargar,
     render: render,
     construirFilasCarrera: construirFilasCarrera,
+    fusionarMaterias: fusionarMaterias,
     tipoElemento: tipoElemento,
     estadoMateria: estadoMateria,
     estadoPEA: estadoPEA,
