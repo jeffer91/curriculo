@@ -11,8 +11,16 @@ let importacionesLocales = 0;
 let importacionesFirebase = 0;
 let fallarFirebase = false;
 
+function ordenar(valor) {
+  if (Array.isArray(valor)) return valor.map(ordenar);
+  if (!valor || typeof valor !== "object") return valor;
+  const salida = {};
+  Object.keys(valor).sort().forEach((clave) => { salida[clave] = ordenar(valor[clave]); });
+  return salida;
+}
+
 function hash(valor) {
-  const texto = JSON.stringify(valor, Object.keys(valor || {}).sort());
+  const texto = JSON.stringify(ordenar(valor));
   let h = 0;
   for (let i = 0; i < texto.length; i += 1) h = ((h << 5) - h + texto.charCodeAt(i)) | 0;
   return "h" + Math.abs(h);
