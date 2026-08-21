@@ -3,7 +3,7 @@ Nombre completo: menu-superior.js
 Ruta o ubicación: /Curriculo/menu-superior/menu-superior.js
 Funciones:
 - Crear el menú superior reutilizable.
-- Navegar entre Inicio, Subir, Firebase, Estadísticas, Mallas, Comunicados, Fichas y Configuración.
+- Navegar entre Inicio, Subir, Firebase, Base local, Estadísticas, Mallas, Comunicados, Fichas y Configuración.
 - Mostrar la versión instalada.
 - Cargar la comparación de mallas en Subir ZIP.
 ========================================================= */
@@ -13,11 +13,12 @@ Funciones:
   var MENU_ID = "curriculoMenuSuperior";
   var ROOT_CLASS = "cms-menu-mounted";
   var REPOSITORIO_OFICIAL = "jeffer91/curriculo";
-  var VERSION_INTERFAZ = "firebase-mallas-estadisticas-1";
+  var VERSION_INTERFAZ = "firebase-local-estadisticas-2";
   var LINKS = [
     { id: "inicio", label: "Inicio", shortLabel: "Inicio", root: "index.html", child: "../index.html", icon: "⌂", electron: true },
     { id: "subir", label: "Subir", shortLabel: "Subir", root: "subir/subir.html", child: "../subir/subir.html", icon: "ZIP", electron: true },
     { id: "bdlocal", label: "Firebase", shortLabel: "Firebase", root: "bdlocal/bdlocal.html", child: "../bdlocal/bdlocal.html", icon: "FB", electron: true },
+    { id: "local", label: "Base local", shortLabel: "Local", root: "bdlocal/local.html", child: "../bdlocal/local.html", icon: "LOC", electron: false },
     { id: "estadisticas", label: "Estadísticas", shortLabel: "Est.", root: "estadisticas/estadisticas.html", child: "../estadisticas/estadisticas.html", icon: "EST", electron: false },
     { id: "mallas", label: "Mallas", shortLabel: "Mallas", root: "mallas/mallas.html", child: "../mallas/mallas.html", icon: "MC", electron: false },
     { id: "comunicados", label: "Comunicados", shortLabel: "Com.", root: "comunicados/comunicados.html", child: "../comunicados/comunicados.html", icon: "COM", electron: true },
@@ -32,6 +33,7 @@ Funciones:
   function pantallaActual() {
     var p = pathActual();
     if (p.indexOf("/subir/") !== -1) return "subir";
+    if (p.indexOf("/bdlocal/local.html") !== -1) return "local";
     if (p.indexOf("/bdlocal/") !== -1 || p.indexOf("/firebase/") !== -1) return "bdlocal";
     if (p.indexOf("/estadisticas/") !== -1) return "estadisticas";
     if (p.indexOf("/mallas/") !== -1) return "mallas";
@@ -127,7 +129,8 @@ Funciones:
   function actualizarModo() {
     var el = document.getElementById("cmsMode");
     if (!el) return;
-    el.textContent = esElectron() ? "Electron" : "Firebase";
+    if (pantallaActual() === "local") el.textContent = "Local";
+    else el.textContent = esElectron() ? "Electron" : "Firebase";
     el.classList.toggle("cms-mode-electron", esElectron());
   }
 
