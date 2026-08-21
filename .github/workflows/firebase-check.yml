@@ -13,6 +13,7 @@ on:
       - "scripts/firebase-*.test.js"
       - "scripts/mallas-*.test.js"
       - "scripts/subir-*.test.js"
+      - "scripts/estadisticas.test.js"
       - "scripts/comunicados-contador-firebase.test.js"
       - "package.json"
       - ".github/workflows/firebase-check.yml"
@@ -28,6 +29,7 @@ on:
       - "scripts/firebase-*.test.js"
       - "scripts/mallas-*.test.js"
       - "scripts/subir-*.test.js"
+      - "scripts/estadisticas.test.js"
       - "scripts/comunicados-contador-firebase.test.js"
       - "package.json"
       - ".github/workflows/firebase-check.yml"
@@ -80,6 +82,9 @@ jobs:
 
       - name: Ejecutar pruebas de mallas
         run: node scripts/mallas-curriculares.test.js
+
+      - name: Ejecutar pruebas de estadísticas
+        run: node scripts/estadisticas.test.js
 
       - name: Ejecutar pruebas de materias transversales
         run: |
