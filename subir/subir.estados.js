@@ -4,6 +4,7 @@ Ruta o ubicación: /Curriculo/subir/subir.estados.js
 Funciones:
 - Clasificar cada materia como Completa, Advertencia o Error.
 - Separar el número de materias afectadas del número de observaciones técnicas.
+- Detectar PEA Base, Unidades y Actividades incompletos por su contenido real.
 - Mantener compatibilidad con los estados anteriores del validador.
 - Recalcular contadores consistentes para la vista previa y la importación.
 ========================================================= */
@@ -83,14 +84,153 @@ Funciones:
     });
   }
 
-  function clasificarMateria(materia, validaciones) {
+  function evaluacionDeMateria(evaluaciones, materiaId) {
+    return arr(evaluaciones).find(function (evaluacion) {
+      return evaluacion && texto(evaluacion.materiaId) === texto(materiaId);
+    }) || null;
+  }
+
+  function resultadoTipo(evaluacion, tipo) {
+    var resultados = arr(evaluacion && evaluacion.resultadosArchivos).filter(function (resultado) {
+      return resultado && texto(resultado.tipo) === tipo;
+    });
+
+    return resultados.find(function (resultado) {
+      return resultado.contenidoValido === true;
+    }) || resultados[0] || null;
+  }
+
+  function contieneTipo(lista, tipo) {
+    return arr(lista).some(function (item) {
+      return texto(item) === tipo;
+    });
+  }
+
+  function unidadTieneContenido(unidad) {
+    unidad = unidad || {};
+    return arr(unidad.contenidos).some(function (item) {
+      return texto(item) !== "";
+    }) || !!texto(
+      unidad.temaDetectado ||
+      unidad.tema ||
+      unidad.contenido ||
+      unidad.titulo ||
+      unidad.resultadoDetectado ||
+      unidad.resultadoAprendizaje ||
+      unidad.competencia
+    );
+  }
+
+  function numeroUnidad(unidad) {
+    var numero = Number(
+      unidad && (
+        unidad.unidadNumero ||
+        unidad.numeroUnidad ||
+        unidad.nivel ||
+        unidad.ordenComponente ||
+        unidad.unidad
+      )
+    );
+    return Number.isFinite(numero) ? numero : 0;
+  }
+
+  function diagnosticarIntegridadPEA(evaluacion) {
+    if (!evaluacion) return { estado: "", motivos: [] };
+
+    var estado = "";
+    var motivos = [];
+
+    if (contieneTipo(evaluacion.faltantes, "pea_base")) {
+      estado = mayorEstado(estado, ESTADOS.ERROR);
+      motivos.push("Falta el PEA Base.");
+    }
+    if (contieneTipo(evaluacion.faltantes, "pea_unidades")) {
+      estado = mayorEstado(estado, ESTADOS.ERROR);
+      motivos.push("Falta el PEA Unidades.");
+    }
+    if (contieneTipo(evaluacion.faltantes, "pea_actividades")) {
+      estado = mayorEstado(estado, ESTADOS.ERROR);
+      motivos.push("Falta el PEA Actividades.");
+    }
+
+    var base = resultadoTipo(evaluacion, "pea_base");
+    if (base && base.leido === true && !base.error && base.contenidoValido === true) {
+      var detalleBase = base.detalleContenido || {};
+      if (detalleBase.tieneDescripcion === false || detalleBase.tieneObjetivo === false) {
+        estado = mayorEstado(estado, ESTADOS.ADVERTENCIA);
+        motivos.push("El PEA Base está incompleto: falta descripción u objetivo de la asignatura.");
+      }
+    }
+
+    var unidades = resultadoTipo(evaluacion, "pea_unidades");
+    if (unidades && unidades.leido === true && !unidades.error) {
+      var datosUnidades = unidades.archivo && unidades.archivo.datosProcesados;
+      var registrosUnidades = Array.isArray(datosUnidades)
+        ? datosUnidades
+        : arr(datosUnidades && datosUnidades.unidades);
+      var unidadesValidas = registrosUnidades.filter(unidadTieneContenido);
+      var numeros = [];
+
+      unidadesValidas.forEach(function (unidad) {
+        var numero = numeroUnidad(unidad);
+        if (numero >= 1 && numero <= 4 && numeros.indexOf(numero) === -1) numeros.push(numero);
+      });
+
+      if (!unidadesValidas.length) {
+        estado = mayorEstado(estado, ESTADOS.ERROR);
+        motivos.push("El PEA Unidades no tiene contenido en ninguna unidad.");
+      } else if (numeros.length > 0 && numeros.length < 4) {
+        var faltantes = [1, 2, 3, 4].filter(function (numero) {
+          return numeros.indexOf(numero) === -1;
+        });
+        estado = mayorEstado(estado, ESTADOS.ERROR);
+        motivos.push("Unidades incompletas. Faltan: " + faltantes.map(function (numero) {
+          return "Unidad " + numero;
+        }).join(", ") + ".");
+      } else if (numeros.length === 0 && unidadesValidas.length < 4) {
+        estado = mayorEstado(estado, ESTADOS.ERROR);
+        motivos.push("Unidades incompletas: solo se encontraron " + unidadesValidas.length + " de 4 unidades con contenido.");
+      }
+    }
+
+    var actividades = resultadoTipo(evaluacion, "pea_actividades");
+    if (actividades && actividades.leido === true && !actividades.error && actividades.contenidoValido === true) {
+      var detalleActividades = actividades.detalleContenido || {};
+      var totalActividades = Number(detalleActividades.totalRegistros || 0);
+      var actividadesValidas = Number(detalleActividades.actividadesValidas || 0);
+
+      if (totalActividades > actividadesValidas && actividadesValidas > 0) {
+        estado = mayorEstado(estado, ESTADOS.ADVERTENCIA);
+        motivos.push("El PEA Actividades está incompleto: " + actividadesValidas + " de " + totalActividades + " actividades tienen contenido válido.");
+      }
+    }
+
+    return { estado: estado, motivos: motivos };
+  }
+
+  function clasificarMateria(materia, validaciones, evaluacion) {
     materia = Object.assign({}, materia || {});
     validaciones = arr(validaciones);
 
     var estadoTecnico = texto(materia.estadoValidacion || materia.estado || "");
     var estadoAnterior = texto(materia.estadoValidacionOriginal || "");
-    var estadoFuente = estadoTecnico || estadoAnterior;
+    var integridadPEA = diagnosticarIntegridadPEA(evaluacion);
+    var estadoTecnicoAjustado = estadoTecnico;
+    var estadoActual = estadoDesdeOriginal(estadoTecnicoAjustado || estadoAnterior);
+
+    if (integridadPEA.estado === ESTADOS.ERROR && estadoActual !== ESTADOS.ERROR) {
+      estadoTecnicoAjustado = "incompleto";
+    } else if (
+      integridadPEA.estado === ESTADOS.ADVERTENCIA &&
+      [ESTADOS.ERROR, ESTADOS.ADVERTENCIA].indexOf(estadoActual) === -1
+    ) {
+      estadoTecnicoAjustado = "revision";
+    }
+
+    var estadoFuente = estadoTecnicoAjustado || estadoAnterior;
     var estado = estadoDesdeOriginal(estadoFuente) || ESTADOS.COMPLETA;
+    estado = mayorEstado(estado, integridadPEA.estado);
+
     var errores = validaciones.filter(function (validacion) {
       return esSeveridadError(validacion && validacion.severidad);
     });
@@ -116,13 +256,14 @@ Funciones:
           validacion.tipo
         )
       );
-    }).filter(Boolean);
+    }).filter(Boolean).concat(integridadPEA.motivos);
 
     return Object.assign({}, materia, {
+      estadoValidacion: estadoTecnicoAjustado || materia.estadoValidacion,
       // Siempre se conserva como referencia el estado técnico más reciente.
       // Solo se usa el valor anterior cuando el validador no entregó estado.
-      estadoValidacionOriginal: estadoTecnico || estadoAnterior,
-      estadoValidacionTecnico: estadoTecnico,
+      estadoValidacionOriginal: estadoTecnicoAjustado || estadoAnterior,
+      estadoValidacionTecnico: estadoTecnicoAjustado,
       estadoClasificado: estado,
       etiquetaEstado: estado === ESTADOS.COMPLETA
         ? "Completa"
@@ -134,6 +275,7 @@ Funciones:
       totalAdvertenciasMateria: advertencias.length,
       totalErroresMateria: errores.length,
       motivosEstado: motivos,
+      diagnosticoIntegridadPEA: integridadPEA,
       bloqueaImportacion: bloquea,
       puedeImportar: !bloquea,
       requiereRevision: estado !== ESTADOS.COMPLETA
@@ -198,10 +340,12 @@ Funciones:
     if (!paquete || typeof paquete !== "object") return paquete;
 
     var validaciones = arr(paquete.validacionesSubida);
+    var evaluaciones = arr(paquete.evaluacionesMaterias);
     var materias = arr(paquete.materias).map(function (materia) {
       return clasificarMateria(
         materia,
-        validacionesDeMateria(validaciones, materia && materia.id)
+        validacionesDeMateria(validaciones, materia && materia.id),
+        evaluacionDeMateria(evaluaciones, materia && materia.id)
       );
     });
     var resumen = recalcularResumen(paquete, materias);
@@ -255,6 +399,7 @@ Funciones:
     clasificarMateria: clasificarMateria,
     clasificarPaquete: clasificarPaquete,
     recalcularResumen: recalcularResumen,
+    diagnosticarIntegridadPEA: diagnosticarIntegridadPEA,
     instalar: instalar
   };
 
