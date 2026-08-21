@@ -4,6 +4,7 @@ Ruta o ubicación: /Curriculo/subir/subir.estados.css
 Funciones:
 - Adaptar las tarjetas para mostrar Completa, Advertencia y Error.
 - Diferenciar visualmente las filas según el estado clasificado.
+- Mostrar el diagnóstico específico de Base, Unidades y Actividades.
 - Resaltar inconsistencias entre el total de materias y los contadores.
 ========================================================= */
 
@@ -50,6 +51,38 @@ Funciones:
 
 .subir-table tbody tr.subir-row-error:hover {
   background: #fff5f4;
+}
+
+.subir-pea-status {
+  min-width: 155px;
+}
+
+.subir-pea-status .subir-badge {
+  display: inline-flex;
+  justify-content: center;
+  max-width: 100%;
+  text-align: center;
+  white-space: normal;
+}
+
+.subir-pea-status small {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  line-height: 1.38;
+  color: var(--subir-muted);
+}
+
+.subir-pea-status-error small {
+  color: var(--subir-error);
+}
+
+.subir-pea-status-warn small {
+  color: #8a5a00;
+}
+
+.subir-pea-status-ok small {
+  color: #52647b;
 }
 
 @media (max-width: 1280px) {
