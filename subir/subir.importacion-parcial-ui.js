@@ -2,16 +2,17 @@
 Nombre completo: subir.importacion-parcial-ui.js
 Ruta o ubicación: /Curriculo/subir/subir.importacion-parcial-ui.js
 Funciones:
-- Mostrar cuántas materias completas se subirán y cuántas se omitirán.
-- Permitir la carga parcial aunque existan errores en otras materias.
-- Evitar dos botones con comportamientos ambiguos.
+- Guardar todas las materias detectadas en la base local.
+- Sincronizar con Firebase únicamente las materias completas.
+- Permitir persistir localmente aun cuando no exista ninguna materia completa.
+- Mantener una sola acción de guardado clara para el usuario.
 ========================================================= */
 (function (window, document) {
   "use strict";
 
   window.SubirCCC = window.SubirCCC || {};
   var NS = window.SubirCCC;
-  var VERSION = "1.0.0";
+  var VERSION = "2.0.0";
   var instalado = false;
 
   function texto(valor) {
@@ -26,8 +27,7 @@ Funciones:
 
   function esCompleta(materia) {
     if (NS.FiltroImportacion && typeof NS.FiltroImportacion.esCompleta === "function") {
-      return NS.FiltroImportacion.esCompleta(materia) &&
-        materia && materia.bloqueaImportacion !== true;
+      return NS.FiltroImportacion.esCompleta(materia) && materia && materia.bloqueaImportacion !== true;
     }
     var estado = texto(
       materia && (
@@ -54,8 +54,7 @@ Funciones:
       total: materias.length,
       completas: completas,
       omitidas: omitidas,
-      bloqueado: resumen.bloqueaImportacion === true ||
-        control.bloqueaImportacion === true
+      bloqueado: resumen.bloqueaImportacion === true || control.bloqueaImportacion === true
     };
   }
 
@@ -74,32 +73,33 @@ Funciones:
 
     if (!btn) return info;
 
-    btn.disabled = procesando || info.bloqueado || info.completas < 1;
-    if (info.completas < 1) {
-      btn.textContent = "No hay materias completas";
+    btn.disabled = procesando || info.bloqueado || info.total < 1;
+    if (info.total < 1) {
+      btn.textContent = "No hay materias para guardar";
+    } else if (info.completas < 1) {
+      btn.textContent = "Guardar " + info.total + " en base local";
     } else if (info.omitidas > 0) {
-      btn.textContent = "Subir " + info.completas +
-        " materia" + (info.completas === 1 ? " completa" : "s completas");
+      btn.textContent = "Guardar todo · sincronizar " + info.completas;
     } else {
-      btn.textContent = "Subir " + info.completas +
-        " materia" + (info.completas === 1 ? "" : "s") + " a Firebase";
+      btn.textContent = "Guardar y sincronizar " + info.completas;
     }
 
-    btn.title = info.omitidas > 0
-      ? info.omitidas + " materia" + (info.omitidas === 1 ? " será omitida" : "s serán omitidas") +
-        " porque tienen errores o advertencias."
-      : "Todas las materias están completas.";
+    if (info.omitidas > 0) {
+      btn.title = "La base local guardará las " + info.total + " materias. Firebase recibirá solo las " + info.completas + " completas y únicamente si tienen cambios.";
+    } else {
+      btn.title = "La base local guardará todas las materias y Firebase sincronizará únicamente cambios reales.";
+    }
 
     return info;
   }
 
-  function confirmarParcial(mensaje, info) {
+  function confirmarParcial(info) {
     return window.__confirmImportacionParcialOriginal(
-      "Se subirán únicamente las materias completas.\n\n" +
+      "La base local guardará todas las materias detectadas.\n\n" +
       "Materias detectadas: " + info.total + "\n" +
-      "Materias que se subirán: " + info.completas + "\n" +
-      "Materias que no se subirán: " + info.omitidas + "\n\n" +
-      "Las materias omitidas permanecerán visibles para que puedas corregirlas y no modificarán las versiones correctas que ya existan en Firebase.\n\n" +
+      "Materias completas para Firebase: " + info.completas + "\n" +
+      "Materias con problemas que quedarán locales: " + info.omitidas + "\n\n" +
+      "Firebase solo recibirá cambios de las materias completas.\n\n" +
       "¿Deseas continuar?"
     );
   }
@@ -115,7 +115,7 @@ Funciones:
 
     var estado = NS.Main.getEstado ? NS.Main.getEstado() : {};
     var info = actualizarBotones(estado.paqueteValidado);
-    if (info.bloqueado || info.completas < 1 || estado.procesando === true) return;
+    if (info.bloqueado || info.total < 1 || estado.procesando === true) return;
 
     NS.Main.importar(info.omitidas > 0);
   }
@@ -131,7 +131,7 @@ Funciones:
         : {};
       var info = resumenActual(estado.paqueteValidado);
       if (/El ZIP tiene observaciones/i.test(texto(mensaje)) && info.omitidas > 0) {
-        return confirmarParcial(mensaje, info);
+        return confirmarParcial(info);
       }
       return confirmAnterior(mensaje);
     };
@@ -145,9 +145,7 @@ Funciones:
       var pintarOriginal = NS.Preview.pintarPaquete;
       NS.Preview.pintarPaquete = function (paquete) {
         var resultado = pintarOriginal.apply(NS.Preview, arguments);
-        window.setTimeout(function () {
-          actualizarBotones(paquete);
-        }, 0);
+        window.setTimeout(function () { actualizarBotones(paquete); }, 0);
         return resultado;
       };
     }
@@ -159,9 +157,7 @@ Funciones:
       var estado = NS.Main && typeof NS.Main.getEstado === "function"
         ? NS.Main.getEstado()
         : {};
-      window.setTimeout(function () {
-        actualizarBotones(estado.paqueteValidado);
-      }, 0);
+      window.setTimeout(function () { actualizarBotones(estado.paqueteValidado); }, 0);
     });
 
     var estado = NS.Main && typeof NS.Main.getEstado === "function"
@@ -177,9 +173,6 @@ Funciones:
     resumenActual: resumenActual
   };
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", instalar, { once: true });
-  } else {
-    instalar();
-  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", instalar, { once: true });
+  else instalar();
 })(window, document);
