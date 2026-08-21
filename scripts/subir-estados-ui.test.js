@@ -195,6 +195,72 @@ assert.strictEqual(estadoGeneral.titulo, "ZIP con alerta general");
 assert.match(estadoGeneral.mensaje, /1 alerta general/);
 assert.doesNotMatch(estadoGeneral.mensaje, /materia requiere/);
 
+const paqueteUnidades = {
+  materias: [{ id: "m_unidades" }],
+  evaluacionesMaterias: [{
+    materiaId: "m_unidades",
+    faltantes: [],
+    resultadosArchivos: [{
+      tipo: "pea_unidades",
+      leido: true,
+      error: "",
+      contenidoValido: true,
+      archivo: {
+        datosProcesados: [
+          { unidadNumero: 1, contenidos: ["Tema 1"] },
+          { unidadNumero: 2, contenidos: ["Tema 2"] }
+        ]
+      }
+    }]
+  }]
+};
+
+const estadoUnidades = UI.estadoPEA(paqueteUnidades, paqueteUnidades.materias[0], "pea_unidades");
+assert.strictEqual(estadoUnidades.etiqueta, "Unidades incompletas");
+assert.strictEqual(estadoUnidades.clase, "error");
+assert.match(estadoUnidades.mensaje, /Unidad 3/);
+assert.match(estadoUnidades.mensaje, /Unidad 4/);
+
+const paqueteSinContenidoUnidades = {
+  materias: [{ id: "m_sin_unidades" }],
+  evaluacionesMaterias: [{
+    materiaId: "m_sin_unidades",
+    faltantes: [],
+    resultadosArchivos: [{
+      tipo: "pea_unidades",
+      leido: true,
+      error: "",
+      contenidoValido: false,
+      archivo: { datosProcesados: [] }
+    }]
+  }]
+};
+
+const estadoSinContenido = UI.estadoPEA(
+  paqueteSinContenidoUnidades,
+  paqueteSinContenidoUnidades.materias[0],
+  "pea_unidades"
+);
+assert.strictEqual(estadoSinContenido.etiqueta, "No hay contenido");
+assert.match(estadoSinContenido.mensaje, /ninguna unidad/);
+
+const paqueteSinArchivoUnidades = {
+  materias: [{ id: "m_falta_unidades" }],
+  evaluacionesMaterias: [{
+    materiaId: "m_falta_unidades",
+    faltantes: ["pea_unidades"],
+    resultadosArchivos: []
+  }]
+};
+
+const estadoFaltante = UI.estadoPEA(
+  paqueteSinArchivoUnidades,
+  paqueteSinArchivoUnidades.materias[0],
+  "pea_unidades"
+);
+assert.strictEqual(estadoFaltante.etiqueta, "Faltan unidades");
+assert.match(estadoFaltante.mensaje, /No existe el archivo PEA Unidades/);
+
 context.window.SubirCCC.Preview.limpiarPreview();
 assert.strictEqual(limpiarEjecutado, true);
 assert.strictEqual(elementos.statAdvertencias.textContent, "0");
