@@ -58,6 +58,7 @@ jobs:
           node --check firebase/firebase.inteligencia-v2-ajustes.js
           node --check firebase/firebase.transversales.js
           node --check firebase/firebase.curriculo.js
+          node --check firebase/firebase.estadisticas.js
           node --check firebase/firebase.robustez.js
           node --check firebase/firebase.robustez-ajustes.js
           node --check firebase/firebase.importacion-parcial.js
