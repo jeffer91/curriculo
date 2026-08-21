@@ -1,0 +1,73 @@
+<!-- =========================================================
+Nombre completo: local.html
+Ruta o ubicación: /Curriculo/bdlocal/local.html
+Funciones:
+- Consultar la base local IndexedDB de Gestión Curricular CCC.
+- Mostrar carreras, materias, estados y detalle PEA sin usar Firebase.
+- Exportar una copia JSON de la base local.
+========================================================= -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Base local | Curriculo</title>
+  <link rel="stylesheet" href="../menu-superior/menu-superior.css?v=20260821-3" />
+  <style>
+    :root{--bg:#f4f7fb;--surface:#fff;--border:#dbe3ef;--text:#142033;--muted:#64748b;--primary:#184f90;--ok:#087f5b;--warn:#b7791f;--error:#b42318;--shadow:0 18px 45px rgba(31,50,78,.08)}
+    *{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#f8fbff 0%,var(--bg) 100%);color:var(--text);font-family:Arial,Helvetica,sans-serif}.loc-page{width:min(1450px,calc(100% - 32px));margin:0 auto;padding:34px 0 54px}.loc-header{display:flex;justify-content:space-between;gap:20px;align-items:center;margin-bottom:18px}.loc-header h1{margin:0;font-size:42px;letter-spacing:-.04em}.loc-header p{margin:7px 0 0;color:var(--muted)}.loc-actions{display:flex;gap:9px;flex-wrap:wrap}.loc-btn,.loc-mini{border:0;border-radius:11px;padding:11px 15px;background:var(--primary);color:#fff;font-weight:800;cursor:pointer;text-decoration:none}.loc-btn-light{background:#fff;color:var(--primary);border:1px solid var(--border)}.loc-status{display:flex;gap:10px;align-items:center;padding:13px 16px;border:1px solid var(--border);border-radius:15px;background:#fff;margin-bottom:16px}.loc-status span{color:var(--muted)}.loc-status-ok{border-color:#abefc6;background:#ecfdf3}.loc-status-error{border-color:#fecdca;background:#fef3f2}.loc-status-warn{border-color:#fedf89;background:#fffaeb}.loc-stats{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-bottom:16px}.loc-stat{padding:15px;border:1px solid var(--border);border-radius:16px;background:#fff;box-shadow:var(--shadow)}.loc-stat span{display:block;color:var(--muted);font-size:12px}.loc-stat strong{display:block;margin-top:5px;font-size:28px}.loc-panel{padding:18px;border:1px solid var(--border);border-radius:20px;background:#fff;box-shadow:var(--shadow);margin-bottom:16px}.loc-toolbar{display:grid;grid-template-columns:1.2fr 1fr 1.4fr;gap:10px}.loc-toolbar select,.loc-toolbar input{width:100%;padding:12px;border:1px solid var(--border);border-radius:11px;background:#fff;font:inherit}.loc-table-wrap{overflow:auto}.loc-table{width:100%;border-collapse:collapse;min-width:980px}.loc-table th,.loc-table td{padding:12px 10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:middle}.loc-table th{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}.loc-badge{display:inline-flex;padding:5px 8px;border-radius:999px;font-size:11px;font-weight:900}.loc-badge-ok{background:#ecfdf3;color:var(--ok)}.loc-badge-warn{background:#fff7ed;color:var(--warn)}.loc-badge-error{background:#fef3f2;color:var(--error)}.loc-empty,.loc-muted{color:var(--muted)}.loc-modal{width:min(1050px,96vw);max-height:92vh;border:0;border-radius:20px;padding:0;box-shadow:0 32px 90px rgba(15,23,42,.25)}.loc-modal::backdrop{background:rgba(15,23,42,.55)}.loc-modal-head{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-bottom:1px solid var(--border);position:sticky;top:0;background:#fff}.loc-modal-head h2{margin:0}.loc-close{border:0;background:#eef2f6;width:36px;height:36px;border-radius:50%;font-size:22px;cursor:pointer}.loc-modal-content{padding:22px;max-height:75vh;overflow:auto}.loc-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.loc-grid>div,.loc-card{border:1px solid var(--border);border-radius:13px;padding:12px;background:#f8fafc}.loc-grid span{display:block;color:var(--muted);font-size:12px}.loc-card{margin:8px 0;background:#fff}.loc-card h4{margin:0 0 7px}.loc-card p{line-height:1.45}.loc-mini{padding:8px 10px;font-size:12px}@media(max-width:1000px){.loc-stats{grid-template-columns:repeat(3,1fr)}.loc-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:680px){.loc-page{width:min(100% - 18px,1450px)}.loc-header{display:block}.loc-actions{margin-top:12px}.loc-stats{grid-template-columns:repeat(2,1fr)}.loc-toolbar{grid-template-columns:1fr}.loc-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <main class="loc-page">
+    <header class="loc-header">
+      <div><h1>Base local</h1><p>IndexedDB del equipo. Funciona incluso cuando Firebase no está disponible.</p></div>
+      <div class="loc-actions">
+        <a class="loc-btn loc-btn-light" href="./bdlocal.html">Ver Firebase</a>
+        <button class="loc-btn loc-btn-light" id="btnExportarLocal" type="button">Exportar JSON</button>
+        <button class="loc-btn" id="btnRecargarLocal" type="button">Recargar</button>
+      </div>
+    </header>
+
+    <section id="localEstado" class="loc-status"><strong>Inicializando</strong><span>Abriendo IndexedDB...</span></section>
+
+    <section class="loc-stats">
+      <article class="loc-stat"><span>Carreras</span><strong id="locCarreras">0</strong></article>
+      <article class="loc-stat"><span>Niveles</span><strong id="locNiveles">0</strong></article>
+      <article class="loc-stat"><span>Materias</span><strong id="locMaterias">0</strong></article>
+      <article class="loc-stat"><span>Completas</span><strong id="locCompletas">0</strong></article>
+      <article class="loc-stat"><span>Incompletas</span><strong id="locIncompletas">0</strong></article>
+      <article class="loc-stat"><span>Archivos PEA</span><strong id="locArchivos">0</strong></article>
+    </section>
+
+    <section class="loc-panel">
+      <div class="loc-toolbar">
+        <select id="locFiltroCarrera"><option value="">Todas las carreras</option></select>
+        <select id="locFiltroEstado"><option value="">Todos los estados</option><option value="completo">Completo</option><option value="incompleto">Incompleto</option><option value="revision">Revisión</option><option value="pendiente">Pendiente</option><option value="error">Error</option></select>
+        <input id="locBuscar" type="search" placeholder="Buscar materia o código..." autocomplete="off" />
+      </div>
+    </section>
+
+    <section class="loc-panel">
+      <div class="loc-table-wrap">
+        <table class="loc-table">
+          <thead><tr><th>Carrera</th><th>Nivel</th><th>Código</th><th>Materia</th><th>Estado</th><th>Base</th><th>Unidades</th><th>Actividades</th><th>Detalle</th></tr></thead>
+          <tbody id="locTabla"><tr><td colspan="9" class="loc-empty">Cargando...</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="localModal" class="loc-modal">
+    <div class="loc-modal-head"><h2 id="localModalTitulo">Materia</h2><button id="localModalCerrar" class="loc-close" type="button">×</button></div>
+    <div id="localModalContenido" class="loc-modal-content"></div>
+  </dialog>
+
+  <script src="../menu-superior/menu-superior.js?v=20260821-3"></script>
+  <script src="./bdlocal.schema.js?v=20260821-1"></script>
+  <script src="./bdlocal.core.js?v=20260821-1"></script>
+  <script src="./bdlocal.importador.js?v=20260821-1"></script>
+  <script src="./bdlocal.api.js?v=20260821-1"></script>
+  <script src="./local.ui.js?v=20260821-1"></script>
+</body>
+</html>
