@@ -3,6 +3,7 @@ Nombre completo: bdlocal.html
 Ruta o ubicación: /Curriculo/bdlocal/bdlocal.html
 Funciones:
 - Consultar materias, contenidos e historial en Firebase.
+- Permitir cambiar rápidamente a la copia local IndexedDB.
 ========================================================= -->
 <!DOCTYPE html>
 <html lang="es">
@@ -10,7 +11,7 @@ Funciones:
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Firebase | Curriculo</title>
-  <link rel="stylesheet" href="../menu-superior/menu-superior.css?v=20260804-1" />
+  <link rel="stylesheet" href="../menu-superior/menu-superior.css?v=20260821-3" />
   <style>
     :root{--bg:#f4f7fb;--surface:#fff;--border:#dbe3ef;--text:#142033;--muted:#64748b;--primary:#184f90;--ok:#087f5b;--warn:#b7791f;--error:#b42318;--shadow:0 18px 45px rgba(31,50,78,.08)}
     *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,Helvetica,sans-serif}.fb-page{width:min(1450px,calc(100% - 32px));margin:0 auto;padding:34px 0 54px}.fb-header{display:flex;justify-content:space-between;gap:22px;align-items:center;margin-bottom:20px}.fb-header h1{margin:0;font-size:42px;letter-spacing:-.04em}.fb-actions{display:flex;gap:10px;flex-wrap:wrap}.fb-btn,.fb-mini{border:0;border-radius:11px;padding:11px 16px;background:var(--primary);color:#fff;font-weight:800;cursor:pointer;text-decoration:none}.fb-btn-light{background:#fff;color:var(--primary);border:1px solid var(--border)}.fb-status{display:flex;flex-direction:column;gap:4px;padding:13px 16px;border-radius:15px;margin-bottom:18px;border:1px solid var(--border);background:#fff}.fb-status span{color:var(--muted)}.fb-status-ok{border-color:#abefc6;background:#ecfdf3}.fb-status-error{border-color:#fecdca;background:#fef3f2}.fb-status-neutral{border-color:#bfd4ec;background:#f4f8fd}.fb-stats{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-bottom:18px}.fb-stat{background:#fff;border:1px solid var(--border);border-radius:16px;padding:15px;box-shadow:var(--shadow)}.fb-stat span{display:block;color:var(--muted);font-size:12px}.fb-stat strong{display:block;font-size:28px;margin-top:5px}.fb-panel{background:#fff;border:1px solid var(--border);border-radius:20px;padding:18px;box-shadow:var(--shadow);margin-bottom:18px}.fb-toolbar{display:grid;grid-template-columns:minmax(230px,330px) 1fr;gap:12px}.fb-toolbar select,.fb-toolbar input{width:100%;border:1px solid var(--border);border-radius:11px;padding:12px;font-size:14px}.fb-table-wrap{overflow:auto}.fb-table{width:100%;border-collapse:collapse;min-width:970px}.fb-table th,.fb-table td{padding:12px 10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:middle}.fb-table th{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}.fb-table code{font-size:12px}.fb-mini{padding:8px 11px;font-size:12px}.fb-badge{display:inline-flex;padding:5px 9px;border-radius:999px;font-size:11px;font-weight:900;text-transform:capitalize}.fb-badge-ok{background:#ecfdf3;color:var(--ok)}.fb-badge-warn{background:#fff7ed;color:var(--warn)}.fb-badge-error{background:#fef3f2;color:var(--error)}.fb-badge-off{background:#eef2f6;color:#52647b}.fb-empty,.fb-muted{color:var(--muted)}.fb-error{color:var(--error)}.fb-modal{width:min(1080px,96vw);max-height:92vh;border:0;border-radius:20px;padding:0;box-shadow:0 32px 90px rgba(15,23,42,.25)}.fb-modal::backdrop{background:rgba(15,23,42,.55)}.fb-modal-head{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-bottom:1px solid var(--border);position:sticky;top:0;background:#fff;z-index:2}.fb-modal-head h2{margin:0}.fb-close{border:0;background:#eef2f6;width:36px;height:36px;border-radius:50%;font-size:22px;cursor:pointer}.fb-modal-content{padding:22px;max-height:75vh;overflow:auto}.fb-detail-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.fb-detail-grid>div,.fb-detail-card,.fb-change{border:1px solid var(--border);border-radius:13px;padding:12px;background:#f8fafc}.fb-detail-grid span{display:block;color:var(--muted);font-size:12px}.fb-detail-grid strong,.fb-detail-grid code{display:block;margin-top:4px;overflow-wrap:anywhere}.fb-detail-card{background:#fff;margin:8px 0}.fb-detail-card h4{margin:0 0 8px}.fb-detail-card p{line-height:1.5}.fb-change{margin:8px 0}.fb-change>div{display:flex;justify-content:space-between;gap:12px}.fb-change span{font-size:12px;color:var(--muted)}.fb-change p{margin:8px 0 0;line-height:1.45}@media(max-width:1000px){.fb-stats{grid-template-columns:repeat(3,1fr)}.fb-detail-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:680px){.fb-page{width:min(100% - 18px,1450px)}.fb-header{display:block}.fb-actions{margin-top:12px}.fb-stats{grid-template-columns:repeat(2,1fr)}.fb-toolbar{grid-template-columns:1fr}.fb-detail-grid{grid-template-columns:1fr}}
@@ -22,6 +23,7 @@ Funciones:
       <h1>Firebase</h1>
       <div class="fb-actions">
         <a class="fb-btn fb-btn-light" href="../subir/subir.html">Subir ZIP</a>
+        <a class="fb-btn fb-btn-light" href="./local.html">Base local</a>
         <button class="fb-btn" id="btnRecargarFirebase" type="button">Recargar</button>
       </div>
     </header>
@@ -59,7 +61,7 @@ Funciones:
     <div id="modalFirebaseContenido" class="fb-modal-content"></div>
   </dialog>
 
-  <script src="../menu-superior/menu-superior.js?v=20260804-2"></script>
+  <script src="../menu-superior/menu-superior.js?v=20260821-3"></script>
   <script src="../firebase/firebase.inteligencia.js?v=20260728-1"></script>
   <script src="../firebase/firebase.inteligencia-v2.js?v=20260728-2"></script>
   <script src="../firebase/firebase.inteligencia-v2-ajustes.js?v=20260728-3"></script>
