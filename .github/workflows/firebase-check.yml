@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - "firebase/**"
+      - "bdlocal/**"
       - "subir/**"
       - "mallas/**"
       - "estadisticas/**"
@@ -20,6 +21,7 @@ on:
   pull_request:
     paths:
       - "firebase/**"
+      - "bdlocal/**"
       - "subir/**"
       - "mallas/**"
       - "estadisticas/**"
@@ -55,6 +57,11 @@ jobs:
         run: |
           node --check diagnostico/diagnostico-flujo.js
           node --check diagnostico/subir-diagnostico.js
+          node --check bdlocal/bdlocal.schema.js
+          node --check bdlocal/bdlocal.core.js
+          node --check bdlocal/bdlocal.importador.js
+          node --check bdlocal/bdlocal.api.js
+          node --check bdlocal/local.ui.js
           node --check firebase/firebase.inteligencia.js
           node --check firebase/firebase.inteligencia-v2.js
           node --check firebase/firebase.inteligencia-v2-ajustes.js
@@ -85,6 +92,9 @@ jobs:
 
       - name: Ejecutar pruebas de estadísticas
         run: node scripts/estadisticas.test.js
+
+      - name: Ejecutar pruebas de guardado local y sincronización
+        run: node scripts/subir-conexion-hibrida.test.js
 
       - name: Ejecutar pruebas de materias transversales
         run: |
