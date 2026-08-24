@@ -13,17 +13,17 @@ Funciones:
   var MENU_ID = "curriculoMenuSuperior";
   var ROOT_CLASS = "cms-menu-mounted";
   var REPOSITORIO_OFICIAL = "jeffer91/curriculo";
-  var VERSION_INTERFAZ = "firebase-local-estadisticas-2";
+  var VERSION_INTERFAZ = "header-buttons-1";
   var LINKS = [
-    { id: "inicio", label: "Inicio", shortLabel: "Inicio", root: "index.html", child: "../index.html", icon: "⌂", electron: true },
-    { id: "subir", label: "Subir", shortLabel: "Subir", root: "subir/subir.html", child: "../subir/subir.html", icon: "ZIP", electron: true },
-    { id: "bdlocal", label: "Firebase", shortLabel: "Firebase", root: "bdlocal/bdlocal.html", child: "../bdlocal/bdlocal.html", icon: "FB", electron: true },
-    { id: "local", label: "Base local", shortLabel: "Local", root: "bdlocal/local.html", child: "../bdlocal/local.html", icon: "LOC", electron: false },
-    { id: "estadisticas", label: "Estadísticas", shortLabel: "Est.", root: "estadisticas/estadisticas.html", child: "../estadisticas/estadisticas.html", icon: "EST", electron: false },
-    { id: "mallas", label: "Mallas", shortLabel: "Mallas", root: "mallas/mallas.html", child: "../mallas/mallas.html", icon: "MC", electron: false },
-    { id: "comunicados", label: "Comunicados", shortLabel: "Com.", root: "comunicados/comunicados.html", child: "../comunicados/comunicados.html", icon: "COM", electron: true },
-    { id: "fichas", label: "Fichas", shortLabel: "Fichas", root: "fichas/fichas.html", child: "../fichas/fichas.html", icon: "FIC", electron: false },
-    { id: "configuracion", label: "Configuración", shortLabel: "Config.", root: "configuracion/configuracion.html", child: "../configuracion/configuracion.html", icon: "IA", electron: false }
+    { id: "inicio", label: "Inicio", shortLabel: "Inicio", root: "index.html", child: "../index.html", electron: true },
+    { id: "subir", label: "Subir", shortLabel: "Subir", root: "subir/subir.html", child: "../subir/subir.html", electron: true },
+    { id: "bdlocal", label: "Firebase", shortLabel: "Firebase", root: "bdlocal/bdlocal.html", child: "../bdlocal/bdlocal.html", electron: true },
+    { id: "local", label: "Base local", shortLabel: "Local", root: "bdlocal/local.html", child: "../bdlocal/local.html", electron: false },
+    { id: "estadisticas", label: "Estadísticas", shortLabel: "Est.", root: "estadisticas/estadisticas.html", child: "../estadisticas/estadisticas.html", electron: false },
+    { id: "mallas", label: "Mallas", shortLabel: "Mallas", root: "mallas/mallas.html", child: "../mallas/mallas.html", electron: false },
+    { id: "comunicados", label: "Comunicados", shortLabel: "Com.", root: "comunicados/comunicados.html", child: "../comunicados/comunicados.html", electron: true },
+    { id: "fichas", label: "Fichas", shortLabel: "Fichas", root: "fichas/fichas.html", child: "../fichas/fichas.html", electron: false },
+    { id: "configuracion", label: "Configuración", shortLabel: "Config.", root: "configuracion/configuracion.html", child: "../configuracion/configuracion.html", electron: false }
   ];
 
   function texto(v) { return String(v === null || typeof v === "undefined" ? "" : v).trim(); }
@@ -50,7 +50,7 @@ Funciones:
     var activa = pantallaActual();
     var links = LINKS.map(function (link) {
       return '<a class="cms-link ' + (link.id === activa ? "cms-link-active" : "") + '" href="' + escapar(hrefDe(link)) + '" data-cms-route="' + escapar(link.id) + '" data-cms-native="' + (link.electron === false ? "true" : "false") + '" title="' + escapar(link.label) + '">' +
-        '<span class="cms-link-icon">' + escapar(link.icon) + '</span><span class="cms-link-label">' + escapar(link.label) + '</span><span class="cms-link-short">' + escapar(link.shortLabel) + '</span></a>';
+        '<span class="cms-link-label">' + escapar(link.label) + '</span><span class="cms-link-short">' + escapar(link.shortLabel) + '</span></a>';
     }).join("");
     return '<nav id="' + MENU_ID + '" class="cms-menu" aria-label="Menú superior Curriculo"><div class="cms-inner">' +
       '<a class="cms-brand" href="' + escapar(estaEnSubcarpeta() ? "../index.html" : "index.html") + '" data-cms-route="inicio"><span class="cms-brand-mark">CCC</span><span class="cms-brand-text"><strong>Curriculo</strong><small>Gestión curricular</small></span></a>' +
