@@ -2,7 +2,8 @@
 Nombre completo: fichas.html
 Ruta o ubicación: /Curriculo/fichas/fichas.html
 Funciones:
-- Crear una ficha por carrera, nivel y período.
+- Crear una ficha por carrera, nivel y período institucional guardado.
+- Crear y reutilizar períodos mediante mes/año inicial y final.
 - Diagnosticar materias, PEA, inputs, datos generales e IA.
 - Cargar y analizar inputs institucionales.
 - Actualizar tendencias bajo demanda.
@@ -16,6 +17,7 @@ Funciones:
   <title>Fichas | Curriculo</title>
   <link rel="stylesheet" href="../menu-superior/menu-superior.css?v=20260804-1" />
   <link rel="stylesheet" href="./fichas.css?v=20260807-1" />
+  <link rel="stylesheet" href="./fichas.periodos.css?v=20260824-1" />
 </head>
 <body>
   <main class="fichas-app">
@@ -35,12 +37,49 @@ Funciones:
         <label>Nivel</label>
         <select id="nivelSelect" disabled><option value="">Seleccionar nivel</option></select>
       </div>
-      <div class="field">
+      <div class="field period-field">
         <label>Período</label>
-        <input id="periodoInput" placeholder="Ej. Abril - Septiembre 2026" />
+        <div class="period-select-row">
+          <select id="periodoSelect" disabled><option value="">Cargando períodos...</option></select>
+          <button class="btn btn-light" id="btnNuevoPeriodo" type="button">+ Nuevo</button>
+        </div>
+        <input id="periodoInput" type="hidden" />
       </div>
       <button class="btn btn-primary" id="btnRevisar" type="button">Revisar</button>
     </section>
+
+    <section id="periodoNuevoPanel" class="period-new-panel" hidden>
+      <div class="period-new-head">
+        <div>
+          <strong>Nuevo período</strong>
+          <span>Se guardará una sola vez y luego estará disponible en el selector.</span>
+        </div>
+      </div>
+      <div class="period-builder">
+        <div class="field">
+          <label for="periodoMesInicio">Mes inicial</label>
+          <select id="periodoMesInicio"><option value="">Mes</option></select>
+        </div>
+        <div class="field">
+          <label for="periodoAnioInicio">Año inicial</label>
+          <input id="periodoAnioInicio" type="number" min="2000" max="2100" step="1" />
+        </div>
+        <span class="period-arrow" aria-hidden="true">→</span>
+        <div class="field">
+          <label for="periodoMesFin">Mes final</label>
+          <select id="periodoMesFin"><option value="">Mes</option></select>
+        </div>
+        <div class="field">
+          <label for="periodoAnioFin">Año final</label>
+          <input id="periodoAnioFin" type="number" min="2000" max="2100" step="1" />
+        </div>
+        <div class="period-actions">
+          <button class="btn btn-light" id="btnCancelarPeriodo" type="button">Cancelar</button>
+          <button class="btn btn-primary" id="btnGuardarPeriodo" type="button">Guardar período</button>
+        </div>
+      </div>
+    </section>
+    <div id="periodoMensaje" class="period-message" hidden></div>
 
     <section class="dashboard">
       <aside class="side">
@@ -154,7 +193,9 @@ Funciones:
   <script src="../firebase/firebase.curriculo.js?v=20260728-1"></script>
   <script src="../firebase/firebase.mallas.js?v=20260804-1"></script>
   <script src="../firebase/firebase.fichas.js?v=20260807-1"></script>
+  <script src="../firebase/firebase.fichas-periodos.js?v=20260824-1"></script>
   <script src="../configuracion/ia.motor.js?v=20260807-1"></script>
+  <script src="./fichas.periodos.js?v=20260824-1"></script>
   <script src="./fichas.js?v=20260807-1"></script>
 </body>
 </html>
