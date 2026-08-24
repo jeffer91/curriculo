@@ -1,0 +1,241 @@
+/* Correcciones asistidas desde Estadísticas */
+.est-action-head,
+.est-action-cell {
+  width: 118px;
+  min-width: 118px;
+  text-align: center !important;
+}
+
+.est-fix-btn {
+  min-height: 30px;
+  padding: 6px 10px;
+  border: 1px solid #b9cbe1;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #184f90;
+  font-size: 11px;
+  font-weight: 900;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+
+.est-fix-btn:hover {
+  background: #f3f7fc;
+  border-color: #184f90;
+}
+
+.est-action-note,
+.est-action-empty {
+  display: inline-block;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.est-action-warn {
+  color: #9a5b00;
+}
+
+.est-fix-modal {
+  width: min(760px, calc(100vw - 32px));
+  max-height: min(720px, calc(100vh - 32px));
+  padding: 0;
+  border: 0;
+  border-radius: 18px;
+  background: #ffffff;
+  color: #142033;
+  box-shadow: 0 28px 80px rgba(15, 23, 42, .25);
+  overflow: hidden;
+}
+
+.est-fix-modal::backdrop {
+  background: rgba(15, 23, 42, .44);
+  backdrop-filter: blur(2px);
+}
+
+.est-fix-modal-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 18px 20px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.est-fix-modal-head > div {
+  display: grid;
+  gap: 3px;
+}
+
+.est-fix-modal-head strong {
+  font-size: 18px;
+}
+
+.est-fix-modal-head span {
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.est-fix-close {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #64748b;
+  font-size: 19px;
+  cursor: pointer;
+}
+
+.est-fix-modal-body {
+  padding: 20px;
+  overflow: auto;
+}
+
+.est-fix-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.est-fix-box {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid #dbe3ef;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.est-fix-box > span,
+.est-fix-box label {
+  display: block;
+  margin-bottom: 7px;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.est-fix-box > strong {
+  display: block;
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.est-fix-box > small {
+  display: block;
+  margin-top: 7px;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.est-fix-box select {
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #142033;
+  font: inherit;
+}
+
+.est-fix-reason {
+  display: grid;
+  gap: 3px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid #c7daf2;
+  border-radius: 11px;
+  background: #f4f9ff;
+}
+
+.est-fix-reason strong {
+  color: #184f90;
+  font-size: 12px;
+}
+
+.est-fix-reason span {
+  color: #42526a;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.est-fix-help {
+  margin: 12px 0 0;
+  color: #64748b;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.est-fix-message {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border: 1px solid #c7daf2;
+  border-radius: 9px;
+  background: #f4f9ff;
+  color: #184f90;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.est-fix-message-ok {
+  border-color: #bde8d2;
+  background: #e7f7ef;
+  color: #137a4b;
+}
+
+.est-fix-message-error {
+  border-color: #f1b8b2;
+  background: #fff0ee;
+  color: #b42318;
+}
+
+.est-fix-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 20px;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.est-fix-secondary,
+.est-fix-primary {
+  min-height: 38px;
+  padding: 8px 14px;
+  border-radius: 9px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.est-fix-secondary {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #475569;
+}
+
+.est-fix-primary {
+  border: 1px solid #184f90;
+  background: #184f90;
+  color: #ffffff;
+}
+
+.est-fix-primary:disabled {
+  opacity: .6;
+  cursor: wait;
+}
+
+@media (max-width: 700px) {
+  .est-fix-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .est-action-head,
+  .est-action-cell {
+    width: 105px;
+    min-width: 105px;
+  }
+}
