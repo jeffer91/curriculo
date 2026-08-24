@@ -4,7 +4,7 @@ Ruta o ubicación: /Curriculo/mallas/mallas.comparador.js
 Funciones:
 - Comparar materias detectadas en un ZIP contra una malla oficial.
 - Usar equivalencias, nombre normalizado y nivel, sin depender de códigos.
-- Normalizar tildes, signos y números romanos de la misma forma que Mallas.
+- Normalizar tildes, signos, números romanos y distintas formas de escribir niveles.
 - Proponer coincidencias por similitud sin confirmarlas automáticamente.
 - Garantizar relaciones uno a uno entre materia detectada y oficial.
 ========================================================= */
@@ -16,7 +16,7 @@ Funciones:
 })(typeof window !== "undefined" ? window : globalThis, function () {
   "use strict";
 
-  var VERSION = "1.0.2";
+  var VERSION = "1.1.0";
   var ROMANOS = Object.freeze({ x: "10", ix: "9", viii: "8", vii: "7", vi: "6", v: "5", iv: "4", iii: "3", ii: "2", i: "1" });
 
   function texto(valor) {
@@ -38,8 +38,48 @@ Funciones:
       .trim();
   }
 
+  function numeroNivel(valor) {
+    if (typeof valor === "number" && Number.isFinite(valor)) {
+      return valor > 0 ? Math.trunc(valor) : 0;
+    }
+
+    var limpio = normalizar(valor);
+    if (!limpio) return 0;
+
+    var directo = Number(limpio);
+    if (Number.isFinite(directo) && directo > 0) return Math.trunc(directo);
+
+    var coincidencia = limpio.match(/(?:^|\s)(\d{1,2})(?:\s|$)/);
+    if (!coincidencia) return 0;
+
+    var n = Number(coincidencia[1]);
+    return Number.isFinite(n) && n > 0 ? Math.trunc(n) : 0;
+  }
+
   function nivel(item) {
-    return Number(item && (item.nivelNumero || item.numeroNivel || item.nivel) || 0);
+    if (!item) return 0;
+
+    var candidatos = [
+      item.nivelNumero,
+      item.numeroNivel,
+      item.mallaNivelOficial,
+      item.nivel,
+      item.nivelNombre,
+      item.estructura,
+      item.estructuraNombre
+    ];
+
+    for (var i = 0; i < candidatos.length; i += 1) {
+      var n = numeroNivel(candidatos[i]);
+      if (n > 0) return n;
+    }
+
+    return 0;
+  }
+
+  function etiquetaNivel(valor) {
+    var n = numeroNivel(valor);
+    return n > 0 ? "Nivel " + n : "Sin nivel";
   }
 
   function nombreDetectado(item) {
@@ -72,8 +112,8 @@ Funciones:
     return (2 * comunes) / (aa.length + bb.length);
   }
 
-  function claveEquivalencia(nombre, numeroNivel) {
-    return normalizar(nombre) + "|n" + Number(numeroNivel || 0);
+  function claveEquivalencia(nombre, numeroNivelValor) {
+    return normalizar(nombre) + "|n" + numeroNivel(numeroNivelValor);
   }
 
   function prepararOficiales(lista) {
@@ -269,6 +309,9 @@ Funciones:
   return {
     VERSION: VERSION,
     normalizar: normalizar,
+    numeroNivel: numeroNivel,
+    nivel: nivel,
+    etiquetaNivel: etiquetaNivel,
     similitud: similitud,
     claveEquivalencia: claveEquivalencia,
     comparar: comparar,
