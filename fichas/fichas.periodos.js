@@ -48,8 +48,15 @@ Funciones:
     return listaPeriodos.filter(function (item) { return texto(item.id || item.periodoId) === id; })[0] || null;
   }
 
-  function datosPeriodoActual() {
-    var periodo = periodoSeleccionado();
+  function periodoPorValor(valor) {
+    var buscado = texto(valor);
+    if (!buscado) return null;
+    return listaPeriodos.filter(function (item) {
+      return texto(item.periodo) === buscado || texto(item.nombre) === buscado;
+    })[0] || null;
+  }
+
+  function metaPeriodo(periodo) {
     if (!periodo) return null;
     return {
       periodoId: texto(periodo.id || periodo.periodoId),
@@ -59,6 +66,10 @@ Funciones:
       periodoFinMes: numero(periodo.mesFin, 0),
       periodoFinAnio: numero(periodo.anioFin, 0)
     };
+  }
+
+  function datosPeriodoActual() {
+    return metaPeriodo(periodoSeleccionado());
   }
 
   function sincronizarPeriodoOculto() {
@@ -233,7 +244,8 @@ Funciones:
       var original = Fichas[nombre];
       if (typeof original !== "function") return;
       Fichas[nombre] = function (datos) {
-        var meta = datosPeriodoActual();
+        var periodo = periodoPorValor(datos && datos.periodo) || periodoSeleccionado();
+        var meta = metaPeriodo(periodo);
         return original.call(Fichas, meta ? Object.assign({}, datos || {}, meta) : datos);
       };
     });
