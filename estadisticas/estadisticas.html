@@ -5,6 +5,7 @@ Funciones:
 - Mostrar cobertura curricular institucional por carrera.
 - Filtrar por niveles, núcleos, transversales, estado y PEA.
 - Identificar materias completas, incompletas, faltantes y no vinculadas.
+- Corregir vinculaciones dudosas directamente desde el detalle curricular.
 ========================================================= -->
 <!DOCTYPE html>
 <html lang="es">
@@ -14,6 +15,7 @@ Funciones:
   <title>Estadísticas | Curriculo</title>
   <link rel="stylesheet" href="../menu-superior/menu-superior.css?v=20260824-1" />
   <link rel="stylesheet" href="./estadisticas.css?v=20260824-1" />
+  <link rel="stylesheet" href="./estadisticas.correcciones.css?v=20260824-1" />
 </head>
 <body>
   <main class="est-page">
@@ -140,10 +142,11 @@ Funciones:
               <th>Actividades</th>
               <th>Estado</th>
               <th>Referencia</th>
+              <th class="est-action-head">Acción</th>
             </tr>
           </thead>
           <tbody id="tablaDetalle">
-            <tr><td colspan="9" class="est-empty">Cargando...</td></tr>
+            <tr><td colspan="10" class="est-empty">Cargando...</td></tr>
           </tbody>
         </table>
       </div>
@@ -155,7 +158,8 @@ Funciones:
   <script src="../firebase/firebase.curriculo.js?v=20260728-1"></script>
   <script src="../firebase/firebase.mallas.js?v=20260804-1"></script>
   <script src="../firebase/firebase.estadisticas.js?v=20260821-1"></script>
-  <script src="../mallas/mallas.comparador.js?v=20260821-1"></script>
+  <script src="../mallas/mallas.comparador.js?v=20260824-1"></script>
   <script src="./estadisticas.js?v=20260821-3"></script>
+  <script src="./estadisticas.correcciones.js?v=20260824-1"></script>
 </body>
 </html>
