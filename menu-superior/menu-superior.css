@@ -96,7 +96,7 @@ body.cms-menu-mounted {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 2px;
+  gap: 6px;
   min-width: 0;
 }
 
@@ -104,63 +104,45 @@ body.cms-menu-mounted {
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  min-height: 36px;
-  padding: 6px 9px;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  color: var(--cms-muted);
+  justify-content: center;
+  min-height: 34px;
+  padding: 7px 11px;
+  border: 1px solid #e6ebf2;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #5f6f86;
   text-decoration: none;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 800;
+  line-height: 1;
   white-space: nowrap;
-  transition: background 0.15s ease, color 0.15s ease;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
 
 .cms-link:hover {
-  color: var(--cms-text);
-  background: var(--cms-hover);
-}
-
-.cms-link-active {
-  color: var(--cms-primary);
-  background: transparent;
-  border-color: transparent;
-}
-
-.cms-link-active:hover {
   color: var(--cms-primary);
   background: var(--cms-primary-soft);
+  border-color: #c8d8ec;
+  box-shadow: 0 2px 6px rgba(24, 79, 144, 0.08);
+  transform: translateY(-1px);
+}
+
+.cms-link-active,
+.cms-link-active:hover {
+  color: #ffffff;
+  background: var(--cms-primary);
+  border-color: var(--cms-primary);
+  box-shadow: 0 2px 7px rgba(24, 79, 144, 0.18);
+  transform: none;
 }
 
 .cms-link-active::after {
-  content: "";
-  position: absolute;
-  left: 9px;
-  right: 9px;
-  bottom: -13px;
-  height: 2px;
-  border-radius: 2px 2px 0 0;
-  background: var(--cms-primary);
+  display: none;
 }
 
 .cms-link-icon {
-  min-width: auto;
-  height: auto;
-  display: inline;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  color: var(--cms-muted-soft);
-  font-size: 9px;
-  line-height: 1;
-  font-weight: 900;
-  letter-spacing: 0.02em;
-}
-
-.cms-link:hover .cms-link-icon,
-.cms-link-active .cms-link-icon {
-  color: var(--cms-primary);
+  display: none !important;
 }
 
 .cms-link-short {
@@ -237,6 +219,15 @@ body.cms-menu-mounted {
   .cms-brand {
     min-width: 160px;
   }
+
+  .cms-links {
+    gap: 4px;
+  }
+
+  .cms-link {
+    padding: 7px 9px;
+    font-size: 12px;
+  }
 }
 
 @media (max-width: 1020px) {
@@ -262,11 +253,7 @@ body.cms-menu-mounted {
   }
 
   .cms-link {
-    padding: 6px 8px;
-  }
-
-  .cms-link-icon {
-    display: none;
+    padding: 7px 9px;
   }
 }
 
@@ -305,9 +292,5 @@ body.cms-menu-mounted {
 
   .cms-right {
     grid-area: right;
-  }
-
-  .cms-link-active::after {
-    bottom: -6px;
   }
 }
