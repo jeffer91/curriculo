@@ -3,29 +3,31 @@ Nombre completo: menu-superior.css
 Ruta o ubicación: /Curriculo/menu-superior/menu-superior.css
 Función o funciones:
 - Diseñar el menú superior reutilizable de Curriculo.
-- Mantener navegación fija entre Inicio, Subir ZIP y BDLocal.
+- Mantener navegación fija entre los módulos de la aplicación.
 - Adaptar el menú a navegador y Electron.
 - Resaltar la pantalla activa.
-- Mantener diseño claro, institucional y compatible con las pantallas actuales.
-- Mostrar una identificación visible de versión y origen de ejecución.
+- Mantener una cabecera sobria, compacta e institucional.
+- Mostrar la versión y el origen de ejecución sin recargar visualmente la navegación.
 ========================================================= */
 
 :root {
-  --cms-bg: rgba(255, 255, 255, 0.92);
+  --cms-bg: rgba(255, 255, 255, 0.98);
   --cms-bg-solid: #ffffff;
-  --cms-border: #dbe3ef;
-  --cms-text: #142033;
+  --cms-border: #e2e8f0;
+  --cms-text: #1e293b;
   --cms-muted: #64748b;
+  --cms-muted-soft: #94a3b8;
   --cms-primary: #184f90;
   --cms-primary-dark: #123e72;
-  --cms-primary-soft: #e8f1fb;
-  --cms-shadow: 0 12px 35px rgba(31, 50, 78, 0.08);
+  --cms-primary-soft: #f3f7fc;
+  --cms-hover: #f8fafc;
+  --cms-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
   --cms-ok: #137a4b;
   --cms-warn: #9a5b00;
 }
 
 body.cms-menu-mounted {
-  padding-top: 78px;
+  padding-top: 66px;
 }
 
 .cms-menu {
@@ -36,116 +38,129 @@ body.cms-menu-mounted {
   z-index: 9999;
   border-bottom: 1px solid var(--cms-border);
   background: var(--cms-bg);
-  backdrop-filter: blur(14px);
+  backdrop-filter: blur(10px);
   box-shadow: var(--cms-shadow);
 }
 
 .cms-inner {
-  width: min(1440px, calc(100% - 32px));
-  height: 70px;
+  width: min(1480px, calc(100% - 32px));
+  height: 60px;
   margin: 0 auto;
   display: grid;
   grid-template-columns: auto 1fr auto;
-  gap: 18px;
+  gap: 16px;
   align-items: center;
 }
 
 .cms-brand {
   display: inline-flex;
   align-items: center;
-  gap: 11px;
+  gap: 10px;
   color: var(--cms-text);
   text-decoration: none;
-  min-width: 230px;
+  min-width: 188px;
 }
 
 .cms-brand-mark {
-  width: 44px;
-  height: 44px;
+  width: 36px;
+  height: 36px;
   display: grid;
   place-items: center;
-  border-radius: 14px;
+  border-radius: 10px;
   background: var(--cms-primary);
   color: #ffffff;
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 900;
-  letter-spacing: 0.06em;
-  box-shadow: 0 10px 22px rgba(24, 79, 144, 0.22);
+  letter-spacing: 0.05em;
+  box-shadow: none;
 }
 
 .cms-brand-text {
   display: grid;
-  gap: 2px;
+  gap: 1px;
 }
 
 .cms-brand-text strong {
-  font-size: 16px;
-  line-height: 1.1;
+  font-size: 15px;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
 }
 
 .cms-brand-text small {
   color: var(--cms-muted);
-  font-size: 12px;
-  font-weight: 800;
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .cms-links {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 8px;
+  gap: 2px;
+  min-width: 0;
 }
 
 .cms-link {
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  min-height: 42px;
-  padding: 8px 13px;
+  gap: 5px;
+  min-height: 36px;
+  padding: 6px 9px;
   border: 1px solid transparent;
-  border-radius: 999px;
+  border-radius: 8px;
   color: var(--cms-muted);
   text-decoration: none;
-  font-size: 14px;
-  font-weight: 900;
-  transition: background 0.15s ease, color 0.15s ease, border 0.15s ease, transform 0.15s ease;
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 .cms-link:hover {
-  color: var(--cms-primary);
-  background: var(--cms-primary-soft);
-  transform: translateY(-1px);
+  color: var(--cms-text);
+  background: var(--cms-hover);
 }
 
 .cms-link-active {
   color: var(--cms-primary);
+  background: transparent;
+  border-color: transparent;
+}
+
+.cms-link-active:hover {
+  color: var(--cms-primary);
   background: var(--cms-primary-soft);
-  border-color: #c7daf2;
 }
 
 .cms-link-active::after {
   content: "";
   position: absolute;
-  left: 18px;
-  right: 18px;
-  bottom: -15px;
-  height: 3px;
-  border-radius: 999px;
+  left: 9px;
+  right: 9px;
+  bottom: -13px;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
   background: var(--cms-primary);
 }
 
 .cms-link-icon {
-  min-width: 28px;
-  height: 28px;
-  display: grid;
-  place-items: center;
-  border-radius: 999px;
-  background: #ffffff;
-  color: var(--cms-primary);
-  border: 1px solid var(--cms-border);
-  font-size: 11px;
+  min-width: auto;
+  height: auto;
+  display: inline;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--cms-muted-soft);
+  font-size: 9px;
+  line-height: 1;
   font-weight: 900;
+  letter-spacing: 0.02em;
+}
+
+.cms-link:hover .cms-link-icon,
+.cms-link-active .cms-link-icon {
+  color: var(--cms-primary);
 }
 
 .cms-link-short {
@@ -156,85 +171,85 @@ body.cms-menu-mounted {
   display: inline-flex;
   justify-content: flex-end;
   align-items: center;
-  gap: 8px;
-  min-width: 180px;
+  gap: 4px;
+  min-width: 150px;
 }
 
 .cms-version,
 .cms-mode {
   display: inline-flex;
   align-items: center;
-  min-height: 32px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: 1px solid var(--cms-border);
-  font-size: 12px;
-  font-weight: 900;
+  min-height: 28px;
+  padding: 4px 7px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--cms-muted-soft);
+  font-size: 10px;
+  font-weight: 800;
   white-space: nowrap;
 }
 
 .cms-version {
-  color: var(--cms-primary);
-  background: var(--cms-primary-soft);
-  border-color: #c7daf2;
   cursor: help;
 }
 
 .cms-version-warning {
   color: var(--cms-warn);
-  background: #fff6df;
-  border-color: #f0d39a;
-}
-
-.cms-mode {
-  color: var(--cms-muted);
-  background: #f8fafc;
+  background: #fff9eb;
 }
 
 .cms-mode-electron {
   color: var(--cms-ok);
-  background: #e7f7ef;
-  border-color: #bde8d2;
 }
 
 .cms-icon-btn {
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
   display: grid;
   place-items: center;
-  border: 1px solid var(--cms-border);
-  border-radius: 999px;
-  background: #ffffff;
-  color: var(--cms-primary);
-  font-size: 17px;
-  font-weight: 900;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--cms-muted);
+  font-size: 15px;
+  font-weight: 800;
   cursor: pointer;
-  transition: background 0.15s ease, transform 0.15s ease, border 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
 .cms-icon-btn:hover {
-  background: var(--cms-primary-soft);
-  border-color: var(--cms-primary);
-  transform: translateY(-1px);
+  background: var(--cms-hover);
+  border-color: var(--cms-border);
+  color: var(--cms-primary);
 }
 
-@media (max-width: 1120px) {
-  .cms-version {
+@media (max-width: 1240px) {
+  .cms-version,
+  .cms-mode {
     display: none;
+  }
+
+  .cms-right {
+    min-width: 34px;
+  }
+
+  .cms-brand {
+    min-width: 160px;
   }
 }
 
-@media (max-width: 960px) {
+@media (max-width: 1020px) {
   .cms-inner {
     grid-template-columns: auto 1fr auto;
-    gap: 10px;
+    gap: 8px;
   }
 
   .cms-brand {
     min-width: auto;
   }
 
-  .cms-brand-text {
+  .cms-brand-text small {
     display: none;
   }
 
@@ -247,50 +262,52 @@ body.cms-menu-mounted {
   }
 
   .cms-link {
-    padding: 8px 10px;
+    padding: 6px 8px;
   }
 
-  .cms-right {
-    min-width: auto;
+  .cms-link-icon {
+    display: none;
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 720px) {
   body.cms-menu-mounted {
-    padding-top: 124px;
+    padding-top: 108px;
   }
 
   .cms-inner {
-    width: min(100% - 20px, 1440px);
+    width: min(100% - 20px, 1480px);
     height: auto;
-    min-height: 116px;
-    padding: 10px 0;
+    min-height: 100px;
+    padding: 8px 0;
     grid-template-columns: 1fr auto;
     grid-template-areas:
       "brand right"
       "links links";
+    row-gap: 6px;
   }
 
   .cms-brand {
     grid-area: brand;
   }
 
+  .cms-brand-text small {
+    display: block;
+  }
+
   .cms-links {
     grid-area: links;
     justify-content: flex-start;
     overflow-x: auto;
-    padding-bottom: 4px;
+    padding: 0 0 3px;
+    scrollbar-width: thin;
   }
 
   .cms-right {
     grid-area: right;
   }
 
-  .cms-mode {
-    display: none;
-  }
-
   .cms-link-active::after {
-    display: none;
+    bottom: -6px;
   }
 }
