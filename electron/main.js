@@ -3,7 +3,7 @@ Nombre completo: main.js
 Ruta o ubicación: /Curriculo/electron/main.js
 Función o funciones:
 - Crear la ventana principal de la app Curriculo en Electron.
-- Cargar las pantallas internas: Inicio, Subir ZIP, BDLocal y Comunicados.
+- Cargar las pantallas internas: Inicio, Subir ZIP, BDLocal, Exportar Firebase y Comunicados.
 - Exponer IPC seguros para navegación interna, enlaces externos y archivos.
 - Generar PDF desde HTML usando una ventana temporal y printToPDF.
 - Guardar y verificar los PDF directamente en la carpeta Descargas.
@@ -34,6 +34,7 @@ const RUTAS = Object.freeze({
   inicio: path.join(ROOT_DIR, "index.html"),
   subir: path.join(ROOT_DIR, "subir", "subir.html"),
   bdlocal: path.join(ROOT_DIR, "bdlocal", "bdlocal.html"),
+  exportar: path.join(ROOT_DIR, "exportar", "exportar.html"),
   comunicados: path.join(ROOT_DIR, "comunicados", "comunicados.html")
 });
 
@@ -464,15 +465,29 @@ async function guardarArchivoEnDescargas(payload) {
   payload = payload || {};
 
   try {
-    const contenido = String(payload.contenido || "");
     const extension = String(payload.extension || ".txt");
+    const encoding = String(payload.encoding || "utf8").toLowerCase() === "base64" ? "base64" : "utf8";
+    const contenido = encoding === "base64"
+      ? String(payload.contenidoBase64 || payload.contenido || "")
+      : String(payload.contenido || "");
     const nombreArchivo = asegurarExtension(payload.nombreArchivo || "archivo" + extension, extension);
     const carpetaDescargas = app.getPath("downloads");
+
+    if (!contenido) {
+      throw new Error("No se recibió contenido para guardar.");
+    }
 
     await fs.promises.mkdir(carpetaDescargas, { recursive: true });
 
     const rutaFinal = obtenerRutaUnica(carpetaDescargas, nombreArchivo);
-    await fs.promises.writeFile(rutaFinal, contenido, "utf8");
+
+    if (encoding === "base64") {
+      const buffer = Buffer.from(contenido, "base64");
+      if (!buffer.length) throw new Error("El contenido binario está vacío.");
+      await fs.promises.writeFile(rutaFinal, buffer);
+    } else {
+      await fs.promises.writeFile(rutaFinal, contenido, "utf8");
+    }
 
     const info = await fs.promises.stat(rutaFinal);
 
@@ -517,6 +532,7 @@ function configurarIPC() {
         inicio: RUTAS.inicio,
         subir: RUTAS.subir,
         bdlocal: RUTAS.bdlocal,
+        exportar: RUTAS.exportar,
         comunicados: RUTAS.comunicados
       }
     };
@@ -606,6 +622,7 @@ function crearMenuNativo() {
         { label: "Inicio", click: function () { navegar("inicio"); } },
         { label: "Subir ZIP", click: function () { navegar("subir"); } },
         { label: "BDLocal", click: function () { navegar("bdlocal"); } },
+        { label: "Exportar Firebase", click: function () { navegar("exportar"); } },
         { label: "Comunicados", click: function () { navegar("comunicados"); } },
         { type: "separator" },
         {
