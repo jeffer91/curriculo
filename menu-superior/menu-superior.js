@@ -3,7 +3,7 @@ Nombre completo: menu-superior.js
 Ruta o ubicación: /Curriculo/menu-superior/menu-superior.js
 Funciones:
 - Crear el menú superior reutilizable.
-- Navegar entre Inicio, Subir, Firebase, Base local, Estadísticas, Mallas, Comunicados, Fichas y Configuración.
+- Navegar entre Inicio, Subir, Firebase, Exportar, Base local, Estadísticas, Mallas, Comunicados, Fichas y Configuración.
 - Mostrar la versión instalada.
 - Cargar la comparación de mallas en Subir ZIP.
 ========================================================= */
@@ -18,6 +18,7 @@ Funciones:
     { id: "inicio", label: "Inicio", shortLabel: "Inicio", root: "index.html", child: "../index.html", electron: true },
     { id: "subir", label: "Subir", shortLabel: "Subir", root: "subir/subir.html", child: "../subir/subir.html", electron: true },
     { id: "bdlocal", label: "Firebase", shortLabel: "Firebase", root: "bdlocal/bdlocal.html", child: "../bdlocal/bdlocal.html", electron: true },
+    { id: "exportar", label: "Exportar", shortLabel: "Export.", root: "exportar/exportar.html", child: "../exportar/exportar.html", electron: true },
     { id: "local", label: "Base local", shortLabel: "Local", root: "bdlocal/local.html", child: "../bdlocal/local.html", electron: false },
     { id: "estadisticas", label: "Estadísticas", shortLabel: "Est.", root: "estadisticas/estadisticas.html", child: "../estadisticas/estadisticas.html", electron: false },
     { id: "mallas", label: "Mallas", shortLabel: "Mallas", root: "mallas/mallas.html", child: "../mallas/mallas.html", electron: false },
@@ -29,12 +30,13 @@ Funciones:
   function texto(v) { return String(v === null || typeof v === "undefined" ? "" : v).trim(); }
   function escapar(v) { return texto(v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;").replace(/'/g, "&#039;"); }
   function pathActual() { return String(window.location.pathname || "").replace(/\\/g, "/").toLowerCase(); }
-  function estaEnSubcarpeta() { return /\/(subir|bdlocal|estadisticas|comunicados|firebase|mallas|fichas|configuracion|menu-superior)\//.test(pathActual()); }
+  function estaEnSubcarpeta() { return /\/(subir|bdlocal|exportar|estadisticas|comunicados|firebase|mallas|fichas|configuracion|menu-superior)\//.test(pathActual()); }
   function pantallaActual() {
     var p = pathActual();
     if (p.indexOf("/subir/") !== -1) return "subir";
     if (p.indexOf("/bdlocal/local.html") !== -1) return "local";
     if (p.indexOf("/bdlocal/") !== -1 || p.indexOf("/firebase/") !== -1) return "bdlocal";
+    if (p.indexOf("/exportar/") !== -1) return "exportar";
     if (p.indexOf("/estadisticas/") !== -1) return "estadisticas";
     if (p.indexOf("/mallas/") !== -1) return "mallas";
     if (p.indexOf("/comunicados/") !== -1) return "comunicados";
