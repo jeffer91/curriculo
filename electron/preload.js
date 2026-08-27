@@ -3,7 +3,7 @@ Nombre completo: preload.js
 Ruta o ubicación: /Curriculo/electron/preload.js
 Funciones:
 - Exponer funciones seguras desde Electron hacia las pantallas HTML.
-- Permitir navegación interna a Inicio, Subir ZIP, Firebase y Comunicados.
+- Permitir navegación interna a Inicio, Subir ZIP, Firebase, Exportar Firebase y Comunicados.
 - Permitir consultar información y diagnóstico del puente de PDF.
 - Permitir abrir enlaces externos y la carpeta Descargas.
 - Permitir guardar PDF directamente en Descargas desde Comunicados.
@@ -26,6 +26,7 @@ const RUTAS_PERMITIDAS = Object.freeze({
   inicio: true,
   subir: true,
   bdlocal: true,
+  exportar: true,
   comunicados: true
 });
 
@@ -111,11 +112,16 @@ function normalizarPayloadComunicadosZIP(payload) {
 
 function normalizarPayloadArchivo(payload) {
   payload = payload || {};
+  const encoding = textoSeguro(payload.encoding || "utf8").toLowerCase() === "base64"
+    ? "base64"
+    : "utf8";
 
   return {
     contenido: textoSeguro(payload.contenido),
+    contenidoBase64: textoSeguro(payload.contenidoBase64),
     nombreArchivo: textoSeguro(payload.nombreArchivo || "archivo.txt"),
-    extension: textoSeguro(payload.extension || ".txt")
+    extension: textoSeguro(payload.extension || ".txt"),
+    encoding: encoding
   };
 }
 
