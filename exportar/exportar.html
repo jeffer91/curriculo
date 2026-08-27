@@ -1,0 +1,114 @@
+<!-- =========================================================
+Nombre completo: exportar.html
+Ruta o ubicación: /Curriculo/exportar/exportar.html
+Funciones:
+- Mostrar el módulo de respaldo de Firebase.
+- Leer todas las colecciones curriculares en modo solo lectura.
+- Descargar un respaldo completo en TXT o Excel.
+========================================================= -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Exportar Firebase | Curriculo</title>
+  <link rel="stylesheet" href="../menu-superior/menu-superior.css?v=20260827-1" />
+  <link rel="stylesheet" href="./exportar.css?v=20260827-1" />
+</head>
+<body>
+  <main class="exp-app">
+    <header class="exp-hero">
+      <div>
+        <p class="exp-eyebrow">RESPALDO DE DATOS</p>
+        <h1>Exportar Firebase</h1>
+        <p class="exp-subtitle">Descarga una copia completa de la información curricular almacenada en Firestore.</p>
+      </div>
+      <div class="exp-readonly">Solo lectura · No modifica Firebase</div>
+    </header>
+
+    <section class="exp-panel" aria-labelledby="expTituloEstado">
+      <div class="exp-status exp-status-neutral" id="expEstado">
+        <div>
+          <strong id="expTituloEstado">Preparando Firebase</strong>
+          <span id="expMensajeEstado">Conectando con la base central...</span>
+        </div>
+        <span class="exp-status-dot" aria-hidden="true"></span>
+      </div>
+
+      <div class="exp-progress-wrap" id="expProgressWrap" hidden>
+        <div class="exp-progress-line">
+          <span id="expProgressTexto">Leyendo datos...</span>
+          <strong id="expProgressPorcentaje">0%</strong>
+        </div>
+        <div class="exp-progress"><div id="expProgressBar"></div></div>
+      </div>
+
+      <div class="exp-actions">
+        <button type="button" class="exp-btn exp-btn-primary" id="btnCargar">Actualizar datos</button>
+        <button type="button" class="exp-btn" id="btnTxt" disabled>Descargar TXT</button>
+        <button type="button" class="exp-btn" id="btnExcel" disabled>Descargar Excel</button>
+        <button type="button" class="exp-btn exp-btn-ghost" id="btnAbrirDescargas">Abrir Descargas</button>
+      </div>
+    </section>
+
+    <section class="exp-kpis" aria-label="Resumen de exportación">
+      <article class="exp-kpi">
+        <span>Colecciones</span>
+        <strong id="kpiColecciones">—</strong>
+        <small id="kpiColeccionesDetalle">Sin cargar</small>
+      </article>
+      <article class="exp-kpi">
+        <span>Registros</span>
+        <strong id="kpiRegistros">—</strong>
+        <small>Documentos Firestore leídos</small>
+      </article>
+      <article class="exp-kpi">
+        <span>Errores</span>
+        <strong id="kpiErrores">—</strong>
+        <small id="kpiErroresDetalle">Sin cargar</small>
+      </article>
+      <article class="exp-kpi">
+        <span>Proyecto</span>
+        <strong class="exp-project" id="kpiProyecto">curriculo-ddfcd</strong>
+        <small id="kpiFecha">Sin respaldo cargado</small>
+      </article>
+    </section>
+
+    <section class="exp-panel">
+      <div class="exp-section-heading">
+        <div>
+          <h2>Contenido del respaldo</h2>
+          <p>Cada colección aparece por separado. El Excel crea una hoja independiente para cada colección.</p>
+        </div>
+      </div>
+
+      <div class="exp-table-wrap">
+        <table class="exp-table">
+          <thead>
+            <tr>
+              <th>Colección</th>
+              <th>Registros</th>
+              <th>Estado</th>
+              <th>Detalle</th>
+            </tr>
+          </thead>
+          <tbody id="expTabla">
+            <tr><td colspan="4" class="exp-empty">Cargando información de Firebase...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="exp-note">
+      <strong>TXT</strong> conserva la estructura completa en JSON legible. <strong>Excel</strong> crea una hoja por colección y convierte objetos o listas anidadas a contenido JSON dentro de las celdas.
+    </section>
+  </main>
+
+  <script src="../menu-superior/menu-superior.js?v=20260827-1"></script>
+  <script src="../libs/xlsx.min.js?v=20260827-1"></script>
+  <script src="../firebase/firebase.inteligencia.js?v=20260827-1"></script>
+  <script src="../firebase/firebase.curriculo.js?v=20260827-1"></script>
+  <script src="../firebase/firebase.exportar.js?v=20260827-1"></script>
+  <script src="./exportar.js?v=20260827-1"></script>
+</body>
+</html>
