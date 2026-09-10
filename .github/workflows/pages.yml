@@ -1,9 +1,9 @@
-name: Publicar GitHub Pages
+name: Publicar aplicación de usuarios
 
 on:
   push:
     branches:
-      - main
+      - app
   workflow_dispatch:
 
 permissions:
@@ -23,24 +23,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Descargar repositorio
+      - name: Descargar rama app
         uses: actions/checkout@v4
 
       - name: Configurar GitHub Pages
         uses: actions/configure-pages@v5
 
-      - name: Preparar sitio estático
+      - name: Preparar solo la aplicación pública
         run: |
-          mkdir -p _site
-          rsync -av \
-            --exclude='.git' \
-            --exclude='.github' \
-            --exclude='node_modules' \
-            --exclude='electron' \
-            --exclude='scripts' \
-            --exclude='package-lock.json' \
-            --exclude='package.json' \
-            ./ _site/
+          mkdir -p _site/assets
+          cp index.html _site/index.html
+          cp app.css _site/app.css
+          cp app.js _site/app.js
+          cp assets/logo-itsqmet-comunicado-oficial.svg _site/assets/logo-itsqmet-comunicado-oficial.svg
           touch _site/.nojekyll
 
       - name: Subir artefacto de Pages
