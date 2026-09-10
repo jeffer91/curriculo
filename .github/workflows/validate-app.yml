@@ -21,8 +21,11 @@ jobs:
           test -f index.html
           test -f app.css
           test -f app.js
+          test -f pdf-materia.js
           test -f assets/favicon.svg
           test -f assets/logo-itsqmet-comunicado-oficial.svg
 
       - name: Verificar JavaScript
-        run: node --check app.js
+        run: |
+          node --check app.js
+          node --check pdf-materia.js
