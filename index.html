@@ -1,89 +1,176 @@
-<!-- =========================================================
-Nombre completo: index.html
-Ruta o ubicación: /Curriculo/index.html
-Funciones:
-- Servir como menú principal de Gestión Curricular CCC.
-- Permitir ingresar a Subir, Firebase, Base local, Estadísticas, Mallas, Comunicados, Fichas y Configuración.
-========================================================= -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Curriculo | Gestión Curricular</title>
-  <link rel="stylesheet" href="./menu-superior/menu-superior.css?v=20260821-3" />
-  <style>
-    :root{--bg:#f4f7fb;--surface:#fff;--border:#dbe3ef;--text:#142033;--muted:#64748b;--primary:#184f90;--green:#087f5b;--gold:#6d5017;--purple:#6741d9;--slate:#475569;--teal:#0f766e;--shadow:0 18px 45px rgba(31,50,78,.08)}
-    *{box-sizing:border-box}body{margin:0;min-height:100vh;font-family:Arial,Helvetica,sans-serif;color:var(--text);background:linear-gradient(180deg,#f8fbff 0%,var(--bg) 100%)}.app{width:min(1240px,calc(100% - 32px));margin:0 auto;padding:48px 0}.hero{margin-bottom:24px}.hero h1{margin:0;font-size:clamp(34px,5vw,54px);line-height:1.05;letter-spacing:-.04em}.hero p{margin:10px 0 0;color:var(--muted);font-size:17px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.module{min-height:190px;display:flex;flex-direction:column;justify-content:space-between;padding:22px;border:1px solid var(--border);border-radius:22px;background:var(--surface);box-shadow:var(--shadow);text-decoration:none;color:inherit;transition:.15s}.module:hover{transform:translateY(-3px);border-color:var(--primary);box-shadow:0 22px 54px rgba(24,79,144,.14)}.module h2{margin:0;font-size:27px;letter-spacing:-.03em}.module p{margin:9px 0 0;color:var(--muted);line-height:1.45}.module-footer{display:flex;justify-content:flex-end;align-items:center;margin-top:22px}.circle{width:43px;height:43px;display:grid;place-items:center;border-radius:50%;color:#fff;background:var(--primary);font-weight:900;font-size:20px}.circle-green{background:var(--green)}.circle-gold{background:var(--gold)}.circle-purple{background:var(--purple)}.circle-slate{background:var(--slate)}.circle-teal{background:var(--teal)}@media(max-width:1000px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:600px){.app{width:min(100% - 20px,1240px);padding-top:28px}.grid{grid-template-columns:1fr}.module{min-height:155px}}
-  </style>
+  <title>Gestión Curricular | Consulta y envío</title>
+  <link rel="stylesheet" href="./app.css?v=20260910-1" />
 </head>
 <body>
-  <main class="app">
-    <header class="hero">
-      <h1>Gestión curricular</h1>
-      <p>Selecciona una opción.</p>
-    </header>
+  <header class="topbar">
+    <div class="brand">
+      <img src="./assets/logo-itsqmet-comunicado-oficial.svg" alt="ITSQMET" />
+      <div>
+        <strong>Gestión Curricular</strong>
+        <span>Consulta y envío de información</span>
+      </div>
+    </div>
+  </header>
 
-    <section class="grid">
-      <a class="module" href="./subir/subir.html" data-home-route="subir">
-        <div><h2>Subir ZIP</h2><p>Analiza, guarda localmente y sincroniza cambios.</p></div>
-        <div class="module-footer"><span class="circle">→</span></div>
-      </a>
+  <main class="page">
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Aplicación para usuarios</p>
+        <h1>Consulta información curricular y envía tus datos</h1>
+        <p>Selecciona carrera, nivel y materia. Puedes revisar la información disponible, enviar información manual y consultar el estado de tu trámite con el código generado.</p>
+      </div>
+      <div class="status-pill" id="firebaseStatus">Conectando…</div>
+    </section>
 
-      <a class="module" href="./bdlocal/bdlocal.html" data-home-route="bdlocal">
-        <div><h2>Firebase</h2><p>Consulta la copia central e historial.</p></div>
-        <div class="module-footer"><span class="circle">→</span></div>
-      </a>
+    <nav class="tabs" aria-label="Secciones">
+      <button class="tab is-active" type="button" data-tab="consulta">Consultar</button>
+      <button class="tab" type="button" data-tab="enviar">Enviar información</button>
+      <button class="tab" type="button" data-tab="tramite">Consultar trámite</button>
+    </nav>
 
-      <a class="module" href="./exportar/exportar.html" data-home-route="exportar">
-        <div><h2>Exportar Firebase</h2><p>Descarga un respaldo completo en TXT o Excel.</p></div>
-        <div class="module-footer"><span class="circle circle-teal">→</span></div>
-      </a>
+    <section class="panel tab-panel is-active" id="panel-consulta">
+      <div class="panel-head">
+        <div>
+          <p class="eyebrow">Información oficial</p>
+          <h2>Consulta curricular</h2>
+        </div>
+      </div>
 
-      <a class="module" href="./bdlocal/local.html">
-        <div><h2>Base local</h2><p>Consulta la información guardada en este equipo.</p></div>
-        <div class="module-footer"><span class="circle circle-slate">→</span></div>
-      </a>
+      <div class="filters">
+        <label>
+          <span>Carrera</span>
+          <select id="consultaCarrera"><option value="">Seleccionar carrera</option></select>
+        </label>
+        <label>
+          <span>Nivel</span>
+          <select id="consultaNivel" disabled><option value="">Seleccionar nivel</option></select>
+        </label>
+        <label>
+          <span>Materia</span>
+          <select id="consultaMateria" disabled><option value="">Seleccionar materia</option></select>
+        </label>
+      </div>
 
-      <a class="module" href="./estadisticas/estadisticas.html">
-        <div><h2>Estadísticas</h2><p>Revisa cobertura, faltantes y problemas por carrera.</p></div>
-        <div class="module-footer"><span class="circle circle-teal">→</span></div>
-      </a>
+      <div class="empty-state" id="materiaVacia">Selecciona una carrera, un nivel y una materia para ver la información disponible.</div>
+      <article class="subject-card hidden" id="materiaDetalle" aria-live="polite">
+        <div class="subject-title">
+          <div>
+            <span class="badge" id="materiaNivel"></span>
+            <h3 id="materiaNombre"></h3>
+          </div>
+          <span class="version" id="materiaVersion"></span>
+        </div>
+        <dl class="subject-data">
+          <div><dt>Carrera</dt><dd id="materiaCarrera"></dd></div>
+          <div><dt>Código</dt><dd id="materiaCodigo"></dd></div>
+          <div><dt>Estado</dt><dd id="materiaEstado"></dd></div>
+        </dl>
+      </article>
+    </section>
 
-      <a class="module" href="./mallas/mallas.html">
-        <div><h2>Mallas</h2><p>Registra la estructura oficial.</p></div>
-        <div class="module-footer"><span class="circle circle-green">→</span></div>
-      </a>
+    <section class="panel tab-panel" id="panel-enviar">
+      <div class="panel-head">
+        <div>
+          <p class="eyebrow">Registro manual</p>
+          <h2>Enviar información</h2>
+          <p class="muted">El envío quedará en estado <strong>Pendiente</strong> para revisión del administrador.</p>
+        </div>
+      </div>
 
-      <a class="module" href="./comunicados/comunicados.html" data-home-route="comunicados">
-        <div><h2>Comunicados</h2><p>Genera los documentos.</p></div>
-        <div class="module-footer"><span class="circle circle-gold">→</span></div>
-      </a>
+      <form id="formSolicitud" novalidate>
+        <input id="codigoActual" type="hidden" />
+        <div class="filters form-grid">
+          <label>
+            <span>Carrera *</span>
+            <select id="formCarrera" required><option value="">Seleccionar carrera</option></select>
+          </label>
+          <label>
+            <span>Nivel *</span>
+            <select id="formNivel" required disabled><option value="">Seleccionar nivel</option></select>
+          </label>
+          <label>
+            <span>Materia *</span>
+            <select id="formMateria" required disabled><option value="">Seleccionar materia</option></select>
+          </label>
+        </div>
 
-      <a class="module" href="./fichas/fichas.html">
-        <div><h2>Fichas</h2><p>Revisa faltantes y genera una ficha por nivel.</p></div>
-        <div class="module-footer"><span class="circle circle-purple">→</span></div>
-      </a>
+        <div class="form-grid identity-grid">
+          <label><span>Nombres y apellidos *</span><input id="formNombres" type="text" maxlength="120" required /></label>
+          <label><span>Cédula / identificación *</span><input id="formCedula" type="text" maxlength="20" required /></label>
+          <label><span>Correo *</span><input id="formCorreo" type="email" maxlength="140" required /></label>
+        </div>
 
-      <a class="module" href="./configuracion/configuracion.html">
-        <div><h2>Configuración</h2><p>Configura y prueba las inteligencias artificiales.</p></div>
-        <div class="module-footer"><span class="circle circle-slate">→</span></div>
-      </a>
+        <label class="wide-field">
+          <span>Información a registrar *</span>
+          <textarea id="formInformacion" rows="8" maxlength="6000" required placeholder="Escribe aquí la información que deseas enviar para revisión."></textarea>
+        </label>
+        <label class="wide-field">
+          <span>Observaciones</span>
+          <textarea id="formObservaciones" rows="4" maxlength="2000" placeholder="Opcional"></textarea>
+        </label>
+
+        <div class="form-actions">
+          <button class="btn btn-secondary" type="button" id="btnBorrador">Descargar PDF borrador</button>
+          <button class="btn btn-primary" type="submit" id="btnEnviar">Enviar para revisión</button>
+        </div>
+        <p class="form-message" id="formMensaje" aria-live="polite"></p>
+      </form>
+
+      <div class="success-box hidden" id="envioExitoso">
+        <p class="eyebrow">Envío registrado</p>
+        <h3>Guarda este código</h3>
+        <div class="tracking-code" id="codigoGenerado"></div>
+        <p>Lo necesitarás para consultar el estado y, si la solicitud es aprobada, descargar el PDF oficial.</p>
+        <button class="btn btn-secondary" type="button" id="btnIrTramite">Consultar este trámite</button>
+      </div>
+    </section>
+
+    <section class="panel tab-panel" id="panel-tramite">
+      <div class="panel-head">
+        <div>
+          <p class="eyebrow">Seguimiento</p>
+          <h2>Consultar trámite</h2>
+          <p class="muted">Ingresa exactamente el código generado cuando enviaste la información.</p>
+        </div>
+      </div>
+
+      <form class="tracking-form" id="formConsultaTramite">
+        <label>
+          <span>Código de trámite</span>
+          <input id="consultaCodigo" type="text" maxlength="40" placeholder="CUR-AAAA-MMDD-XXXXXXXXXX" required />
+        </label>
+        <button class="btn btn-primary" type="submit">Consultar</button>
+      </form>
+      <p class="form-message" id="tramiteMensaje" aria-live="polite"></p>
+
+      <article class="tracking-result hidden" id="tramiteResultado">
+        <div class="tracking-result-head">
+          <div>
+            <span class="badge" id="tramiteEstado"></span>
+            <h3 id="tramiteCodigoResultado"></h3>
+          </div>
+          <span class="muted" id="tramiteFecha"></span>
+        </div>
+        <dl class="subject-data">
+          <div><dt>Carrera</dt><dd id="tramiteCarrera"></dd></div>
+          <div><dt>Nivel</dt><dd id="tramiteNivel"></dd></div>
+          <div><dt>Materia</dt><dd id="tramiteMateria"></dd></div>
+          <div><dt>Observación del administrador</dt><dd id="tramiteObservacion"></dd></div>
+        </dl>
+        <div class="form-actions">
+          <button class="btn btn-secondary hidden" type="button" id="btnCorregir">Corregir y reenviar</button>
+          <button class="btn btn-primary hidden" type="button" id="btnPdfOficial">Descargar PDF oficial</button>
+        </div>
+      </article>
     </section>
   </main>
 
-  <script src="./menu-superior/menu-superior.js?v=20260821-3"></script>
-  <script>
-    (function () {
-      document.addEventListener("click", function (event) {
-        var enlace = event.target.closest("[data-home-route]");
-        if (!enlace || !window.CurriculoElectron || window.CurriculoElectron.isElectron !== true) return;
-        event.preventDefault();
-        window.CurriculoElectron.navigate(enlace.getAttribute("data-home-route")).then(function (resultado) {
-          if (!resultado || resultado.ok !== true) window.location.assign(enlace.getAttribute("href"));
-        }).catch(function () { window.location.assign(enlace.getAttribute("href")); });
-      });
-    })();
-  </script>
+  <footer class="footer">Gestión Curricular · Información institucional</footer>
+  <script type="module" src="./app.js?v=20260910-1"></script>
 </body>
 </html>
