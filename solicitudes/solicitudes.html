@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Solicitudes de usuarios | Gestión Curricular</title>
+  <link rel="stylesheet" href="./solicitudes.css?v=20260910-1" />
+</head>
+<body>
+  <header class="topbar">
+    <a href="../index.html" class="back">← Gestión curricular</a>
+    <div>
+      <strong>Solicitudes de usuarios</strong>
+      <span>Revisión administrativa</span>
+    </div>
+    <span class="connection" id="connection">Conectando…</span>
+  </header>
+
+  <main class="layout">
+    <section class="list-panel">
+      <div class="panel-head">
+        <div>
+          <p class="eyebrow">Bandeja</p>
+          <h1>Solicitudes</h1>
+        </div>
+        <button class="btn secondary" id="btnRecargar" type="button">Recargar</button>
+      </div>
+      <div class="filters">
+        <input id="buscar" type="search" placeholder="Buscar código, persona, carrera o materia" />
+        <select id="estadoFiltro">
+          <option value="pendiente">Pendientes</option>
+          <option value="">Todos los estados</option>
+          <option value="devuelto">Devueltos</option>
+          <option value="aprobado">Aprobados</option>
+          <option value="rechazado">Rechazados</option>
+        </select>
+      </div>
+      <div class="summary" id="summary"></div>
+      <div class="request-list" id="requestList"></div>
+      <div class="empty" id="empty">No hay solicitudes para mostrar.</div>
+    </section>
+
+    <section class="detail-panel" id="detailPanel">
+      <div class="detail-empty" id="detailEmpty">Selecciona una solicitud para revisarla.</div>
+      <div class="detail hidden" id="detail">
+        <div class="detail-head">
+          <div>
+            <span class="badge" id="dEstado"></span>
+            <h2 id="dCodigo"></h2>
+          </div>
+          <span class="date" id="dFecha"></span>
+        </div>
+
+        <div class="data-grid">
+          <div><span>Persona</span><strong id="dPersona"></strong></div>
+          <div><span>Identificación</span><strong id="dCedula"></strong></div>
+          <div><span>Correo</span><strong id="dCorreo"></strong></div>
+          <div><span>Carrera</span><strong id="dCarrera"></strong></div>
+          <div><span>Nivel</span><strong id="dNivel"></strong></div>
+          <div><span>Materia</span><strong id="dMateria"></strong></div>
+        </div>
+
+        <label class="field">
+          <span>Información enviada</span>
+          <textarea id="dInformacion" rows="10" maxlength="6000"></textarea>
+        </label>
+        <label class="field">
+          <span>Observaciones del usuario</span>
+          <textarea id="dObservaciones" rows="4" maxlength="2000"></textarea>
+        </label>
+        <label class="field">
+          <span>Observación del administrador</span>
+          <textarea id="dObsAdmin" rows="4" maxlength="2000" placeholder="Obligatoria al devolver o rechazar"></textarea>
+        </label>
+
+        <div class="actions">
+          <button class="btn secondary" id="btnGuardarCorreccion" type="button">Guardar corrección</button>
+          <button class="btn warning" id="btnDevolver" type="button">Devolver</button>
+          <button class="btn danger" id="btnRechazar" type="button">Rechazar</button>
+          <button class="btn success" id="btnAprobar" type="button">Aprobar</button>
+        </div>
+        <p class="message" id="message" aria-live="polite"></p>
+      </div>
+    </section>
+  </main>
+  <script type="module" src="./solicitudes.js?v=20260910-1"></script>
+</body>
+</html>
