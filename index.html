@@ -3,30 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gestión Curricular | Consulta y envío</title>
-  <link rel="stylesheet" href="./app.css?v=20260910-1" />
+  <title>Gestión Curricular</title>
+  <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" />
+  <link rel="stylesheet" href="./app.css?v=20260910-2" />
 </head>
 <body>
   <header class="topbar">
-    <div class="brand">
-      <img src="./assets/logo-itsqmet-comunicado-oficial.svg" alt="ITSQMET" />
-      <div>
+    <div class="topbar-inner">
+      <div class="brand">
+        <img src="./assets/favicon.svg" alt="" />
         <strong>Gestión Curricular</strong>
-        <span>Consulta y envío de información</span>
       </div>
+      <div class="status-pill" id="firebaseStatus">Conectando…</div>
     </div>
   </header>
 
   <main class="page">
-    <section class="hero">
-      <div>
-        <p class="eyebrow">Aplicación para usuarios</p>
-        <h1>Consulta información curricular y envía tus datos</h1>
-        <p>Selecciona carrera, nivel y materia. Puedes revisar la información disponible, enviar información manual y consultar el estado de tu trámite con el código generado.</p>
-      </div>
-      <div class="status-pill" id="firebaseStatus">Conectando…</div>
-    </section>
-
     <nav class="tabs" aria-label="Secciones">
       <button class="tab is-active" type="button" data-tab="consulta">Consultar</button>
       <button class="tab" type="button" data-tab="enviar">Enviar información</button>
@@ -34,69 +26,79 @@
     </nav>
 
     <section class="panel tab-panel is-active" id="panel-consulta">
-      <div class="panel-head">
+      <div class="panel-head compact-head">
         <div>
           <p class="eyebrow">Información oficial</p>
-          <h2>Consulta curricular</h2>
+          <h1>Consulta curricular</h1>
         </div>
       </div>
 
       <div class="filters">
-        <label>
-          <span>Carrera</span>
-          <select id="consultaCarrera"><option value="">Seleccionar carrera</option></select>
-        </label>
-        <label>
-          <span>Nivel</span>
-          <select id="consultaNivel" disabled><option value="">Seleccionar nivel</option></select>
-        </label>
-        <label>
-          <span>Materia</span>
-          <select id="consultaMateria" disabled><option value="">Seleccionar materia</option></select>
-        </label>
+        <label><span>Carrera</span><select id="consultaCarrera"><option value="">Seleccionar carrera</option></select></label>
+        <label><span>Nivel</span><select id="consultaNivel" disabled><option value="">Seleccionar nivel</option></select></label>
+        <label><span>Materia</span><select id="consultaMateria" disabled><option value="">Seleccionar materia</option></select></label>
       </div>
 
-      <div class="empty-state" id="materiaVacia">Selecciona una carrera, un nivel y una materia para ver la información disponible.</div>
+      <div class="empty-state" id="materiaVacia">Selecciona carrera, nivel y materia.</div>
+
       <article class="subject-card hidden" id="materiaDetalle" aria-live="polite">
         <div class="subject-title">
           <div>
             <span class="badge" id="materiaNivel"></span>
-            <h3 id="materiaNombre"></h3>
+            <h2 id="materiaNombre"></h2>
           </div>
           <span class="version" id="materiaVersion"></span>
         </div>
-        <dl class="subject-data">
+
+        <dl class="subject-data subject-data-compact">
           <div><dt>Carrera</dt><dd id="materiaCarrera"></dd></div>
           <div><dt>Código</dt><dd id="materiaCodigo"></dd></div>
-          <div><dt>Estado</dt><dd id="materiaEstado"></dd></div>
         </dl>
+
+        <div class="curriculum-loading hidden" id="materiaCargando">Cargando información curricular…</div>
+        <div class="curriculum-content" id="materiaContenido">
+          <section class="curriculum-section">
+            <h3>Descripción de la asignatura</h3>
+            <div class="text-content" id="materiaDescripcion"></div>
+          </section>
+
+          <section class="curriculum-section">
+            <h3>Objetivo de la asignatura</h3>
+            <div class="text-content" id="materiaObjetivo"></div>
+          </section>
+
+          <section class="curriculum-section">
+            <div class="section-title-row">
+              <h3>Unidades, competencias, resultados y contenidos</h3>
+              <span class="mini-counter" id="materiaResumenUnidades"></span>
+            </div>
+            <div class="units-list" id="materiaUnidades"></div>
+          </section>
+
+          <section class="curriculum-section">
+            <h3>Actividades</h3>
+            <div id="materiaActividades"></div>
+          </section>
+
+          <section class="curriculum-section">
+            <h3>Bibliografía</h3>
+            <div id="materiaBibliografia"></div>
+          </section>
+        </div>
       </article>
     </section>
 
     <section class="panel tab-panel" id="panel-enviar">
-      <div class="panel-head">
-        <div>
-          <p class="eyebrow">Registro manual</p>
-          <h2>Enviar información</h2>
-          <p class="muted">El envío quedará en estado <strong>Pendiente</strong> para revisión del administrador.</p>
-        </div>
+      <div class="panel-head compact-head">
+        <div><p class="eyebrow">Registro manual</p><h1>Enviar información</h1><p class="muted">El envío quedará pendiente de revisión.</p></div>
       </div>
 
       <form id="formSolicitud" novalidate>
         <input id="codigoActual" type="hidden" />
         <div class="filters form-grid">
-          <label>
-            <span>Carrera *</span>
-            <select id="formCarrera" required><option value="">Seleccionar carrera</option></select>
-          </label>
-          <label>
-            <span>Nivel *</span>
-            <select id="formNivel" required disabled><option value="">Seleccionar nivel</option></select>
-          </label>
-          <label>
-            <span>Materia *</span>
-            <select id="formMateria" required disabled><option value="">Seleccionar materia</option></select>
-          </label>
+          <label><span>Carrera *</span><select id="formCarrera" required><option value="">Seleccionar carrera</option></select></label>
+          <label><span>Nivel *</span><select id="formNivel" required disabled><option value="">Seleccionar nivel</option></select></label>
+          <label><span>Materia *</span><select id="formMateria" required disabled><option value="">Seleccionar materia</option></select></label>
         </div>
 
         <div class="form-grid identity-grid">
@@ -105,14 +107,8 @@
           <label><span>Correo *</span><input id="formCorreo" type="email" maxlength="140" required /></label>
         </div>
 
-        <label class="wide-field">
-          <span>Información a registrar *</span>
-          <textarea id="formInformacion" rows="8" maxlength="6000" required placeholder="Escribe aquí la información que deseas enviar para revisión."></textarea>
-        </label>
-        <label class="wide-field">
-          <span>Observaciones</span>
-          <textarea id="formObservaciones" rows="4" maxlength="2000" placeholder="Opcional"></textarea>
-        </label>
+        <label class="wide-field"><span>Información a registrar *</span><textarea id="formInformacion" rows="8" maxlength="6000" required placeholder="Escribe la información que deseas enviar para revisión."></textarea></label>
+        <label class="wide-field"><span>Observaciones</span><textarea id="formObservaciones" rows="4" maxlength="2000" placeholder="Opcional"></textarea></label>
 
         <div class="form-actions">
           <button class="btn btn-secondary" type="button" id="btnBorrador">Descargar PDF borrador</button>
@@ -123,37 +119,27 @@
 
       <div class="success-box hidden" id="envioExitoso">
         <p class="eyebrow">Envío registrado</p>
-        <h3>Guarda este código</h3>
+        <h2>Guarda este código</h2>
         <div class="tracking-code" id="codigoGenerado"></div>
-        <p>Lo necesitarás para consultar el estado y, si la solicitud es aprobada, descargar el PDF oficial.</p>
+        <p>Lo necesitarás para consultar el estado del trámite.</p>
         <button class="btn btn-secondary" type="button" id="btnIrTramite">Consultar este trámite</button>
       </div>
     </section>
 
     <section class="panel tab-panel" id="panel-tramite">
-      <div class="panel-head">
-        <div>
-          <p class="eyebrow">Seguimiento</p>
-          <h2>Consultar trámite</h2>
-          <p class="muted">Ingresa exactamente el código generado cuando enviaste la información.</p>
-        </div>
+      <div class="panel-head compact-head">
+        <div><p class="eyebrow">Seguimiento</p><h1>Consultar trámite</h1></div>
       </div>
 
       <form class="tracking-form" id="formConsultaTramite">
-        <label>
-          <span>Código de trámite</span>
-          <input id="consultaCodigo" type="text" maxlength="40" placeholder="CUR-AAAA-MMDD-XXXXXXXXXX" required />
-        </label>
+        <label><span>Código de trámite</span><input id="consultaCodigo" type="text" maxlength="40" placeholder="CUR-AAAA-MMDD-XXXXXXXX" required /></label>
         <button class="btn btn-primary" type="submit">Consultar</button>
       </form>
       <p class="form-message" id="tramiteMensaje" aria-live="polite"></p>
 
       <article class="tracking-result hidden" id="tramiteResultado">
         <div class="tracking-result-head">
-          <div>
-            <span class="badge" id="tramiteEstado"></span>
-            <h3 id="tramiteCodigoResultado"></h3>
-          </div>
+          <div><span class="badge" id="tramiteEstado"></span><h2 id="tramiteCodigoResultado"></h2></div>
           <span class="muted" id="tramiteFecha"></span>
         </div>
         <dl class="subject-data">
@@ -170,7 +156,7 @@
     </section>
   </main>
 
-  <footer class="footer">Gestión Curricular · Información institucional</footer>
-  <script type="module" src="./app.js?v=20260910-1"></script>
+  <footer class="footer">ITSQMET · Gestión Curricular</footer>
+  <script type="module" src="./app.js?v=20260910-2"></script>
 </body>
 </html>
