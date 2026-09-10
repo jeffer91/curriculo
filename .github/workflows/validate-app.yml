@@ -1,0 +1,14 @@
+name: Validar aplicación pública
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mensaje
+        run: echo "La validación automática se ejecuta desde la rama app."
