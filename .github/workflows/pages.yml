@@ -1,4 +1,4 @@
-name: Publicar aplicación de usuarios
+name: Validar aplicación pública
 
 on:
   push:
@@ -8,41 +8,20 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: true
 
 jobs:
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  validate:
     runs-on: ubuntu-latest
-
     steps:
       - name: Descargar rama app
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
-      - name: Configurar GitHub Pages
-        uses: actions/configure-pages@v5
-
-      - name: Preparar solo la aplicación pública
+      - name: Verificar archivos públicos
         run: |
-          mkdir -p _site/assets
-          cp index.html _site/index.html
-          cp app.css _site/app.css
-          cp app.js _site/app.js
-          cp assets/logo-itsqmet-comunicado-oficial.svg _site/assets/logo-itsqmet-comunicado-oficial.svg
-          touch _site/.nojekyll
+          test -f index.html
+          test -f app.css
+          test -f app.js
+          test -f assets/logo-itsqmet-comunicado-oficial.svg
 
-      - name: Subir artefacto de Pages
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./_site
-
-      - name: Publicar sitio
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Verificar JavaScript
+        run: node --check app.js
