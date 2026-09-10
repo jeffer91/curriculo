@@ -40,6 +40,7 @@ jobs:
           cp index.html _site/index.html
           cp app.css _site/app.css
           cp app.js _site/app.js
+          cp pdf-materia.js _site/pdf-materia.js
           cp assets/favicon.svg _site/assets/favicon.svg
           cp assets/logo-itsqmet-comunicado-oficial.svg _site/assets/logo-itsqmet-comunicado-oficial.svg
           touch _site/.nojekyll
