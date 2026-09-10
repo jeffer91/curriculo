@@ -1,0 +1,53 @@
+name: Publicar aplicación de usuarios
+
+on:
+  workflow_run:
+    workflows:
+      - Validar aplicación pública
+    types:
+      - completed
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'app') }}
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar aplicación pública
+        uses: actions/checkout@v6
+        with:
+          ref: app
+
+      - name: Configurar GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Preparar solo los archivos públicos
+        run: |
+          mkdir -p _site/assets
+          cp index.html _site/index.html
+          cp app.css _site/app.css
+          cp app.js _site/app.js
+          cp assets/logo-itsqmet-comunicado-oficial.svg _site/assets/logo-itsqmet-comunicado-oficial.svg
+          touch _site/.nojekyll
+
+      - name: Subir artefacto de Pages
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: ./_site
+
+      - name: Publicar sitio
+        id: deployment
+        uses: actions/deploy-pages@v4
