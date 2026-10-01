@@ -308,11 +308,16 @@ Funciones:
     var oficial = buscarOficial(entrada, oficialId);
     if (!entrada || !materia || !oficial) return;
 
-    if (nivelMateria(materia) !== numero(oficial.nivelNumero, 0)) {
+    var nivelDetectado = nivelMateria(materia);
+    var nivelOficial = numero(oficial.nivelNumero, 0);
+
+    if (nivelDetectado !== nivelOficial) {
+      var mensajeNivel = nivelDetectado > 0
+        ? "La materia detectada está en el nivel " + nivelDetectado +
+          " y la materia oficial está en el nivel " + nivelOficial + "."
+        : "No se pudo detectar el nivel de esta materia. La malla oficial la ubica en el nivel " + nivelOficial + ".";
       var confirmarNivel = window.confirm(
-        "La materia detectada está en el nivel " + nivelMateria(materia) +
-        " y la materia oficial está en el nivel " + oficial.nivelNumero +
-        ".\n\n¿Deseas confirmar la relación y utilizar el nivel oficial?"
+        mensajeNivel + "\n\n¿Deseas confirmar la relación y utilizar el nivel oficial?"
       );
       if (!confirmarNivel) return;
     }
@@ -322,9 +327,9 @@ Funciones:
       carreraId: entrada.detalle.malla.carreraId,
       mallaMateriaId: oficial.id,
       nombreOficial: oficial.nombreOficial,
-      nivelOficial: oficial.nivelNumero,
+      nivelOficial: nivelOficial,
       nombreDetectado: nombreMateria(materia),
-      nivelDetectado: nivelMateria(materia),
+      nivelDetectado: nivelDetectado,
       criterio: "arrastre_manual"
     });
     materia.mallaExcepcionAprobada = false;

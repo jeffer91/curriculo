@@ -213,6 +213,16 @@ Funciones:
       var mismoNombreOtroNivel = disponibles(function (item) {
         return item.__nombreNormalizado === detectada.nombreNormalizado && item.__nivel !== detectada.nivel;
       });
+
+      // Si el ZIP no permitió detectar el nivel, no existe un conflicto de nivel:
+      // el dato simplemente está ausente. Cuando el nombre normalizado identifica
+      // una única materia oficial, la malla vigente es una fuente inequívoca para
+      // completar ese nivel y la relación puede confirmarse automáticamente.
+      if (detectada.nivel === 0 && mismoNombreOtroNivel.length === 1) {
+        vincular(detectada, mismoNombreOtroNivel[0], "nombre_exacto_nivel_inferido", 1);
+        return;
+      }
+
       if (mismoNombreOtroNivel.length === 1) {
         noVinculadas.push({
           detectada: detectada.referencia,
@@ -226,7 +236,10 @@ Funciones:
       }
 
       var similares = disponibles(function (item) {
-        return item.__nivel === detectada.nivel;
+        // Con nivel conocido, las sugerencias deben permanecer dentro de ese
+        // nivel. Si el nivel no se detectó, buscar en toda la malla permite
+        // ofrecer una sugerencia útil sin aprobarla automáticamente.
+        return detectada.nivel === 0 || item.__nivel === detectada.nivel;
       }).map(function (item) {
         return { oficial: item, valor: similitud(detectada.nombre, item.__nombre) };
       }).filter(function (item) {

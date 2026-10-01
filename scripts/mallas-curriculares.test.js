@@ -75,6 +75,62 @@ assert.strictEqual(comparacionCodigo.resumen.vinculadas, 0);
 assert.strictEqual(comparacionCodigo.resumen.noVinculadas, 1);
 assert.strictEqual(comparacionCodigo.resumen.faltantes, 21);
 
+// Si el ZIP no trae nivel, un nombre exacto y único debe tomar el nivel de la
+// malla vigente sin obligar al usuario a confirmar una relación inequívoca.
+const sinNivelNombreExacto = [{
+  id: "sin_nivel_exacto",
+  nombre: "Administración II",
+  nivelNumero: 0
+}];
+const comparacionSinNivelExacto = Comparador.comparar(sinNivelNombreExacto, oficiales, []);
+assert.strictEqual(comparacionSinNivelExacto.resumen.vinculadas, 1);
+assert.strictEqual(comparacionSinNivelExacto.resumen.noVinculadas, 0);
+assert.strictEqual(comparacionSinNivelExacto.coincidencias[0].criterio, "nombre_exacto_nivel_inferido");
+assert.strictEqual(comparacionSinNivelExacto.coincidencias[0].oficial.nivelNumero, 2);
+
+// Un nivel realmente detectado que contradice la malla continúa requiriendo
+// revisión humana: aquí sí existe un conflicto y no un dato ausente.
+const nivelRealDiferente = [{
+  id: "nivel_real_diferente",
+  nombre: "Administración II",
+  nivelNumero: 4
+}];
+const comparacionNivelRealDiferente = Comparador.comparar(nivelRealDiferente, oficiales, []);
+assert.strictEqual(comparacionNivelRealDiferente.resumen.vinculadas, 0);
+assert.strictEqual(comparacionNivelRealDiferente.resumen.noVinculadas, 1);
+assert.strictEqual(comparacionNivelRealDiferente.noVinculadas[0].motivo, "nivel_diferente");
+
+// Sin nivel también se puede buscar una sugerencia aproximada en toda la
+// malla, pero una coincidencia no exacta jamás se aprueba automáticamente.
+const sinNivelParecida = [{
+  id: "sin_nivel_parecida",
+  nombre: "Métodos Cuantitativos para Toma de Decisiones",
+  nivelNumero: 0
+}];
+const comparacionSinNivelParecida = Comparador.comparar(sinNivelParecida, oficiales, []);
+assert.strictEqual(comparacionSinNivelParecida.resumen.vinculadas, 0);
+assert.strictEqual(comparacionSinNivelParecida.resumen.noVinculadas, 1);
+assert.ok(comparacionSinNivelParecida.noVinculadas[0].sugerencia);
+assert.strictEqual(
+  comparacionSinNivelParecida.noVinculadas[0].sugerencia.nombreOficial,
+  "Métodos Cuantitativos para la Toma de Decisiones"
+);
+
+// Si el mismo nombre oficial existe en más de un nivel y el ZIP no trae nivel,
+// no hay base segura para decidir automáticamente entre ambos.
+const oficialesAmbiguos = [
+  { id: "amb_1", nombreOficial: "Proyecto Integrador", nivelNumero: 2 },
+  { id: "amb_2", nombreOficial: "Proyecto Integrador", nivelNumero: 4 }
+];
+const comparacionAmbigua = Comparador.comparar(
+  [{ id: "amb_detectada", nombre: "Proyecto Integrador", nivelNumero: 0 }],
+  oficialesAmbiguos,
+  []
+);
+assert.strictEqual(comparacionAmbigua.resumen.vinculadas, 0);
+assert.strictEqual(comparacionAmbigua.resumen.noVinculadas, 1);
+assert.strictEqual(comparacionAmbigua.resumen.conflictos, 1);
+
 const distinta = [{ id: "x", nombre: "Gestión Empresarial Aplicada", nivelNumero: 3 }];
 const comparacionDistinta = Comparador.comparar(distinta, oficiales, []);
 assert.strictEqual(comparacionDistinta.resumen.noVinculadas, 1);
