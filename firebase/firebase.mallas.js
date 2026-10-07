@@ -240,6 +240,9 @@ Funciones:
   }
 
   async function actualizarNombreCarrera(carreraId, nombreOficial) {
+    if (typeof NS.corregirNombreCarrera === "function") {
+      return await NS.corregirNombreCarrera(carreraId, nombreOficial);
+    }
     await abrirSDK();
     carreraId = texto(carreraId);
     nombreOficial = texto(nombreOficial);
@@ -257,7 +260,14 @@ Funciones:
     return nombreOficial;
   }
 
-  async function actualizarNombreMateria(materiaFirebaseId, nombreOficial) {
+  async function fusionarCarreras(carreraOrigenId, carreraDestinoId, opciones) {
+    if (typeof NS.fusionarCarreras !== "function") {
+      throw new Error("La función de fusión de carreras no está disponible.");
+    }
+    return await NS.fusionarCarreras(carreraOrigenId, carreraDestinoId, opciones || {});
+  }
+
+  async function actualizarNombreMateria(materiaFirebaseId, nombreOficial) {  async function actualizarNombreMateria(materiaFirebaseId, nombreOficial) {
     await abrirSDK();
     materiaFirebaseId = texto(materiaFirebaseId);
     nombreOficial = texto(nombreOficial);
@@ -527,6 +537,7 @@ Funciones:
     obtenerMallaVigenteParaCarrera: obtenerMallaVigenteParaCarrera,
     activarMalla: activarMalla,
     actualizarNombreCarrera: actualizarNombreCarrera,
+    fusionarCarreras: fusionarCarreras,
     actualizarNombreMateria: actualizarNombreMateria,
     guardarEquivalencia: guardarEquivalencia,
     eliminarEquivalencia: eliminarEquivalencia,
