@@ -35,6 +35,18 @@ Función o funciones:
     return String(valor === null || typeof valor === "undefined" ? "" : valor).trim();
   }
 
+  function nombreCarrera(carrera) {
+    if (window.CurriculoFirebase && typeof window.CurriculoFirebase.nombreOficialCarrera === "function") {
+      return window.CurriculoFirebase.nombreOficialCarrera(carrera);
+    }
+    return texto(carrera && (
+      carrera.nombreInstitucional ||
+      carrera.nombreCorregido ||
+      carrera.nombreMostrar ||
+      carrera.nombre
+    ));
+  }
+
   function escapar(valor) {
     return texto(valor)
       .replace(/&/g, "&amp;")
@@ -164,7 +176,7 @@ Función o funciones:
     select.innerHTML =
       '<option value="">Seleccione una carrera...</option>' +
       estado.carreras.map(function (carrera) {
-        return '<option value="' + escapar(carrera.id) + '">' + escapar(carrera.nombre) + "</option>";
+        return '<option value="' + escapar(carrera.id) + '">' + escapar(nombreCarrera(carrera)) + "</option>";
       }).join("");
   }
 
@@ -577,7 +589,7 @@ Función o funciones:
         "Creando " + documentos.length + " PDF independiente(s) y comprimiéndolos."
       );
 
-      var carreraNombre = estado.carreraActual ? estado.carreraActual.nombre : "carrera";
+      var carreraNombre = estado.carreraActual ? nombreCarrera(estado.carreraActual) : "carrera";
       var nombreArchivo = [
         "Comunicados",
         tipoLote === "todas" ? "TODAS" : "SELECCIONADAS",
