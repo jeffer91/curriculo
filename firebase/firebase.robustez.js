@@ -1090,7 +1090,10 @@ Funciones:
     await abrirSDK();
 
     var cargaId = crearCargaId();
-    var preparado = I().prepararPaquete(paquete, cargaId);
+    var paqueteCanonico = typeof NS.resolverCarrerasCanonicasPaquete === "function"
+      ? await NS.resolverCarrerasCanonicasPaquete(paquete)
+      : paquete;
+    var preparado = I().prepararPaquete(paqueteCanonico, cargaId);
 
     if (
       !preparado.contadoresConsistentes ||
