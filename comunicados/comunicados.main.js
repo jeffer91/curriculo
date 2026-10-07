@@ -47,6 +47,129 @@ Función o funciones:
     ));
   }
 
+  var LOGO_STORAGE_KEY = "curriculo.comunicados.logo.v1";
+
+  function obtenerLogoPredeterminado() {
+    return texto(
+      window.CURRICULO_LOGO_COMUNICADO ||
+      window.CURRICULO_LOGO_COMUNICADO_RESPALDO ||
+      "../assets/logo-itsqmet-comunicado.png"
+    );
+  }
+
+  function logoEsDataURL(valor) {
+    return /^data:image\/(?:png|jpe?g|webp);base64,/i.test(texto(valor));
+  }
+
+  function pintarLogo(nombre, personalizado) {
+    var src = texto($("inputLogoSrc") && $("inputLogoSrc").value) || obtenerLogoPredeterminado();
+    var preview = $("logoPreview");
+    var titulo = $("logoEstadoTitulo");
+    var detalle = $("logoEstadoTexto");
+    var restaurar = $("btnRestaurarLogo");
+
+    if (preview) preview.src = src;
+    if (titulo) titulo.textContent = personalizado ? "Logo personalizado" : "Logo institucional";
+    if (detalle) {
+      detalle.textContent = personalizado
+        ? (texto(nombre) || "Logo cargado") + " · Guardado en este equipo"
+        : "Predeterminado de la aplicación";
+    }
+    if (restaurar) restaurar.disabled = !personalizado;
+  }
+
+  function aplicarLogo(src, nombre, personalizado, guardar) {
+    src = texto(src) || obtenerLogoPredeterminado();
+    var hidden = $("inputLogoSrc");
+    if (hidden) hidden.value = src;
+    window.CURRICULO_LOGO_COMUNICADO = src;
+
+    if (guardar && personalizado) {
+      try {
+        window.localStorage.setItem(LOGO_STORAGE_KEY, JSON.stringify({
+          src: src,
+          nombre: texto(nombre) || "Logo personalizado",
+          actualizadoEn: new Date().toISOString()
+        }));
+      } catch (error) {
+        console.warn("[ComunicadosCCC.Main] No se pudo guardar el logo localmente:", error);
+      }
+    }
+
+    pintarLogo(nombre, personalizado);
+  }
+
+  function cargarLogoGuardado() {
+    try {
+      var raw = window.localStorage.getItem(LOGO_STORAGE_KEY);
+      if (raw) {
+        var guardado = JSON.parse(raw);
+        if (guardado && logoEsDataURL(guardado.src)) {
+          aplicarLogo(guardado.src, guardado.nombre || "Logo personalizado", true, false);
+          return;
+        }
+      }
+    } catch (error) {
+      console.warn("[ComunicadosCCC.Main] No se pudo recuperar el logo guardado:", error);
+    }
+
+    aplicarLogo(obtenerLogoPredeterminado(), "Logo institucional", false, false);
+  }
+
+  function restaurarLogoPredeterminado() {
+    try {
+      window.localStorage.removeItem(LOGO_STORAGE_KEY);
+    } catch (error) {
+      console.warn("[ComunicadosCCC.Main] No se pudo borrar el logo guardado:", error);
+    }
+
+    var respaldo = texto(
+      window.CURRICULO_LOGO_COMUNICADO_RESPALDO ||
+      "../assets/logo-itsqmet-comunicado.png"
+    );
+    aplicarLogo(respaldo, "Logo institucional", false, false);
+  }
+
+  function leerLogoArchivo(archivo) {
+    return new Promise(function (resolve, reject) {
+      if (!archivo) {
+        reject(new Error("No seleccionaste ningún archivo."));
+        return;
+      }
+
+      var tipo = texto(archivo.type).toLowerCase();
+      if (["image/png", "image/jpeg", "image/webp"].indexOf(tipo) === -1) {
+        reject(new Error("Selecciona un archivo PNG, JPG/JPEG o WebP."));
+        return;
+      }
+
+      if (Number(archivo.size || 0) > 8 * 1024 * 1024) {
+        reject(new Error("El logo supera 8 MB. Selecciona una imagen más liviana."));
+        return;
+      }
+
+      var lector = new FileReader();
+      lector.onload = function () {
+        var resultado = texto(lector.result);
+        if (!logoEsDataURL(resultado)) {
+          reject(new Error("El archivo seleccionado no pudo convertirse en un logo válido."));
+          return;
+        }
+        resolve(resultado);
+      };
+      lector.onerror = function () {
+        reject(new Error("No se pudo leer el archivo seleccionado."));
+      };
+      lector.readAsDataURL(archivo);
+    });
+  }
+
+  async function cargarLogoDesdeArchivo(archivo) {
+    var dataURL = await leerLogoArchivo(archivo);
+    aplicarLogo(dataURL, archivo.name || "Logo personalizado", true, true);
+    pintarEstado("ok", "Logo actualizado", "El logo quedó integrado para los próximos PDF.");
+  }
+
   function escapar(valor) {
     return texto(valor)
       .replace(/&/g, "&amp;")
@@ -661,6 +784,42 @@ Función o funciones:
       btnRecargar.addEventListener("click", cargarCarreras);
     }
 
+    var btnExaminarLogo = $("btnExaminarLogo");
+    var inputLogoArchivo = $("inputLogoArchivo");
+    var btnRestaurarLogo = $("btnRestaurarLogo");
+
+    if (btnExaminarLogo && inputLogoArchivo) {
+      btnExaminarLogo.addEventListener("click", function () {
+        inputLogoArchivo.value = "";
+        inputLogoArchivo.click();
+      });
+
+      inputLogoArchivo.addEventListener("change", async function () {
+        var archivo = inputLogoArchivo.files && inputLogoArchivo.files[0];
+        if (!archivo) return;
+
+        var etiqueta = btnExaminarLogo.textContent;
+        btnExaminarLogo.disabled = true;
+        btnExaminarLogo.textContent = "Procesando...";
+
+        try {
+          await cargarLogoDesdeArchivo(archivo);
+        } catch (error) {
+          pintarEstado("error", "No se pudo cargar el logo", error.message || "Archivo no válido.");
+        } finally {
+          btnExaminarLogo.disabled = false;
+          btnExaminarLogo.textContent = etiqueta;
+        }
+      });
+    }
+
+    if (btnRestaurarLogo) {
+      btnRestaurarLogo.addEventListener("click", function () {
+        restaurarLogoPredeterminado();
+        pintarEstado("ok", "Logo restaurado", "Se volvió a usar el logo institucional predeterminado.");
+      });
+    }
+
     var btnSeleccionarTodas = $("btnSeleccionarTodas");
 
     if (btnSeleccionarTodas) {
@@ -739,6 +898,7 @@ Función o funciones:
   async function iniciar() {
     try {
       validarDependencias();
+      cargarLogoGuardado();
       conectarEventos();
       await verificarEntornoPDF();
       await cargarCarreras();
