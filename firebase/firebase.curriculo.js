@@ -875,7 +875,7 @@ Funciones:
     });
   }
 
-  async function obtenerMateria(materiaId) {  async function obtenerMateria(materiaId) {
+  async function obtenerMateria(materiaId) {
     await inicializar();
     return plano(await sdk().getDoc(referencia(COLECCIONES.MATERIAS, materiaId)));
   }
