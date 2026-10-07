@@ -15,7 +15,7 @@ Funciones:
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mallas | Curriculo</title>
   <link rel="stylesheet" href="../menu-superior/menu-superior.css?v=20260804-1" />
-  <link rel="stylesheet" href="./mallas.css?v=20260805-3" />
+  <link rel="stylesheet" href="./mallas.css?v=20261007-1" />
 </head>
 <body>
   <main class="ml-page">
@@ -45,7 +45,11 @@ Funciones:
       </div>
       <div class="ml-field">
         <label for="inputNombreCarrera">Nombre oficial</label>
-        <input id="inputNombreCarrera" type="text" placeholder="Nombre correcto de la carrera" autocomplete="off" disabled />
+        <div class="ml-inline-control">
+          <input id="inputNombreCarrera" type="text" placeholder="Nombre correcto de la carrera" autocomplete="off" disabled />
+          <button id="btnCorregirCarrera" class="ml-btn ml-btn-light" type="button" disabled>Corregir carrera</button>
+        </div>
+        <small id="textoCorreccionCarrera" class="ml-field-help">Puedes corregir el nombre o fusionar un registro duplicado.</small>
       </div>
       <div id="mlResumenCarrera" class="ml-summary" hidden>
         <strong id="resumenTotalMaterias">0 materias</strong>
@@ -70,6 +74,30 @@ Funciones:
       </div>
     </section>
   </main>
+
+  <dialog id="modalCorregirCarrera" class="ml-modal ml-modal-small">
+    <div class="ml-modal-card">
+      <div class="ml-modal-head">
+        <div>
+          <h2>Corregir carrera</h2>
+          <p>La corrección conserva el registro original y evita perder materias o PEA.</p>
+        </div>
+        <button class="ml-icon-btn" type="button" data-cerrar-modal="modalCorregirCarrera" aria-label="Cerrar">×</button>
+      </div>
+      <div class="ml-correction-body">
+        <div class="ml-correction-row"><span>Registro actual</span><strong id="correccionNombreActual">—</strong></div>
+        <div class="ml-correction-row"><span>Nombre oficial</span><strong id="correccionNombreOficial">—</strong></div>
+        <div id="correccionDuplicado" class="ml-correction-warning" hidden>
+          <strong>Posible duplicado detectado</strong>
+          <span id="correccionDuplicadoTexto"></span>
+        </div>
+      </div>
+      <div class="ml-modal-actions">
+        <button class="ml-btn ml-btn-light" type="button" data-cerrar-modal="modalCorregirCarrera">Cancelar</button>
+        <button id="btnAplicarCorreccionCarrera" class="ml-btn" type="button">Guardar corrección</button>
+      </div>
+    </div>
+  </dialog>
 
   <dialog id="modalAgregarMateria" class="ml-modal ml-modal-small">
     <form method="dialog" class="ml-modal-card" id="formAgregarMateria">
@@ -156,14 +184,14 @@ Funciones:
   <script src="../firebase/firebase.inteligencia.js?v=20260728-1"></script>
   <script src="../firebase/firebase.inteligencia-v2.js?v=20260728-2"></script>
   <script src="../firebase/firebase.inteligencia-v2-ajustes.js?v=20260728-3"></script>
-  <script src="../firebase/firebase.curriculo.js?v=20260728-1"></script>
-  <script src="../firebase/firebase.mallas.js?v=20260805-3"></script>
+  <script src="../firebase/firebase.curriculo.js?v=20261007-1"></script>
+  <script src="../firebase/firebase.mallas.js?v=20261007-1"></script>
   <script src="./mallas.parser.js?v=20260805-4"></script>
   <script src="./mallas.conciliador.js?v=20260805-1"></script>
   <script src="./mallas.conciliacion-ui.js?v=20260805-1"></script>
   <script src="./mallas.estabilidad.js?v=20260805-4"></script>
   <script src="./mallas.transversales.js?v=20260806-1"></script>
-  <script src="./mallas.main.js?v=20260805-3"></script>
+  <script src="./mallas.main.js?v=20261007-1"></script>
   <script src="./mallas.edicion-ui.js?v=20260805-1"></script>
 </body>
 </html>
