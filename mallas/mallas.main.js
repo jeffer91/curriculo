@@ -24,7 +24,8 @@ Funciones:
     archivoFuente: null,
     urlPreview: "",
     guardando: false,
-    cargandoCarrera: false
+    cargandoCarrera: false,
+    correccionCarrera: null
   };
 
   function $(id) { return document.getElementById(id); }
@@ -65,13 +66,15 @@ Funciones:
     estado.guardando = !!valor;
     [
       "btnGuardarMalla", "btnAgregarMateria", "btnOrdenarMaterias", "btnProcesarTexto",
-      "btnProcesarExcel", "btnProcesarDocumento", "btnRecargarMallas"
+      "btnProcesarExcel", "btnProcesarDocumento", "btnRecargarMallas", "btnCorregirCarrera",
+      "btnAplicarCorreccionCarrera"
     ].forEach(function (id) {
       var el = $(id);
       if (el) el.disabled = estado.guardando;
     });
     if ($("inputCarrera")) $("inputCarrera").disabled = estado.guardando;
     if ($("inputNombreCarrera")) $("inputNombreCarrera").disabled = estado.guardando || !estado.carrera;
+    if ($("btnCorregirCarrera")) $("btnCorregirCarrera").disabled = estado.guardando || !estado.carrera;
   }
 
   function nombreNivel(nivel) {
@@ -80,6 +83,121 @@ Funciones:
 
   function nombreCarreraFirebase(carrera) {
     return texto(carrera && (carrera.nombreInstitucional || carrera.nombreCorregido || carrera.nombre));
+  }
+
+  function buscarDuplicadoCarrera(nombreOficial) {
+    var clave = normalizar(nombreOficial);
+    if (!clave || !estado.carrera) return null;
+    return estado.carreras.find(function (carrera) {
+      return texto(carrera.id) !== texto(estado.carrera.id) &&
+        normalizar(nombreCarreraFirebase(carrera)) === clave;
+    }) || null;
+  }
+
+  function actualizarAyudaCorreccionCarrera() {
+    var ayuda = $("textoCorreccionCarrera");
+    var boton = $("btnCorregirCarrera");
+    if (!ayuda || !boton) return;
+    if (!estado.carrera) {
+      ayuda.textContent = "Selecciona una carrera para corregirla.";
+      boton.disabled = true;
+      return;
+    }
+
+    var oficial = texto($("inputNombreCarrera") && $("inputNombreCarrera").value);
+    var actual = nombreCarreraFirebase(estado.carrera);
+    var duplicado = buscarDuplicadoCarrera(oficial);
+    boton.disabled = estado.guardando || !oficial;
+
+    if (duplicado) {
+      ayuda.textContent = "Ya existe “" + nombreCarreraFirebase(duplicado) + "”. Puedes fusionar ambos registros sin perder los PEA.";
+    } else if (normalizar(oficial) !== normalizar(actual)) {
+      ayuda.textContent = "El nombre será corregido y el anterior quedará como alias para futuras cargas.";
+    } else {
+      ayuda.textContent = "Puedes corregir el nombre o fusionar un registro duplicado.";
+    }
+  }
+
+  function abrirCorreccionCarrera() {
+    if (!estado.carrera) {
+      pintarEstado("warn", "Selecciona una carrera", "Primero selecciona la carrera que deseas corregir.");
+      return;
+    }
+
+    var nombreOficial = texto($("inputNombreCarrera").value);
+    if (!nombreOficial) {
+      pintarEstado("warn", "Nombre requerido", "Escribe el nombre oficial antes de corregir.");
+      return;
+    }
+
+    var duplicado = buscarDuplicadoCarrera(nombreOficial);
+    estado.correccionCarrera = {
+      origenId: estado.carrera.id,
+      nombreActual: nombreCarreraFirebase(estado.carrera),
+      nombreOficial: nombreOficial,
+      duplicado: duplicado
+    };
+
+    $("correccionNombreActual").textContent = estado.correccionCarrera.nombreActual || "—";
+    $("correccionNombreOficial").textContent = nombreOficial;
+    $("correccionDuplicado").hidden = !duplicado;
+    $("correccionDuplicadoTexto").textContent = duplicado
+      ? "Se fusionará con “" + nombreCarreraFirebase(duplicado) + "”. El registro anterior quedará como alias y sus materias seguirán disponibles."
+      : "";
+    $("btnAplicarCorreccionCarrera").textContent = duplicado
+      ? "Fusionar con carrera oficial"
+      : "Guardar corrección";
+
+    abrirModal("modalCorregirCarrera");
+  }
+
+  async function aplicarCorreccionCarrera() {
+    var correccion = estado.correccionCarrera;
+    if (!correccion || !estado.carrera) return;
+
+    var destinoId = correccion.origenId;
+    var tituloResultado = "Carrera corregida";
+
+    try {
+      setOcupado(true);
+
+      if (correccion.duplicado) {
+        var fusion = await Firebase.Mallas.fusionarCarreras(
+          correccion.origenId,
+          correccion.duplicado.id,
+          { nombreOficial: correccion.nombreOficial }
+        );
+        destinoId = fusion.carreraId;
+        tituloResultado = "Carreras fusionadas";
+      } else {
+        await Firebase.Mallas.actualizarNombreCarrera(correccion.origenId, correccion.nombreOficial);
+      }
+
+      cerrarModal("modalCorregirCarrera");
+      estado.correccionCarrera = null;
+    } catch (error) {
+      pintarEstado("error", "No se pudo corregir la carrera", error.message || error);
+      return;
+    } finally {
+      setOcupado(false);
+    }
+
+    try {
+      await Promise.all([cargarCarreras(), cargarMallas()]);
+      $("inputCarrera").value = destinoId;
+      await cargarCarrera(destinoId);
+      pintarEstado(
+        "ok",
+        tituloResultado,
+        "Desde ahora se usará “" + correccion.nombreOficial + "” en Mallas, Comunicados, Fichas y nuevos PDF."
+      );
+    } catch (errorRecarga) {
+      pintarEstado(
+        "warn",
+        tituloResultado,
+        "La corrección se guardó, pero no se pudo recargar la pantalla: " + (errorRecarga.message || errorRecarga)
+      );
+    }
   }
 
   function nombreMateriaFirebase(materia) {
@@ -257,6 +375,7 @@ Funciones:
       estado.materias = [];
       $("inputNombreCarrera").value = "";
       $("inputNombreCarrera").disabled = true;
+      actualizarAyudaCorreccionCarrera();
       $("panelMaterias").hidden = true;
       $("mlResumenCarrera").hidden = true;
       pintarEstado("neutral", "Selecciona una carrera", "Las materias se cargarán desde Firebase.");
@@ -268,6 +387,7 @@ Funciones:
       setOcupado(true);
       $("panelMaterias").hidden = false;
       $("inputNombreCarrera").value = nombreCarreraFirebase(carrera);
+      actualizarAyudaCorreccionCarrera();
       pintarEstado("neutral", "Cargando " + nombreCarreraFirebase(carrera), "Consultando materias y malla vigente.");
 
       var resultados = await Promise.all([
@@ -445,6 +565,7 @@ Funciones:
       });
       actualizarNombreCarreraLocal(nombreCarrera);
       aplicarDetalleMalla(detalle);
+      actualizarAyudaCorreccionCarrera();
       estado.materias = detalle.materias.map(convertirMateriaMalla);
       await cargarMallas();
       pintarMaterias();
@@ -618,6 +739,9 @@ Funciones:
 
   function conectarEventos() {
     $("inputCarrera").addEventListener("change", function () { cargarCarrera(this.value); });
+    $("inputNombreCarrera").addEventListener("input", actualizarAyudaCorreccionCarrera);
+    $("btnCorregirCarrera").addEventListener("click", abrirCorreccionCarrera);
+    $("btnAplicarCorreccionCarrera").addEventListener("click", aplicarCorreccionCarrera);
     $("btnGuardarMalla").addEventListener("click", guardarMalla);
     $("btnAgregarMateria").addEventListener("click", abrirAgregarMateria);
     $("btnOrdenarMaterias").addEventListener("click", ordenarMaterias);
