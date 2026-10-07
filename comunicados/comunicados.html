@@ -15,7 +15,7 @@ Funciones:
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Comunicados | Curriculo</title>
   <link rel="stylesheet" href="../menu-superior/menu-superior.css?v=20260804-1" />
-  <link rel="stylesheet" href="./comunicados.css?v=20260713-7" />
+  <link rel="stylesheet" href="./comunicados.css?v=20261007-2" />
   <style>
     .com-logo-ready{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #d8e2ef;border-radius:12px;background:#f8fafc}.com-logo-ready strong{display:block}.com-logo-mark{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:#e7f6ec;color:#087f5b;font-weight:900}
     .com-batch-progress,.com-batch-report{margin:0 0 18px;padding:16px 18px;border:1px solid #d7e2ef;border-radius:17px;background:#fff;box-shadow:0 10px 28px rgba(31,50,78,.06)}
@@ -65,8 +65,25 @@ Funciones:
         <div class="com-field"><label for="inputCiudad">Ciudad</label><input id="inputCiudad" type="text" value="Quito, D.M." /></div>
         <div class="com-field"><label for="inputUnidadResponsable">Unidad</label><input id="inputUnidadResponsable" type="text" value="Unidad Gestión de Procesos Académicos" /></div>
         <div class="com-field com-field-full"><label for="inputNota">Pie</label><input id="inputNota" type="text" value="Instituto Superior Tecnológico Quito Metropolitano" /></div>
-        <input id="inputLogoSrc" type="hidden" value="../assets/logo-itsqmet-comunicado-oficial.png" />
-        <div class="com-field com-field-full"><div class="com-logo-ready"><div class="com-logo-mark">✓</div><div><strong>Logo configurado</strong></div></div></div>
+        <input id="inputLogoSrc" type="hidden" value="../assets/logo-itsqmet-comunicado.png" />
+        <div class="com-field com-field-full">
+          <label>Logo institucional</label>
+          <div class="com-logo-control">
+            <div class="com-logo-preview-wrap">
+              <img id="logoPreview" class="com-logo-preview" src="../assets/logo-itsqmet-comunicado.png" alt="Vista previa del logo institucional" />
+            </div>
+            <div class="com-logo-info">
+              <strong id="logoEstadoTitulo">Logo institucional</strong>
+              <span id="logoEstadoTexto">Predeterminado de la aplicación</span>
+              <div class="com-logo-actions">
+                <button id="btnExaminarLogo" type="button" class="com-btn com-btn-light">Examinar...</button>
+                <button id="btnRestaurarLogo" type="button" class="com-btn com-btn-light" disabled>Usar predeterminado</button>
+              </div>
+              <small>PNG, JPG/JPEG o WebP. El logo se integra al PDF y queda guardado en este equipo.</small>
+            </div>
+          </div>
+          <input id="inputLogoArchivo" type="file" accept="image/png,image/jpeg,image/webp" hidden />
+        </div>
       </div>
     </section>
 
@@ -112,16 +129,16 @@ Funciones:
   <script src="./comunicados.bdlocal.js?v=20260728-1"></script>
   <script src="./comunicados.contador.js?v=20260728-2"></script>
   <script src="./comunicados.plantilla.js?v=20261007-1"></script>
-  <script src="./comunicados.ajustes-portada.js?v=20260716-4"></script>
-  <script src="./comunicados.pdf.js?v=20260717-1"></script>
-  <script src="./comunicados.formato-oficial.js?v=20260716-4"></script>
-  <script src="./comunicados.portada-final.js?v=20260717-1"></script>
+  <script src="./comunicados.ajustes-portada.js?v=20261007-1"></script>
+  <script src="./comunicados.pdf.js?v=20261007-1"></script>
+  <script src="./comunicados.formato-oficial.js?v=20261007-1"></script>
+  <script src="./comunicados.portada-final.js?v=20261007-1"></script>
   <script src="./comunicados.portada-estilo-final.js?v=20260716-4"></script>
   <script src="./comunicados.estilo-tecnico.js?v=20260716-1"></script>
   <script src="./comunicados.orden-contenidos.js?v=20260716-1"></script>
   <script src="./comunicados.firma-fija.js?v=20260716-1"></script>
   <script src="./comunicados.nombre-archivo.js?v=20260806-1"></script>
-  <script src="./comunicados.main.js?v=20261007-1"></script>
+  <script src="./comunicados.main.js?v=20261007-2"></script>
   <script src="./comunicados.reservas-ui.js?v=20260728-2"></script>
   <script src="./comunicados.firebase-ui.js?v=20260728-1"></script>
   <script src="./comunicados.todas-carreras.js?v=20260806-1"></script>
