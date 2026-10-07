@@ -154,7 +154,7 @@ Función o funciones:
       return logoConfigurado;
     }
 
-    return logoConfigurado || "../assets/logo-itsqmet-comunicado-oficial.png";
+    return logoConfigurado || "../assets/logo-itsqmet-comunicado.png";
   }
 
   function construirFilaMeta(etiqueta, contenido, clase) {
@@ -463,7 +463,7 @@ Función o funciones:
 
   var logoInput = document.getElementById("inputLogoSrc");
   if (logoInput && !texto(logoInput.value)) {
-    logoInput.value = "../assets/logo-itsqmet-comunicado-oficial.png";
+    logoInput.value = "../assets/logo-itsqmet-comunicado.png";
   }
 
   PDF.construirPortada = construirPortada;
