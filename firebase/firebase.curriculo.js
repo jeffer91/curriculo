@@ -854,11 +854,33 @@ Funciones:
       return consultarPorCampo(COLECCIONES.MATERIAS, "carreraId", id);
     }));
     var mapa = {};
+    function claveMateria(materia) {
+      var codigo = texto(materia && (materia.codigo || materia.codigoMateria)).toUpperCase().replace(/\s+/g, "");
+      if (codigo && !/^(S\/?C|SINCODIGO|SIN-CODIGO)$/i.test(codigo)) return "codigo|" + codigo;
+      var nombre = texto(materia && (
+        materia.nombreInstitucional || materia.nombreCorregido || materia.nombreMostrar ||
+        materia.nombre || materia.nombreMateria || materia.materia
+      ));
+      return "nombre|" + numero(materia && materia.nivelNumero, 0) + "|" + normalizarCarrera(nombre);
+    }
+    function prioridadMateria(materia) {
+      var valor = 0;
+      if (["completo", "completa"].includes(texto(materia && materia.estadoValidacion).toLowerCase())) valor += 100;
+      valor += Math.min(3, numero(materia && materia.totalArchivosEncontrados, 0)) * 10;
+      if (texto(materia && materia.carreraId) === idCanonico) valor += 5;
+      if (materia && materia.activo !== false) valor += 1;
+      return valor;
+    }
     grupos.forEach(function (lista) {
-      arr(lista).forEach(function (materia) { mapa[texto(materia.id)] = materia; });
+      arr(lista).forEach(function (materia) {
+        var clave = claveMateria(materia) || ("id|" + texto(materia.id));
+        if (!mapa[clave] || prioridadMateria(materia) > prioridadMateria(mapa[clave])) {
+          mapa[clave] = materia;
+        }
+      });
     });
 
-    return Object.keys(mapa).map(function (id) { return mapa[id]; }).filter(function (materia) {
+    return Object.keys(mapa).map(function (clave) { return mapa[clave]; }).filter(function (materia) {
       if (opciones.incluirRetiradas !== true && materia.activo === false) return false;
       if (opciones.soloCompletas !== false && !["completo", "completa"].includes(texto(materia.estadoValidacion).toLowerCase())) return false;
       return true;
