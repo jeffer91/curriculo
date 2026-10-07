@@ -1144,11 +1144,16 @@ Funciones:
         carreraIndice += 1
       ) {
         var carrera = preparado.carreras[carreraIndice];
-        var existentes = await consultarCampo(
-          C().MATERIAS,
-          "carreraId",
-          carrera.id
-        );
+        var existentes = typeof NS.obtenerMateriasPorCarrera === "function"
+          ? await NS.obtenerMateriasPorCarrera(carrera.id, {
+              soloCompletas: false,
+              incluirRetiradas: true
+            })
+          : await consultarCampo(
+              C().MATERIAS,
+              "carreraId",
+              carrera.id
+            );
         var itemsCarrera = preparado.materias.filter(
           function (item) {
             return item.materia.carreraId === carrera.id;
