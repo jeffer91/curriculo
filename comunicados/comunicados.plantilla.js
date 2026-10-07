@@ -415,7 +415,13 @@ Función o funciones:
       numeroComunicado: texto(reserva.numero),
       fechaEmisionTexto: texto(reserva.fechaTexto),
       numeroFijo: "01",
-      carrera: texto(carrera.nombre || "No registrada"),
+      carrera: texto(
+        carrera.nombreInstitucional ||
+        carrera.nombreCorregido ||
+        carrera.nombreMostrar ||
+        carrera.nombre ||
+        "No registrada"
+      ),
       codigo: texto(materia.codigo || materia.codigoMateria || "S/C"),
       nivel: texto(nivel.nombre || materia.nivelNombre || "No registrado"),
       nombreAsignatura: texto(
