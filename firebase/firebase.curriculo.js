@@ -70,6 +70,37 @@ Funciones:
     return String(Math.max(0, numero(valor, 0))).padStart(Number(longitud || 2), "0");
   }
 
+  function normalizarCarrera(valor) {
+    return texto(valor)
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[_\-–—./]+/g, " ")
+      .replace(/[^a-zA-Z0-9\s]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+  }
+
+  function nombreOficialCarrera(carrera) {
+    return texto(carrera && (
+      carrera.nombreInstitucional ||
+      carrera.nombreCorregido ||
+      carrera.nombreMostrar ||
+      carrera.nombre
+    ));
+  }
+
+  function textosUnicos(valores) {
+    var vistos = {};
+    return arr(valores).map(texto).filter(function (valor) {
+      if (!valor) return false;
+      var clave = normalizarCarrera(valor);
+      if (!clave || vistos[clave]) return false;
+      vistos[clave] = true;
+      return true;
+    });
+  }
+
   function inteligencia() {
     if (!NS.Inteligencia) {
       throw new Error("Falta cargar firebase.inteligencia.js antes de firebase.curriculo.js.");
@@ -461,7 +492,8 @@ Funciones:
     await inicializar();
     var I = inteligencia();
     var cargaId = crearCargaId();
-    var preparado = I.prepararPaquete(paquete, cargaId);
+    var paqueteCanonico = await resolverCarrerasCanonicasPaquete(paquete);
+    var preparado = I.prepararPaquete(paqueteCanonico, cargaId);
     var cargaRef = referencia(COLECCIONES.CARGAS, cargaId);
     var resumen = {
       totalCarreras: preparado.carreras.length,
@@ -611,25 +643,229 @@ Funciones:
     }
   }
 
+  async function obtenerCarreraCanonica(carreraId) {
+    await inicializar();
+    carreraId = texto(carreraId);
+    if (!carreraId) return { id: "", carrera: null, solicitada: null };
+
+    var solicitada = plano(await sdk().getDoc(referencia(COLECCIONES.CARRERAS, carreraId)));
+    if (!solicitada) return { id: carreraId, carrera: null, solicitada: null };
+
+    var destinoId = texto(solicitada.fusionadaConCarreraId);
+    if (solicitada.estado === "fusionada" && destinoId && destinoId !== carreraId) {
+      var destino = plano(await sdk().getDoc(referencia(COLECCIONES.CARRERAS, destinoId)));
+      if (destino) return { id: destino.id, carrera: destino, solicitada: solicitada };
+    }
+    return { id: solicitada.id, carrera: solicitada, solicitada: solicitada };
+  }
+
   async function obtenerCarreras() {
     await inicializar();
     var resultado = listaPlana(await sdk().getDocs(coleccion(COLECCIONES.CARRERAS)));
     return resultado.filter(function (item) {
-      return item.estado !== "eliminado";
+      return item.estado !== "eliminado" && item.estado !== "fusionada" && item.activo !== false;
+    }).map(function (item) {
+      return Object.assign({}, item, { nombreMostrar: nombreOficialCarrera(item) || texto(item.nombre) });
     }).sort(function (a, b) {
-      return texto(a.nombre).localeCompare(texto(b.nombre), "es");
+      return nombreOficialCarrera(a).localeCompare(nombreOficialCarrera(b), "es");
+    });
+  }
+
+  async function corregirNombreCarrera(carreraId, nombreOficial) {
+    await inicializar();
+    carreraId = texto(carreraId);
+    nombreOficial = texto(nombreOficial);
+    if (!carreraId || !nombreOficial) throw new Error("La carrera y el nombre oficial son obligatorios.");
+
+    var ref = referencia(COLECCIONES.CARRERAS, carreraId);
+    var snap = await sdk().getDoc(ref);
+    if (!snap.exists()) throw new Error("No se encontró la carrera que deseas corregir.");
+    var actual = Object.assign({ id: snap.id }, snap.data());
+    if (actual.estado === "fusionada" && texto(actual.fusionadaConCarreraId)) {
+      throw new Error("Esta carrera ya fue fusionada con otra carrera oficial.");
+    }
+
+    var anterior = nombreOficialCarrera(actual) || texto(actual.nombre);
+    var alias = textosUnicos(arr(actual.aliasNombres).concat([
+      actual.nombreOriginalImportado, actual.nombre, actual.nombreInstitucional, actual.nombreCorregido
+    ])).filter(function (item) {
+      return normalizarCarrera(item) !== normalizarCarrera(nombreOficial);
+    });
+
+    await sdk().setDoc(ref, {
+      nombreOriginalImportado: texto(actual.nombreOriginalImportado || actual.nombre || anterior),
+      nombre: nombreOficial,
+      nombreInstitucional: nombreOficial,
+      nombreCorregido: nombreOficial,
+      aliasNombres: alias,
+      activo: true,
+      estado: actual.estado === "eliminado" ? "activo" : (actual.estado || "activo"),
+      actualizadoEn: sdk().serverTimestamp()
+    }, { merge: true });
+
+    return Object.assign({}, actual, {
+      nombre: nombreOficial,
+      nombreInstitucional: nombreOficial,
+      nombreCorregido: nombreOficial,
+      nombreMostrar: nombreOficial,
+      aliasNombres: alias,
+      activo: true
+    });
+  }
+
+  async function fusionarCarreras(carreraOrigenId, carreraDestinoId, opciones) {
+    opciones = opciones || {};
+    await inicializar();
+    carreraOrigenId = texto(carreraOrigenId);
+    carreraDestinoId = texto(carreraDestinoId);
+    if (!carreraOrigenId || !carreraDestinoId || carreraOrigenId === carreraDestinoId) {
+      throw new Error("Selecciona dos carreras diferentes para realizar la fusión.");
+    }
+
+    var snaps = await Promise.all([
+      sdk().getDoc(referencia(COLECCIONES.CARRERAS, carreraOrigenId)),
+      sdk().getDoc(referencia(COLECCIONES.CARRERAS, carreraDestinoId))
+    ]);
+    if (!snaps[0].exists()) throw new Error("No se encontró la carrera que deseas fusionar.");
+    if (!snaps[1].exists()) throw new Error("No se encontró la carrera oficial de destino.");
+
+    var origen = Object.assign({ id: snaps[0].id }, snaps[0].data());
+    var destino = Object.assign({ id: snaps[1].id }, snaps[1].data());
+    if (destino.estado === "fusionada" && texto(destino.fusionadaConCarreraId)) {
+      var canonica = await obtenerCarreraCanonica(destino.id);
+      if (canonica.carrera) {
+        carreraDestinoId = canonica.id;
+        destino = canonica.carrera;
+      }
+    }
+
+    var nombreOficial = texto(opciones.nombreOficial) || nombreOficialCarrera(destino);
+    if (!nombreOficial) throw new Error("La carrera de destino no tiene un nombre oficial.");
+
+    var aliasIds = textosUnicos(arr(destino.aliasCarreraIds).concat(arr(origen.aliasCarreraIds)).concat([carreraOrigenId]))
+      .filter(function (id) { return id !== carreraDestinoId; });
+    var aliasNombres = textosUnicos(arr(destino.aliasNombres).concat(arr(origen.aliasNombres)).concat([
+      origen.nombreOriginalImportado, origen.nombre, origen.nombreInstitucional, origen.nombreCorregido
+    ])).filter(function (item) {
+      return normalizarCarrera(item) !== normalizarCarrera(nombreOficial);
+    });
+
+    var batch = sdk().writeBatch(estado.db);
+    batch.set(referencia(COLECCIONES.CARRERAS, carreraDestinoId), {
+      nombre: nombreOficial,
+      nombreInstitucional: nombreOficial,
+      nombreCorregido: nombreOficial,
+      aliasCarreraIds: aliasIds,
+      aliasNombres: aliasNombres,
+      activo: true,
+      estado: destino.estado === "eliminado" ? "activo" : (destino.estado || "activo"),
+      actualizadoEn: sdk().serverTimestamp()
+    }, { merge: true });
+    batch.set(referencia(COLECCIONES.CARRERAS, carreraOrigenId), {
+      nombreOriginalImportado: texto(origen.nombreOriginalImportado || origen.nombre),
+      nombre: nombreOficial,
+      nombreInstitucional: nombreOficial,
+      nombreCorregido: nombreOficial,
+      estado: "fusionada",
+      activo: false,
+      fusionadaConCarreraId: carreraDestinoId,
+      fusionadaConCarreraNombre: nombreOficial,
+      fusionadaEn: sdk().serverTimestamp(),
+      actualizadoEn: sdk().serverTimestamp()
+    }, { merge: true });
+    await batch.commit();
+
+    return {
+      ok: true,
+      carreraId: carreraDestinoId,
+      carreraNombre: nombreOficial,
+      carreraOrigenId: carreraOrigenId,
+      aliasCarreraIds: aliasIds,
+      aliasNombres: aliasNombres
+    };
+  }
+
+  async function resolverCarrerasCanonicasPaquete(paquete) {
+    paquete = paquete || {};
+    await inicializar();
+    var todas = listaPlana(await sdk().getDocs(coleccion(COLECCIONES.CARRERAS)));
+    if (!todas.length || !arr(paquete.carreras).length) return paquete;
+
+    var porId = {};
+    todas.forEach(function (item) { porId[texto(item.id)] = item; });
+
+    function destinoDe(item) {
+      var actual = item;
+      var vistos = {};
+      while (actual && actual.estado === "fusionada" && texto(actual.fusionadaConCarreraId) && !vistos[actual.id]) {
+        vistos[actual.id] = true;
+        actual = porId[texto(actual.fusionadaConCarreraId)] || actual;
+        if (actual.id === item.id) break;
+      }
+      return actual;
+    }
+    function coincideNombre(item, clave) {
+      if (!item || !clave) return false;
+      return [nombreOficialCarrera(item), item.nombreOriginalImportado].concat(arr(item.aliasNombres))
+        .some(function (nombre) { return normalizarCarrera(nombre) === clave; });
+    }
+
+    var mapaIds = {};
+    var carrerasCanonicas = [];
+    var vistosCanonicos = {};
+    arr(paquete.carreras).forEach(function (carrera) {
+      var originalId = texto(carrera && carrera.id);
+      var clave = normalizarCarrera(carrera && (carrera.nombre || carrera.carrera));
+      var encontrada = porId[originalId] || todas.find(function (item) { return coincideNombre(item, clave); }) || null;
+      var destino = encontrada ? destinoDe(encontrada) : null;
+      if (!destino) {
+        carrerasCanonicas.push(carrera);
+        if (originalId) mapaIds[originalId] = originalId;
+        return;
+      }
+      var destinoId = texto(destino.id);
+      if (originalId) mapaIds[originalId] = destinoId;
+      if (vistosCanonicos[destinoId]) return;
+      vistosCanonicos[destinoId] = true;
+      carrerasCanonicas.push(Object.assign({}, carrera, {
+        id: destinoId,
+        nombre: nombreOficialCarrera(destino) || texto(carrera && (carrera.nombre || carrera.carrera)),
+        carrera: nombreOficialCarrera(destino) || texto(carrera && (carrera.carrera || carrera.nombre)),
+        carreraIdCanonico: destinoId
+      }));
+    });
+
+    return Object.assign({}, paquete, {
+      carreras: carrerasCanonicas,
+      materias: arr(paquete.materias).map(function (materia) {
+        var originalId = texto(materia && materia.carreraId);
+        return Object.assign({}, materia, { carreraId: mapaIds[originalId] || originalId });
+      })
     });
   }
 
   async function obtenerMateriasPorCarrera(carreraId, opciones) {
     opciones = opciones || {};
-    var materias = await consultarPorCampo(COLECCIONES.MATERIAS, "carreraId", carreraId);
-    return materias.filter(function (materia) {
+    var canonica = await obtenerCarreraCanonica(carreraId);
+    var idCanonico = texto(canonica.id || carreraId);
+    var carrera = canonica.carrera || {};
+    var ids = textosUnicos([idCanonico].concat(arr(carrera.aliasCarreraIds)));
+    var grupos = await Promise.all(ids.map(function (id) {
+      return consultarPorCampo(COLECCIONES.MATERIAS, "carreraId", id);
+    }));
+    var mapa = {};
+    grupos.forEach(function (lista) {
+      arr(lista).forEach(function (materia) { mapa[texto(materia.id)] = materia; });
+    });
+
+    return Object.keys(mapa).map(function (id) { return mapa[id]; }).filter(function (materia) {
       if (opciones.incluirRetiradas !== true && materia.activo === false) return false;
       if (opciones.soloCompletas !== false && !["completo", "completa"].includes(texto(materia.estadoValidacion).toLowerCase())) return false;
       return true;
     }).map(function (materia) {
       return Object.assign({}, materia, {
+        carreraIdCanonico: idCanonico,
+        carreraNombreCanonico: nombreOficialCarrera(carrera),
         nombreMostrar: texto(materia.nombreInstitucional || materia.nombreCorregido || materia.nombre),
         totalArchivosEncontrados: numero(materia.totalArchivosEncontrados, 3)
       });
@@ -639,7 +875,7 @@ Funciones:
     });
   }
 
-  async function obtenerMateria(materiaId) {
+  async function obtenerMateria(materiaId) {  async function obtenerMateria(materiaId) {
     await inicializar();
     return plano(await sdk().getDoc(referencia(COLECCIONES.MATERIAS, materiaId)));
   }
@@ -649,12 +885,12 @@ Funciones:
     var materia = await obtenerMateria(materiaId);
     if (!materia) throw new Error("No se encontró la materia en Firebase.");
     var resultados = await Promise.all([
-      sdk().getDoc(referencia(COLECCIONES.CARRERAS, materia.carreraId)),
+      obtenerCarreraCanonica(materia.carreraId),
       sdk().getDoc(referencia(COLECCIONES.PEA_BASE, materiaId)),
       consultarPorCampo(COLECCIONES.PEA_UNIDADES, "materiaId", materiaId),
       sdk().getDoc(referencia(COLECCIONES.PEA_ACTIVIDADES, materiaId))
     ]);
-    var carrera = plano(resultados[0]);
+    var carrera = resultados[0] && resultados[0].carrera ? resultados[0].carrera : null;
     var peaBase = plano(resultados[1]);
     var unidades = resultados[2].sort(function (a, b) { return numero(a.unidadNumero, 0) - numero(b.unidadNumero, 0); });
     var actividadDoc = plano(resultados[3]) || { actividades: [] };
@@ -815,6 +1051,12 @@ Funciones:
   NS.probarConexion = probarConexion;
   NS.importarPaquete = importarPaquete;
   NS.obtenerCarreras = obtenerCarreras;
+  NS.nombreOficialCarrera = nombreOficialCarrera;
+  NS.normalizarCarrera = normalizarCarrera;
+  NS.obtenerCarreraCanonica = obtenerCarreraCanonica;
+  NS.corregirNombreCarrera = corregirNombreCarrera;
+  NS.fusionarCarreras = fusionarCarreras;
+  NS.resolverCarrerasCanonicasPaquete = resolverCarrerasCanonicasPaquete;
   NS.obtenerMateriasPorCarrera = obtenerMateriasPorCarrera;
   NS.obtenerMateria = obtenerMateria;
   NS.obtenerDetalleMateria = obtenerDetalleMateria;
