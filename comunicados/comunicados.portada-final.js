@@ -99,7 +99,7 @@ Funciones:
   function logoHTML(data) {
     data = data || {};
     var externo = texto(data.logoSrc || (data.config && data.config.logoSrc)) ||
-      "../assets/logo-itsqmet-comunicado-oficial.png";
+      "../assets/logo-itsqmet-comunicado.png";
     var respaldo = texto(
       window.CURRICULO_LOGO_COMUNICADO_RESPALDO ||
       window.CURRICULO_LOGO_COMUNICADO ||
