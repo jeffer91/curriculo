@@ -15,20 +15,18 @@ Funciones:
 
   var NS = window.ComunicadosCCC;
   var Plantilla = NS.Plantilla;
-  var LOGO_EXTERNO = "../assets/logo-itsqmet-comunicado-oficial.png";
+  var LOGO_EXTERNO = "../assets/logo-itsqmet-comunicado.png";
 
   if (!Plantilla || Plantilla.__ajustesPortadaV2) return;
 
   /*
-   * El generador anterior daba prioridad al logo embebido.
-   * Se desactiva esa prioridad para que utilice el PNG colocado
-   * físicamente en /Curriculo/assets/.
+   * Conserva el logo embebido como respaldo. Si el usuario carga otro
+   * logo desde Comunicados, se respeta y se integra al PDF.
    */
   window.CURRICULO_LOGO_COMUNICADO_RESPALDO =
     window.CURRICULO_LOGO_COMUNICADO_RESPALDO ||
     window.CURRICULO_LOGO_COMUNICADO ||
-    "";
-  window.CURRICULO_LOGO_COMUNICADO = "";
+    LOGO_EXTERNO;
 
   var generarDocumentoOriginal = Plantilla.generarDocumento.bind(Plantilla);
   var generarDocumentoMultipleOriginal = Plantilla.generarDocumentoMultiple.bind(Plantilla);
@@ -48,18 +46,31 @@ Funciones:
   }
 
   function prepararConfig(config) {
-    return Object.assign({}, config || {}, {
-      logoSrc: LOGO_EXTERNO
-    });
+    var salida = Object.assign({}, config || {});
+    salida.logoSrc =
+      salida.logoSrc ||
+      window.CURRICULO_LOGO_COMUNICADO ||
+      window.CURRICULO_LOGO_COMUNICADO_RESPALDO ||
+      LOGO_EXTERNO;
+    return salida;
   }
 
   function ajustarDocumento(documento) {
     if (!documento || typeof documento !== "object") return documento;
 
-    documento.data = Object.assign({}, documento.data || {}, {
-      logoSrc: LOGO_EXTERNO,
-      config: Object.assign({}, documento.data && documento.data.config || {}, {
-        logoSrc: LOGO_EXTERNO
+    var datos = documento.data || {};
+    var config = datos.config || {};
+    var logoActual =
+      datos.logoSrc ||
+      config.logoSrc ||
+      window.CURRICULO_LOGO_COMUNICADO ||
+      window.CURRICULO_LOGO_COMUNICADO_RESPALDO ||
+      LOGO_EXTERNO;
+
+    documento.data = Object.assign({}, datos, {
+      logoSrc: logoActual,
+      config: Object.assign({}, config, {
+        logoSrc: logoActual
       })
     });
 
