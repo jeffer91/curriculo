@@ -174,7 +174,7 @@ Función o funciones:
     var nombreAsignatura = texto(data.nombreAsignatura || "Asignatura sin nombre");
     var periodo = obtenerPeriodoAcademico(data);
     var fechaEmision = texto(data.fechaEmisionTexto) || fechaLargaEspanol(obtenerFechaEmision(data));
-    var logoSrc = texto(data.logoSrc || "../assets/logo-itsqmet-comunicado-oficial.svg");
+    var logoSrc = texto(data.logoSrc || "../assets/logo-itsqmet-comunicado.png");
 
     return (
       '<article class="com-pdf-portada com-pdf-page">' +
