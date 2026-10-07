@@ -267,7 +267,7 @@ Funciones:
     return await NS.fusionarCarreras(carreraOrigenId, carreraDestinoId, opciones || {});
   }
 
-  async function actualizarNombreMateria(materiaFirebaseId, nombreOficial) {  async function actualizarNombreMateria(materiaFirebaseId, nombreOficial) {
+  async function actualizarNombreMateria(materiaFirebaseId, nombreOficial) {
     await abrirSDK();
     materiaFirebaseId = texto(materiaFirebaseId);
     nombreOficial = texto(nombreOficial);
