@@ -14,7 +14,7 @@ Funciones:
 })(typeof window !== "undefined" ? window : globalThis, function () {
   "use strict";
 
-  var VERSION = "1.1.0";
+  var VERSION = "1.1.1";
   var NIVELES = {
     primer: 1, primero: 1, primera: 1,
     segundo: 2, segunda: 2,
@@ -77,7 +77,9 @@ Funciones:
 
   function esRequisito(linea) {
     var n = normalizar(linea);
-    return /(?:requisito|idioma extranjero|nivel\s+[a-c]\d|competencias? digitales?|practicas? preprofesionales?|vinculacion con la sociedad|horas? de vinculacion|certificacion)/.test(n);
+    // Solo encabezados explícitos de requisitos; una materia puede contener
+    // "competencias digitales", "prácticas" o "vinculación" en su nombre.
+    return /^(?:requisitos?(?: complementarios?)?|idioma extranjero|nivel [a-c][0-9]+|horas? de vinculacion|certificacion(?: de idioma)?|practicas? preprofesionales?|vinculacion con la sociedad)$/.test(n);
   }
 
   function nombreNivel(numero) {
