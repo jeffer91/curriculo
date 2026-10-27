@@ -85,6 +85,44 @@ Catálogo curricular suministrado para codificación.
         "Unidad de Integración Curricular"
       ]
     }
+  },
+  "desarrollodesoftware": {
+    "carrera": "Desarrollo de Software",
+    "fuente": "Malla oficial facilitada para su codificación",
+    "version": null,
+    "vigenciaInicio": null,
+    "vigenciaFin": null,
+    "niveles": {
+      "1": [
+        "Office Essentials",
+        "Matemáticas Discretas",
+        "Lenguajes de Programación I",
+        "Sistemas Operativos",
+        "Fundamentos de Redes"
+      ],
+      "2": [
+        "Mantenimiento y Ensamblaje de Computadoras",
+        "Aplicaciones Móviles I",
+        "Calidad de Software SQA",
+        "Lenguajes de Programación II",
+        "Bases de Datos I"
+      ],
+      "3": [
+        "Aplicaciones Web I",
+        "Aplicaciones Móviles II",
+        "Seguridad Informática",
+        "Lenguajes de Programación III",
+        "Bases de Datos II"
+      ],
+      "4": [
+        "Aplicaciones Web II",
+        "Aplicaciones Móviles III",
+        "Metodología de Desarrollo de Software",
+        "Inteligencia Artificial",
+        "Inteligencia de Negocios",
+        "Unidad de Integración Curricular"
+      ]
+    }
   }
 };
 
