@@ -59,7 +59,8 @@ assert.strictEqual(contabilidad.materias[19].nombreOficial, "Auditoría Financie
 assert.strictEqual(contabilidad.materias[18].nombreOficial, "Contabilidad Superior 2");
 assert.strictEqual(contabilidad.materias[20].tipo, "integracion_curricular");
 assert.strictEqual(catalogo.listarCarreras().length, 2);
-assert.strictEqual(catalogo.obtenerPorCarrera("Desarrollo de Software"), null);
+assert.strictEqual(catalogo.obtenerPorCarrera("Desarrollo de Software").materias.length, 21);
+assert.strictEqual(catalogo.listarCarreras().length, 3);
 assert.strictEqual(catalogo.obtenerPorCarrera("ADMINISTRACIÓN").materias.length, 21);
 
 const nombres = new Set();
