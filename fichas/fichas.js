@@ -16,6 +16,7 @@ Funciones:
 
   var FB = window.CurriculoFirebase;
   var Mallas = FB && FB.Mallas;
+  var MallasOficiales = window.CurriculoMallasOficiales;
   var Fichas = FB && FB.Fichas;
   var IA = window.CurriculoIA;
 
@@ -144,6 +145,13 @@ Funciones:
     }).join("");
   }
 
+  // La fuente codificada define la estructura oficial; Firebase conserva los PEA y el historial.
+  async function obtenerMallaParaFicha(carrera) {
+    var codificada = MallasOficiales && MallasOficiales.obtenerPorCarrera(carrera);
+    if (codificada) return codificada;
+    return Mallas.obtenerMallaVigenteParaCarrera(carrera);
+  }
+
   async function cargarNiveles() {
     var select = document.getElementById("nivelSelect");
     select.disabled = true;
@@ -158,7 +166,7 @@ Funciones:
       return;
     }
     try {
-      estado.malla = await Mallas.obtenerMallaVigenteParaCarrera(estado.carrera);
+      estado.malla = await obtenerMallaParaFicha(estado.carrera);
       if (!estado.malla || !estado.malla.materias || !estado.malla.materias.length) {
         select.innerHTML = '<option value="">Sin malla vigente</option>';
         renderInicial("La carrera no tiene una malla vigente registrada.");
@@ -225,7 +233,7 @@ Funciones:
     boton.disabled = true;
     boton.textContent = "Revisando...";
     try {
-      if (!estado.malla) estado.malla = await Mallas.obtenerMallaVigenteParaCarrera(estado.carrera);
+      if (!estado.malla) estado.malla = await obtenerMallaParaFicha(estado.carrera);
       if (!estado.malla) throw new Error("No existe una malla vigente para esta carrera.");
       estado.materiasEsperadas = estado.malla.materias.filter(function (materia) {
         return materia.activa !== false && numero(materia.nivelNumero, 0) === estado.nivelNumero;
@@ -375,7 +383,8 @@ Funciones:
       return;
     }
     var completas = estado.materiasEstado.filter(function (x) { return x.completa; }).length;
-    resumen.textContent = completas + "/" + estado.materiasEstado.length + " completas";
+    var origenCodigo = estado.malla && estado.malla.malla && estado.malla.malla.origen === "codigo_oficial";
+    resumen.textContent = completas + "/" + estado.materiasEstado.length + " completas" + (origenCodigo ? " · malla oficial en código" : "");
     listaEl.innerHTML = estado.materiasEstado.map(function (item) {
       var nombre = item.esperada.nombreOficial;
       var subtitulo = item.actual
