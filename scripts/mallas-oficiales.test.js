@@ -23,7 +23,43 @@ assert.deepStrictEqual(Array.from([1, 2, 3, 4], n => malla.materias.filter(m => 
 assert.strictEqual(malla.materias[0].nombreOficial, "Administración I");
 assert.strictEqual(malla.materias[malla.materias.length - 1].nombreOficial, "Unidad de Integración Curricular");
 assert.strictEqual(malla.materias[malla.materias.length - 1].tipo, "integracion_curricular");
-assert.strictEqual(catalogo.obtenerPorCarrera("Contabilidad"), null);
+const contabilidad = catalogo.obtenerPorCarrera({ nombreInstitucional: "Contabilidad" });
+assert.ok(contabilidad);
+assert.strictEqual(contabilidad.malla.carreraNombre, "Contabilidad");
+assert.strictEqual(contabilidad.malla.version, null);
+assert.strictEqual(contabilidad.malla.vigenciaInicio, null);
+assert.strictEqual(contabilidad.malla.vigenciaFin, null);
+assert.strictEqual(contabilidad.materias.length, 21);
+assert.deepStrictEqual(Array.from([1, 2, 3, 4], n => contabilidad.materias.filter(m => m.nivelNumero === n).length), [6, 4, 5, 6]);
+const esperadasContabilidad = [
+  "Administración",
+  "Ofimática",
+  "Comunicación Oral y Escrita",
+  "Matemática Financiera",
+  "Legislación Mercantil y Tributaria",
+  "Contabilidad General",
+  "Contabilidad General II",
+  "Contabilidad de Costos I",
+  "Finanzas",
+  "Tributación",
+  "Contabilidad Superior I",
+  "Contabilidad de Costos II",
+  "Análisis Financiero",
+  "Presupuesto",
+  "Sistema Contable",
+  "Métodos Cuantitativos para la Toma de Decisiones",
+  "Planificación Estratégica",
+  "Entrepreneurship",
+  "Contabilidad Superior 2",
+  "Auditoría Financiera",
+  "Unidad de Integración Curricular"
+];
+assert.deepStrictEqual(Array.from(contabilidad.materias.map(m => m.nombreOficial)), esperadasContabilidad);
+assert.strictEqual(contabilidad.materias[19].nombreOficial, "Auditoría Financiera");
+assert.strictEqual(contabilidad.materias[18].nombreOficial, "Contabilidad Superior 2");
+assert.strictEqual(contabilidad.materias[20].tipo, "integracion_curricular");
+assert.strictEqual(catalogo.listarCarreras().length, 2);
+assert.strictEqual(catalogo.obtenerPorCarrera("Desarrollo de Software"), null);
 assert.strictEqual(catalogo.obtenerPorCarrera("ADMINISTRACIÓN").materias.length, 21);
 
 const nombres = new Set();
@@ -43,4 +79,4 @@ assert.ok(fichasJs.includes("Mallas.obtenerMallaVigenteParaCarrera(carrera)"));
 assert.ok(fichasHtml.includes("../mallas/mallas.oficiales.js"));
 assert.ok(fichasHtml.indexOf("../mallas/mallas.oficiales.js") < fichasHtml.indexOf("./fichas.js"));
 
-console.log("Catálogo oficial: Administración (4 niveles, 21 asignaturas), precedencia y compatibilidad verificados.");
+console.log("Catálogo oficial: Administración y Contabilidad (4 niveles y 21 asignaturas cada una), precedencia y compatibilidad verificadas.");
