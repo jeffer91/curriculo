@@ -123,6 +123,42 @@ Catálogo curricular suministrado para codificación.
         "Unidad de Integración Curricular"
       ]
     }
+  },
+  "disenomultimedia": {
+    "carrera": "Diseño Multimedia",
+    "fuente": "Malla oficial facilitada para su codificación",
+    "version": null,
+    "vigenciaInicio": null,
+    "vigenciaFin": null,
+    "niveles": {
+      "1": [
+        "Branding digital",
+        "Semiología de la imagen",
+        "Creatividad",
+        "Fundamentos de programación",
+        "Figura humana y diseño de personaje"
+      ],
+      "2": [
+        "Diseño WEB I",
+        "Marketing digital",
+        "Multimedia",
+        "Diseño gráfico",
+        "Producción audiovisual"
+      ],
+      "3": [
+        "Motion design",
+        "Programación de videojuegos",
+        "Animación y Diseño 2D y 3D",
+        "Producción de sonido",
+        "Redacción de contenidos multimedia"
+      ],
+      "4": [
+        "Modelación e impresión 3D",
+        "UX / UI",
+        "Inteligencia artificial orientada al diseño",
+        "Entrepreneurship"
+      ]
+    }
   }
 };
 
