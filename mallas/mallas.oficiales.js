@@ -47,6 +47,44 @@ Catálogo curricular suministrado para codificación.
         "Unidad de Integración Curricular"
       ]
     }
+  },
+  "contabilidad": {
+    "carrera": "Contabilidad",
+    "fuente": "Malla oficial facilitada para su codificación",
+    "version": null,
+    "vigenciaInicio": null,
+    "vigenciaFin": null,
+    "niveles": {
+      "1": [
+        "Administración",
+        "Ofimática",
+        "Comunicación Oral y Escrita",
+        "Matemática Financiera",
+        "Legislación Mercantil y Tributaria",
+        "Contabilidad General"
+      ],
+      "2": [
+        "Contabilidad General II",
+        "Contabilidad de Costos I",
+        "Finanzas",
+        "Tributación"
+      ],
+      "3": [
+        "Contabilidad Superior I",
+        "Contabilidad de Costos II",
+        "Análisis Financiero",
+        "Presupuesto",
+        "Sistema Contable"
+      ],
+      "4": [
+        "Métodos Cuantitativos para la Toma de Decisiones",
+        "Planificación Estratégica",
+        "Entrepreneurship",
+        "Contabilidad Superior 2",
+        "Auditoría Financiera",
+        "Unidad de Integración Curricular"
+      ]
+    }
   }
 };
 
