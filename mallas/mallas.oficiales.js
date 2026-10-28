@@ -641,6 +641,43 @@ Catálogo curricular suministrado para codificación.
         "Planes de emergencia y simulacros"
       ]
     }
+  },
+  "ventas": {
+    "carrera": "Ventas",
+    "fuente": "Malla oficial facilitada para su codificación",
+    "version": null,
+    "vigenciaInicio": null,
+    "vigenciaFin": null,
+    "niveles": {
+      "1": [
+        "Comunicación Oral y Escrita",
+        "Computación Aplicada",
+        "Matemáticas Aplicadas",
+        "Fundamentos de Marketing",
+        "Introducción a las Ventas"
+      ],
+      "2": [
+        "Comportamiento del Consumidor",
+        "Técnicas de Ventas y Negociación",
+        "Contabilidad Básica",
+        "Estadística Descriptiva",
+        "Marketing Digital y Comercio Electrónico"
+      ],
+      "3": [
+        "Gestión de Ventas y Canales de Distribución",
+        "Investigación de Mercados",
+        "Psicología de las Ventas",
+        "Legislación Mercantil y Tributaria",
+        "Relaciones Públicas y Ética Profesional"
+      ],
+      "4": [
+        "Administración de Ventas y CRM",
+        "Estrategias de Comunicación en Ventas",
+        "Emprendimiento e Innovación",
+        "Liderazgo y Trabajo en Equipo",
+        "Unidad de Integración Curricular"
+      ]
+    }
   }
 };
 
