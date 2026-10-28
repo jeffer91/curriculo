@@ -180,6 +180,8 @@ Funciones:
     });
   }
 
+  // Una ficha general reutiliza los inputs del mismo nivel, incluso los anteriores
+  // a la eliminación del selector de períodos. Nunca cruza carreras ni niveles.
   async function obtenerInputsActuales(carreraId, nivelNumero, periodoFicha) {
     var items = await obtenerInputs(carreraId, nivelNumero);
     // En fichas generales se admiten inputs antiguos sin período para no perder evidencias.
