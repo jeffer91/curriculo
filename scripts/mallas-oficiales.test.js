@@ -168,7 +168,7 @@ assert.strictEqual(inicial.materias[20].tipo, "integracion_curricular");
 assert.strictEqual(inicial.materias[6].nombreOficial, "Las TIC’s en la Educación Inicial");
 assert.strictEqual(new Set(inicial.materias.map(m => m.nivelNumero + "|" + m.nombreOficial)).size, 21);
 assert.strictEqual(catalogo.obtenerPorCarrera("Educacion Inicial").materias.length, 21);
-assert.strictEqual(catalogo.listarCarreras().length, 8);
+assert.strictEqual(catalogo.listarCarreras().length, 9);
 const enfermeria = catalogo.obtenerPorCarrera({ nombreInstitucional: "Enfermería" });
 assert.ok(enfermeria);
 assert.strictEqual(enfermeria.malla.carreraNombre, "Enfermería");
@@ -239,7 +239,41 @@ assert.strictEqual(estetica.materias[20].tipo, "integracion_curricular");
 assert.strictEqual(estetica.materias[17].nombreOficial, "Terapeútica en estética");
 assert.strictEqual(catalogo.obtenerPorCarrera("Estetica Integral").materias.length, 21);
 assert.strictEqual(new Set(estetica.materias.map(m => m.nivelNumero + "|" + m.nombreOficial)).size, 21);
-assert.strictEqual(catalogo.obtenerPorCarrera("Gastronomía"), null);
+const gastronomia = catalogo.obtenerPorCarrera({ nombreInstitucional: "Gastronomía" });
+assert.ok(gastronomia);
+assert.strictEqual(gastronomia.malla.carreraNombre, "Gastronomía");
+assert.strictEqual(gastronomia.malla.version, null);
+assert.strictEqual(gastronomia.malla.vigenciaInicio, null);
+assert.strictEqual(gastronomia.malla.vigenciaFin, null);
+assert.strictEqual(gastronomia.materias.length, 19);
+assert.deepStrictEqual(Array.from([1, 2, 3, 4], n => gastronomia.materias.filter(m => m.nivelNumero === n).length), [5, 5, 5, 4]);
+const esperadasGastronomia = [
+  "Fundamentos de Gastronomía",
+  "Elaboración de menús",
+  "Office Essentials",
+  "Procesos, higiene e inocuidad alimentaria",
+  "Química general de los alimentos",
+  "Costos y Presupuestos Gastronómicos",
+  "Cocina Ecuatoriana",
+  "Técnicas de Carnicería y Chacutería",
+  "Panadería",
+  "Riesgos y Seguridad en la Industria Culinaria",
+  "Cocina Internacional I (Europea)",
+  "Pastelería y chocolatería",
+  "Conservación y Técnicas de Almacenaje",
+  "Enología, Bebidas y Maridaje",
+  "Administración y Marketing Digital de Establecimientos Gastronómicos",
+  "Cocina de Autor y Tendencias Creativas",
+  "Cocina Internacional II (Asiática y Americana)",
+  "Diseño, Equipamiento y Software gastronómico",
+  "Organización de Eventos y Catering"
+];
+assert.deepStrictEqual(Array.from(gastronomia.materias.map(m => m.nombreOficial)), esperadasGastronomia);
+assert.strictEqual(gastronomia.materias.some(m => m.tipo === "integracion_curricular"), false);
+assert.strictEqual(gastronomia.materias[7].nombreOficial, "Técnicas de Carnicería y Chacutería");
+assert.strictEqual(catalogo.obtenerPorCarrera("Gastronomia").materias.length, 19);
+assert.strictEqual(new Set(gastronomia.materias.map(m => m.nivelNumero + "|" + m.nombreOficial)).size, 19);
+assert.strictEqual(catalogo.obtenerPorCarrera("Gestión del Talento Humano"), null);
 
 
 
@@ -262,4 +296,4 @@ assert.ok(fichasJs.includes("Mallas.obtenerMallaVigenteParaCarrera(carrera)"));
 assert.ok(fichasHtml.includes("../mallas/mallas.oficiales.js"));
 assert.ok(fichasHtml.indexOf("../mallas/mallas.oficiales.js") < fichasHtml.indexOf("./fichas.js"));
 
-console.log("Mallas codificadas verificadas: ocho carreras y 165 asignaturas.");
+console.log("Mallas codificadas verificadas: nueve carreras y 184 asignaturas.");
