@@ -168,7 +168,7 @@ assert.strictEqual(inicial.materias[20].tipo, "integracion_curricular");
 assert.strictEqual(inicial.materias[6].nombreOficial, "Las TIC’s en la Educación Inicial");
 assert.strictEqual(new Set(inicial.materias.map(m => m.nivelNumero + "|" + m.nombreOficial)).size, 21);
 assert.strictEqual(catalogo.obtenerPorCarrera("Educacion Inicial").materias.length, 21);
-assert.strictEqual(catalogo.listarCarreras().length, 11);
+assert.strictEqual(catalogo.listarCarreras().length, 12);
 const enfermeria = catalogo.obtenerPorCarrera({ nombreInstitucional: "Enfermería" });
 assert.ok(enfermeria);
 assert.strictEqual(enfermeria.malla.carreraNombre, "Enfermería");
@@ -309,6 +309,16 @@ assert.strictEqual(talento.materias[20].tipo, "integracion_curricular");
 assert.strictEqual(catalogo.obtenerPorCarrera("Gestion del Talento Humano").materias.length, 21);
 assert.strictEqual(new Set(talento.materias.map(m => m.nivelNumero + "|" + m.nombreOficial)).size, 21);
 assert.strictEqual(catalogo.obtenerPorCarrera("Marketing Digital y Comercio Electrónico").materias.length, 21);
+const automotriz = catalogo.obtenerPorCarrera("Mecánica Automotriz");
+assert.ok(automotriz);
+assert.strictEqual(automotriz.materias.length, 21);
+assert.deepStrictEqual(Array.from([1, 2, 3, 4], n => automotriz.materias.filter(m => m.nivelNumero === n).length), [5, 6, 5, 5]);
+assert.strictEqual(automotriz.materias[8].nombreOficial, "Sistemas CAD – CAM");
+assert.strictEqual(automotriz.materias[13].nombreOficial, "Mecánica de motores a gasolina y diesel");
+assert.strictEqual(automotriz.materias[20].nombreOficial, "Mecánica de motos II");
+assert.strictEqual(automotriz.materias.some(m => m.tipo === "integracion_curricular"), false);
+assert.strictEqual(catalogo.obtenerPorCarrera("Mecanica Automotriz").materias.length, 21);
+assert.strictEqual(new Set(automotriz.materias.map(m => m.nivelNumero + "|" + m.nombreOficial)).size, 21);
 
 
 
@@ -331,4 +341,4 @@ assert.ok(fichasJs.includes("Mallas.obtenerMallaVigenteParaCarrera(carrera)"));
 assert.ok(fichasHtml.includes("../mallas/mallas.oficiales.js"));
 assert.ok(fichasHtml.indexOf("../mallas/mallas.oficiales.js") < fichasHtml.indexOf("./fichas.js"));
 
-console.log("Mallas codificadas verificadas: once carreras y 226 asignaturas.");
+console.log("Mallas codificadas verificadas: doce carreras y 247 asignaturas.");
