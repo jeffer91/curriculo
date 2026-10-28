@@ -734,6 +734,19 @@ Funciones:
       versionNueva = 1;
       tipo = "creada";
     }
+    // El nombre institucional también debe vincularse aunque el contenido PEA no cambie.
+    // Es una corrección de referencia, no una retirada ni una nueva materia.
+    var nombreInstitucionalCambio = anterior &&
+      texto(anterior.nombreInstitucional) !== texto(materiaOrigen.nombre);
+    if (nombreInstitucionalCambio && !operaciones.some(function (op) {
+      return op.coleccion === COLECCIONES.MATERIAS && op.id === item.materia.id;
+    })) {
+      operaciones.push(opSet(COLECCIONES.MATERIAS, item.materia.id, {
+        nombreInstitucional: texto(materiaOrigen.nombre),
+        actualizadoEn: sdk().serverTimestamp()
+      }, true));
+      if (tipo === "sin_cambios") tipo = "vinculada";
+    }
     var cargaRef = referencia(COLECCIONES.CARGAS, cargaId);
     await sdk().setDoc(cargaRef, {
       nombreZip: "", origen: "fichas_excel_individual",
