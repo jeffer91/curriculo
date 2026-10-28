@@ -370,7 +370,8 @@ Funciones:
 
   function datosCompletos() {
     var c = obtenerContextoFormulario();
-    return CAMPOS_DATOS.every(function (campo) { return !!texto(c[campo]); });
+    return CAMPOS_DATOS.every(function (campo) { return !!texto(c[campo]); }) &&
+      c.fechaFin >= c.fechaInicio;
   }
 
   function calcularDiagnostico() {
@@ -402,6 +403,10 @@ Funciones:
           faltantes.push("Dato general: " + (nombres[campo] || campo) + ".");
         }
       });
+    }
+    var fechas = obtenerContextoFormulario();
+    if (fechas.fechaInicio && fechas.fechaFin && fechas.fechaFin < fechas.fechaInicio) {
+      faltantes.push("Dato general: la fecha de finalización no puede ser anterior al inicio.");
     }
     if (!iaOk) faltantes.push("No hay una IA configurada con clave y modelo; verifica su conexión.");
 
@@ -482,7 +487,7 @@ Funciones:
       ? d.faltantes.map(function (item) { return '<div class="missing-item">' + escapar(item) + '</div>'; }).join("")
       : '<div class="empty">✓ No faltan elementos obligatorios.</div>';
     document.getElementById("btnGenerar").disabled = !d.lista;
-    document.getElementById("iaEstado").textContent = estado.iaDisponible ? "IA disponible" : "IA no configurada";
+    document.getElementById("iaEstado").textContent = estado.iaDisponible ? "IA configurada (conexión por comprobar)" : "IA no configurada";
   }
 
   function renderTendencias() {
@@ -672,8 +677,8 @@ Funciones:
     var token = estado.revisionToken;
     var noAplica = document.getElementById("inputNoAplica").checked;
     var justificacion = valorCampo("inputJustificacion");
-    if (noAplica && !justificacion) {
-      alert("Escribe la justificación para marcar este input como No aplica.");
+    if (noAplica && justificacion.length < 12) {
+      alert("Escribe una justificación fundamentada (al menos 12 caracteres) para No aplica.");
       return;
     }
     if (!noAplica && !estado.modalArchivo && !valorCampo("inputTexto") && !estado.modalAnalisis) {
