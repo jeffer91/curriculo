@@ -272,6 +272,44 @@ Catálogo curricular suministrado para codificación.
         "Unidad de Integración Curricular"
       ]
     }
+  },
+  "esteticaintegral": {
+    "carrera": "Estética Integral",
+    "fuente": "Malla oficial facilitada para su codificación",
+    "version": null,
+    "vigenciaInicio": null,
+    "vigenciaFin": null,
+    "niveles": {
+      "1": [
+        "Comunicación oral y escrita",
+        "Tratamiento y manejo de desechos",
+        "Terapias alternativas",
+        "Química cosmética",
+        "Cuidado de la piel"
+      ],
+      "2": [
+        "Administración en estéticas integrales",
+        "Masajes y terapia corporal",
+        "Aparatología en estética integral",
+        "Valoración estética",
+        "Cosmiatría"
+      ],
+      "3": [
+        "Contabilidad básica y tributación",
+        "Terapias faciales",
+        "Manicure y pedicure",
+        "Tricología y peluquería",
+        "Dermocosmética"
+      ],
+      "4": [
+        "Gestión de centros de estética integral",
+        "Terapias estéticas integrales",
+        "Terapeútica en estética",
+        "Asesoría de imagen",
+        "Visagismo y maquillaje profesional",
+        "Unidad de integración curricular"
+      ]
+    }
   }
 };
 
