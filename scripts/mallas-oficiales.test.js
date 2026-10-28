@@ -168,7 +168,7 @@ assert.strictEqual(inicial.materias[20].tipo, "integracion_curricular");
 assert.strictEqual(inicial.materias[6].nombreOficial, "Las TIC’s en la Educación Inicial");
 assert.strictEqual(new Set(inicial.materias.map(m => m.nivelNumero + "|" + m.nombreOficial)).size, 21);
 assert.strictEqual(catalogo.obtenerPorCarrera("Educacion Inicial").materias.length, 21);
-assert.strictEqual(catalogo.listarCarreras().length, 17);
+assert.strictEqual(catalogo.listarCarreras().length, 18);
 const enfermeria = catalogo.obtenerPorCarrera({ nombreInstitucional: "Enfermería" });
 assert.ok(enfermeria);
 assert.strictEqual(enfermeria.malla.carreraNombre, "Enfermería");
@@ -418,6 +418,44 @@ assert.strictEqual(new Set(automotriz.materias.map(m => m.nivelNumero + "|" + m.
 
 
 
+const ventas = catalogo.obtenerPorCarrera("Ventas");
+assert.ok(ventas);
+assert.strictEqual(ventas.malla.carreraNombre, "Ventas");
+assert.strictEqual(ventas.malla.version, null);
+assert.strictEqual(ventas.malla.vigenciaInicio, null);
+assert.strictEqual(ventas.malla.vigenciaFin, null);
+assert.strictEqual(ventas.materias.length, 20);
+assert.deepStrictEqual(Array.from([1, 2, 3, 4], n => ventas.materias.filter(m => m.nivelNumero === n).length), [5, 5, 5, 5]);
+const esperadasVentas = [
+  "Comunicación Oral y Escrita",
+  "Computación Aplicada",
+  "Matemáticas Aplicadas",
+  "Fundamentos de Marketing",
+  "Introducción a las Ventas",
+  "Comportamiento del Consumidor",
+  "Técnicas de Ventas y Negociación",
+  "Contabilidad Básica",
+  "Estadística Descriptiva",
+  "Marketing Digital y Comercio Electrónico",
+  "Gestión de Ventas y Canales de Distribución",
+  "Investigación de Mercados",
+  "Psicología de las Ventas",
+  "Legislación Mercantil y Tributaria",
+  "Relaciones Públicas y Ética Profesional",
+  "Administración de Ventas y CRM",
+  "Estrategias de Comunicación en Ventas",
+  "Emprendimiento e Innovación",
+  "Liderazgo y Trabajo en Equipo",
+  "Unidad de Integración Curricular"
+];
+assert.deepStrictEqual(Array.from(ventas.materias.map(m => m.nombreOficial)), esperadasVentas);
+assert.strictEqual(ventas.materias[15].nombreOficial, "Administración de Ventas y CRM");
+assert.strictEqual(ventas.materias[19].nombreOficial, "Unidad de Integración Curricular");
+assert.strictEqual(ventas.materias[19].tipo, "integracion_curricular");
+assert.strictEqual(new Set(ventas.materias.map(m => m.nivelNumero + "|" + m.nombreOficial)).size, 20);
+assert.strictEqual(catalogo.listarCarreras().length, 18);
+assert.strictEqual(catalogo.listarCarreras().reduce((s, x) => s + x.totalMaterias, 0), 363);
+
 assert.strictEqual(catalogo.obtenerPorCarrera("ADMINISTRACIÓN").materias.length, 21);
 
 const nombres = new Set();
@@ -437,4 +475,4 @@ assert.ok(fichasJs.includes("Mallas.obtenerMallaVigenteParaCarrera(carrera)"));
 assert.ok(fichasHtml.includes("../mallas/mallas.oficiales.js"));
 assert.ok(fichasHtml.indexOf("../mallas/mallas.oficiales.js") < fichasHtml.indexOf("./fichas.js"));
 
-console.log("Mallas codificadas verificadas: diecisiete carreras y 343 asignaturas.");
+console.log("Mallas codificadas verificadas: dieciocho carreras y 363 asignaturas.");
