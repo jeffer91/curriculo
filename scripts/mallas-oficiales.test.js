@@ -97,8 +97,43 @@ assert.deepStrictEqual(Array.from(diseno.materias.map(m => m.nombreOficial)), es
 assert.strictEqual(diseno.materias.some(m => m.tipo === "integracion_curricular"), false);
 assert.strictEqual(new Set(diseno.materias.map(m => m.nivelNumero + "|" + m.nombreOficial)).size, 19);
 assert.strictEqual(catalogo.obtenerPorCarrera("Diseno Multimedia").materias.length, 19);
-assert.strictEqual(catalogo.obtenerPorCarrera("Educación Básica"), null);
-assert.strictEqual(catalogo.listarCarreras().length, 4);
+const educacion = catalogo.obtenerPorCarrera({ nombreInstitucional: "Educación Básica" });
+assert.ok(educacion);
+assert.strictEqual(educacion.malla.carreraNombre, "Educación Básica");
+assert.strictEqual(educacion.malla.version, null);
+assert.strictEqual(educacion.malla.vigenciaInicio, null);
+assert.strictEqual(educacion.malla.vigenciaFin, null);
+assert.strictEqual(educacion.materias.length, 21);
+assert.deepStrictEqual(Array.from([1, 2, 3, 4], n => educacion.materias.filter(m => m.nivelNumero === n).length), [5, 5, 5, 6]);
+const esperadasEducacion = [
+  "Office Essentials",
+  "La familia y el entorno educativo",
+  "Aprendizaje y enseñanza de la comunicación humana",
+  "Sistemas educativos del aprendizaje humano",
+  "Psicología de los ciclos de la vida y aprendizaje humano",
+  "Pedagogía, andragogía y corrientes",
+  "Didáctica general",
+  "Diseño, gestión y evaluación curricular",
+  "Neurociencia educativa",
+  "Teoría del aprendizaje",
+  "Aprendizaje y enseñanza de la lengua y literatura",
+  "Aprendizaje y enseñanza del sistema de relaciones y funciones numérico estadístico y probabilidades",
+  "Aprendizaje y enseñanza de las ciencias naturales",
+  "Aprendizaje y enseñanza inclusiva",
+  "Aprendizaje y enseñanza de la cultura física, estética y expresión corporal",
+  "Planificación, modelos y procesos de investigación educativa",
+  "Gestión de recursos, estrategias y ambientes",
+  "Tics en educación y gamificación",
+  "Metodología de investigación educativa",
+  "Deontología docente",
+  "Unidad de integración curricular"
+];
+assert.deepStrictEqual(Array.from(educacion.materias.map(m => m.nombreOficial)), esperadasEducacion);
+assert.strictEqual(educacion.materias[20].tipo, "integracion_curricular");
+assert.strictEqual(catalogo.obtenerPorCarrera("Educacion Basica").materias.length, 21);
+assert.strictEqual(new Set(educacion.materias.map(m => m.nivelNumero + "|" + m.nombreOficial)).size, 21);
+assert.strictEqual(catalogo.obtenerPorCarrera("Educación Inicial"), null);
+assert.strictEqual(catalogo.listarCarreras().length, 5);
 
 
 assert.strictEqual(catalogo.obtenerPorCarrera("ADMINISTRACIÓN").materias.length, 21);
@@ -120,4 +155,4 @@ assert.ok(fichasJs.includes("Mallas.obtenerMallaVigenteParaCarrera(carrera)"));
 assert.ok(fichasHtml.includes("../mallas/mallas.oficiales.js"));
 assert.ok(fichasHtml.indexOf("../mallas/mallas.oficiales.js") < fichasHtml.indexOf("./fichas.js"));
 
-console.log("Mallas codificadas verificadas: cuatro carreras y 82 asignaturas.");
+console.log("Mallas codificadas verificadas: cinco carreras y 103 asignaturas.");
