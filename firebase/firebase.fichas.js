@@ -146,7 +146,7 @@ Funciones:
   }
 
   function fichaId(carreraId, nivelNumero, periodo) {
-    return ["ficha", slug(carreraId), "n" + pad(nivelNumero, 2), slug(periodo)].join("_").slice(0, 700);
+    return ["ficha", slug(carreraId), "n" + pad(nivelNumero, 2), slug(texto(periodo) || "general")].join("_").slice(0, 700);
   }
 
   async function guardarInput(datos) {
@@ -155,8 +155,8 @@ Funciones:
     var carreraId = texto(datos.carreraId);
     var nivelNumero = numero(datos.nivelNumero, 0);
     var tipo = texto(datos.tipo);
-    var periodoFicha = texto(datos.periodoFicha);
-    if (!carreraId || nivelNumero < 1 || !tipo || !periodoFicha) throw new Error("Carrera, nivel, período de ficha y tipo de input son obligatorios.");
+    var periodoFicha = texto(datos.periodoFicha) || "general";
+    if (!carreraId || nivelNumero < 1 || !tipo) throw new Error("Carrera, nivel y tipo de input son obligatorios.");
     var id = ["input", slug(carreraId), "n" + pad(nivelNumero, 2), slug(tipo), Date.now().toString(36)].join("_").slice(0, 800);
     var registro = Object.assign({}, datos, {
       id: id,
@@ -182,7 +182,10 @@ Funciones:
 
   async function obtenerInputsActuales(carreraId, nivelNumero, periodoFicha) {
     var items = await obtenerInputs(carreraId, nivelNumero);
-    if (texto(periodoFicha)) items = items.filter(function (item) { return texto(item.periodoFicha) === texto(periodoFicha); });
+    // En fichas generales se admiten inputs antiguos sin período para no perder evidencias.
+    if (texto(periodoFicha) && texto(periodoFicha) !== "general") {
+      items = items.filter(function (item) { return texto(item.periodoFicha) === texto(periodoFicha); });
+    }
     var mapa = {};
     items.forEach(function (item) {
       if (!mapa[item.tipo]) mapa[item.tipo] = item;
@@ -194,12 +197,13 @@ Funciones:
     await abrirSDK();
     datos = limpiar(datos || {}) || {};
     var id = fichaId(datos.carreraId, datos.nivelNumero, datos.periodo);
-    if (!texto(datos.carreraId) || numero(datos.nivelNumero, 0) < 1 || !texto(datos.periodo)) {
-      throw new Error("Carrera, nivel y período son obligatorios para guardar los datos generales.");
+    if (!texto(datos.carreraId) || numero(datos.nivelNumero, 0) < 1) {
+      throw new Error("Carrera y nivel son obligatorios para guardar los datos generales.");
     }
     var registro = Object.assign({}, datos, {
       id: id,
       fichaId: id,
+      periodo: texto(datos.periodo) || "general",
       actualizadoEn: F().serverTimestamp()
     });
     var snap = await F().getDoc(doc(COLECCIONES.CONTEXTOS, id));
@@ -210,7 +214,6 @@ Funciones:
 
   async function obtenerContexto(carreraId, nivelNumero, periodo) {
     await abrirSDK();
-    if (!texto(periodo)) return null;
     return plano(await F().getDoc(doc(COLECCIONES.CONTEXTOS, fichaId(carreraId, nivelNumero, periodo))));
   }
 
@@ -264,7 +267,7 @@ Funciones:
     datos = datos || {};
     var idGeneracion = texto(datos.generacionId);
     var html = String(datos.html || "");
-    if (!idGeneracion || !texto(datos.carreraId) || !texto(datos.periodo) || numero(datos.nivelNumero, 0) < 1) {
+    if (!idGeneracion || !texto(datos.carreraId) || numero(datos.nivelNumero, 0) < 1) {
       throw new Error("La revisión debe vincularse a una ficha generada y a su período.");
     }
     if (!html || html.length > 500000) {
@@ -274,7 +277,7 @@ Funciones:
       generacionId: idGeneracion,
       carreraId: texto(datos.carreraId),
       nivelNumero: numero(datos.nivelNumero, 0),
-      periodo: texto(datos.periodo),
+      periodo: texto(datos.periodo) || "general",
       html: html,
       actualizadoEn: F().serverTimestamp()
     };
