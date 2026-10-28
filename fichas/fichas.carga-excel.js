@@ -146,7 +146,14 @@
       });
       if (item.actual && candidatos.some(function (m) { return m.id === item.actual.id; })) {
         select.value = item.actual.id;
+      } else if (item.actual) {
+        activo.errorVinculo = true;
+        ponerEstado("Ya existe un registro vinculado para esta materia, pero no pudo recuperarse en el listado. Vuelve a Revisar antes de crear otro para evitar duplicados.", true);
+        return;
       }
+      $("materiaExcelAyudaVinculo").textContent = candidatos.length
+        ? "Revisa los registros disponibles. Si la materia ya existe con otro nombre, selecciónala para conservar su historial y evitar duplicados."
+        : "No se encontraron registros de este nivel sin vincular a otras materias.";
       await actualizarDetalle();
     } catch (error) {
       if (pedido === solicitud) ponerEstado("Error consultando Firebase: " + texto(error.message || error), true);
@@ -175,6 +182,10 @@
   async function guardar() {
     if (ocupado || !contextoVigente()) {
       ponerEstado("La selección cambió. Pulsa Revisar y vuelve a seleccionar la materia.", true);
+      return;
+    }
+    if (activo.errorVinculo) {
+      ponerEstado("No se guardará una materia nueva mientras su registro vinculado no esté resuelto.", true);
       return;
     }
     var ctx = activo;
