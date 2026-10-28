@@ -30,5 +30,8 @@ jobs:
           node --version
           npm --version
 
+      - name: Instalar dependencias de pruebas sin descargar binarios de Electron
+        run: npm install --ignore-scripts --no-package-lock --no-audit --no-fund
+
       - name: Ejecutar pruebas
         run: npm test
