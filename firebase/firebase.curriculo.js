@@ -679,7 +679,22 @@ Funciones:
     var seleccionado = texto(opciones.materiaFirebaseId);
     var anterior = seleccionado ? estadoCarrera.materiasPorId[seleccionado] : null;
     if (seleccionado && !anterior) {
-      throw new Error("La vinculación seleccionada no existe en esta carrera. Vuelve a revisar.");
+      // También puede tratarse de una carrera unificada con un ID histórico.
+      var otro = await obtenerMateria(seleccionado);
+      if (otro) {
+        var origenCanonico = await obtenerCarreraCanonica(otro.carreraId);
+        if (texto(origenCanonico.id) === texto(carrera.id)) {
+          var origen = await cargarEstadoCarrera(otro.carreraId);
+          anterior = otro;
+          estadoCarrera.materiasPorId[seleccionado] = otro;
+          estadoCarrera.basePorMateria[seleccionado] = origen.basePorMateria[seleccionado];
+          estadoCarrera.unidadesPorMateria[seleccionado] = origen.unidadesPorMateria[seleccionado];
+          estadoCarrera.actividadesPorMateria[seleccionado] = origen.actividadesPorMateria[seleccionado];
+        }
+      }
+      if (!anterior) {
+        throw new Error("La materia vinculada no corresponde a esta carrera. Revisa la selección.");
+      }
     }
     if (anterior && (numero(anterior.nivelNumero, 0) !== numero(nivel.numero, 0) || anterior.activo === false)) {
       throw new Error("El registro vinculado pertenece a otro nivel o está retirado.");
