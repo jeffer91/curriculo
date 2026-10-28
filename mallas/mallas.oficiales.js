@@ -460,6 +460,42 @@ Catálogo curricular suministrado para codificación.
         "Mecánica de motos II"
       ]
     }
+  },
+  "mecanicademotos": {
+    "carrera": "Mecánica de Motos",
+    "fuente": "Malla oficial facilitada para su codificación",
+    "version": null,
+    "vigenciaInicio": null,
+    "vigenciaFin": null,
+    "niveles": {
+      "1": [
+        "Física Básica",
+        "Ofimática",
+        "Comunicación Oral y Escrita",
+        "Metrología",
+        "Cálculo Diferencial e Integral"
+      ],
+      "2": [
+        "Ciencia de materiales",
+        "Neumática e Hidráulica",
+        "Electricidad y electrónica de motos",
+        "Sistemas de transmisión y embrague",
+        "Metodología de la Investigación"
+      ],
+      "3": [
+        "Logística y Mantenimiento de Repuestos",
+        "Estructura y Acabados de Motocicletas",
+        "Mecánica de Motores a Gasolina y ensamblaje",
+        "Sistemas de frenos y suspensión",
+        "Diagnóstico electrónico de motos"
+      ],
+      "4": [
+        "Motos eléctricas",
+        "Taller de mantenimiento integral",
+        "Normativas Ambientales y Emisiones en Motocicletas",
+        "Entrepreneurship"
+      ]
+    }
   }
 };
 
