@@ -235,6 +235,43 @@ Catálogo curricular suministrado para codificación.
         "Unidad de Integración Curricular"
       ]
     }
+  },
+  "enfermeria": {
+    "carrera": "Enfermería",
+    "fuente": "Malla oficial facilitada para su codificación",
+    "version": null,
+    "vigenciaInicio": null,
+    "vigenciaFin": null,
+    "niveles": {
+      "1": [
+        "Bioquímica",
+        "Morfofisiología I",
+        "Enfermería Técnica",
+        "Promoción de la Salud y Salud Intercultural",
+        "Redacción y Ofimática Aplicada a la Salud"
+      ],
+      "2": [
+        "Salud Sexual y Salud Reproductiva",
+        "Morfofisiología II",
+        "Nutrición y Dietética",
+        "Farmacología Básica",
+        "Enfermería en el Cuidado de la Persona con Discapacidad y Adultos Mayores"
+      ],
+      "3": [
+        "Enfermería en el Cuidado Esencial y Obstétrico",
+        "Microbiología y Parasitología",
+        "Farmacología Aplicada",
+        "Instrumentación Quirúrgica",
+        "Enfermería en el Cuidado del Paciente Quirúrgico y Pos Quirúrgico"
+      ],
+      "4": [
+        "Enfermería en Salud Mental",
+        "Enfermería Crítica y Clínica",
+        "Ética, Deontología Profesional y Derechos del Paciente",
+        "Epidemiología e Investigación en Salud",
+        "Unidad de Integración Curricular"
+      ]
+    }
   }
 };
 
