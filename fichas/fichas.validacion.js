@@ -63,7 +63,14 @@
       var clave = texto(encontrada.materiaId || encontrada.id || encontrada.nombre || encontrada.nombreOficial);
       if (usados[clave]) errores.push("La IA duplicó el análisis de una materia.");
       usados[clave] = true;
+      if (id && id !== texto(encontrada.materiaId || encontrada.id)) {
+        errores.push("La IA alteró el identificador de una materia.");
+      }
       if (!texto(r.analisis)) errores.push("Falta análisis de " + texto(encontrada.nombre || encontrada.nombreOficial) + ".");
+      var estado = normalizar(r.estadoCurricular);
+      if (estado && estado !== "mantener" && estado !== "requiere revision humana") {
+        errores.push("La IA propuso un cambio curricular no aprobado.");
+      }
     });
     materias.forEach(function (m) {
       var key = texto(m.materiaId || m.id || m.nombre || m.nombreOficial);
