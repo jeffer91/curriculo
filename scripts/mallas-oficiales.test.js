@@ -168,7 +168,7 @@ assert.strictEqual(inicial.materias[20].tipo, "integracion_curricular");
 assert.strictEqual(inicial.materias[6].nombreOficial, "Las TIC’s en la Educación Inicial");
 assert.strictEqual(new Set(inicial.materias.map(m => m.nivelNumero + "|" + m.nombreOficial)).size, 21);
 assert.strictEqual(catalogo.obtenerPorCarrera("Educacion Inicial").materias.length, 21);
-assert.strictEqual(catalogo.listarCarreras().length, 9);
+assert.strictEqual(catalogo.listarCarreras().length, 10);
 const enfermeria = catalogo.obtenerPorCarrera({ nombreInstitucional: "Enfermería" });
 assert.ok(enfermeria);
 assert.strictEqual(enfermeria.malla.carreraNombre, "Enfermería");
@@ -273,7 +273,42 @@ assert.strictEqual(gastronomia.materias.some(m => m.tipo === "integracion_curric
 assert.strictEqual(gastronomia.materias[7].nombreOficial, "Técnicas de Carnicería y Chacutería");
 assert.strictEqual(catalogo.obtenerPorCarrera("Gastronomia").materias.length, 19);
 assert.strictEqual(new Set(gastronomia.materias.map(m => m.nivelNumero + "|" + m.nombreOficial)).size, 19);
-assert.strictEqual(catalogo.obtenerPorCarrera("Gestión del Talento Humano"), null);
+const talento = catalogo.obtenerPorCarrera({ nombreInstitucional: "Gestión del Talento Humano" });
+assert.ok(talento);
+assert.strictEqual(talento.malla.carreraNombre, "Gestión del Talento Humano");
+assert.strictEqual(talento.malla.version, null);
+assert.strictEqual(talento.malla.vigenciaInicio, null);
+assert.strictEqual(talento.malla.vigenciaFin, null);
+assert.strictEqual(talento.materias.length, 21);
+assert.deepStrictEqual(Array.from([1, 2, 3, 4], n => talento.materias.filter(m => m.nivelNumero === n).length), [5, 5, 5, 6]);
+const esperadasTalento = [
+  "Administración de la Compensación en Talento Humano",
+  "Computación Aplicada",
+  "Comunicación Oral y Escrita",
+  "Fundamentos de Gestión de Talento Humano",
+  "Legislación Laboral y Seguridad Social",
+  "Reclutamiento y Selección de Personal",
+  "Comportamiento Organizacional",
+  "Capacitación y Desarrollo de Personal",
+  "Gestión de Desempeño",
+  "Seguridad y Salud Ocupacional",
+  "Remuneración y Compensación",
+  "Gestión y Desarrollo de Competencias",
+  "Valoración de Cargos",
+  "Gestión Presupuestaria y de Talento Humano",
+  "Desarrollo Organizacional",
+  "Estadística Aplicada",
+  "Análisis de Gestión de Riesgos",
+  "Entrepreneurship",
+  "Liderazgo y Gestión de Conflictos",
+  "Gestión de Nómina y Prestaciones Sociales",
+  "Unidad de Integración Curricular"
+];
+assert.deepStrictEqual(Array.from(talento.materias.map(m => m.nombreOficial)), esperadasTalento);
+assert.strictEqual(talento.materias[20].tipo, "integracion_curricular");
+assert.strictEqual(catalogo.obtenerPorCarrera("Gestion del Talento Humano").materias.length, 21);
+assert.strictEqual(new Set(talento.materias.map(m => m.nivelNumero + "|" + m.nombreOficial)).size, 21);
+assert.strictEqual(catalogo.obtenerPorCarrera("Marketing Digital y Comercio Electrónico"), null);
 
 
 
@@ -296,4 +331,4 @@ assert.ok(fichasJs.includes("Mallas.obtenerMallaVigenteParaCarrera(carrera)"));
 assert.ok(fichasHtml.includes("../mallas/mallas.oficiales.js"));
 assert.ok(fichasHtml.indexOf("../mallas/mallas.oficiales.js") < fichasHtml.indexOf("./fichas.js"));
 
-console.log("Mallas codificadas verificadas: nueve carreras y 184 asignaturas.");
+console.log("Mallas codificadas verificadas: diez carreras y 205 asignaturas.");
