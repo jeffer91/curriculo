@@ -569,6 +569,42 @@ Catálogo curricular suministrado para codificación.
         "Unidad de Integración Curricular"
       ]
     }
+  },
+  "rehabilitacionfisica": {
+    "carrera": "Rehabilitación Física",
+    "fuente": "Malla oficial facilitada para su codificación",
+    "version": null,
+    "vigenciaInicio": null,
+    "vigenciaFin": null,
+    "niveles": {
+      "1": [
+        "Comunicación Oral y Escrita",
+        "Morfofisiología I",
+        "Fisiología del Movimiento",
+        "Fundamentos de Rehabilitación Física",
+        "Office essentials"
+      ],
+      "2": [
+        "Técnicas de Masoterapia",
+        "Morfofisiología II",
+        "Biomecánica y Evaluación Funcional",
+        "Farmacología aplicada a la Rehabilitación Física",
+        "Semiotecnia en la Rehabilitación Física"
+      ],
+      "3": [
+        "Kinesioterapia",
+        "Rehabilitación Musculoesquelética",
+        "Rehabilitación Cardiorrespiratoria",
+        "Neurorehabilitación",
+        "Rehabilitación Geriátrica"
+      ],
+      "4": [
+        "Rehabilitación Deportiva",
+        "Rehabilitación Uroginecológica",
+        "Atención Integral al Paciente Crónico o con Discapacidad",
+        "Ergonomía y Seguridad Laboral en Entornos de Salud"
+      ]
+    }
   }
 };
 
