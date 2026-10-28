@@ -259,6 +259,11 @@ Funciones:
       alert("Selecciona carrera, nivel y período.");
       return;
     }
+    estado.materiasEstado = [];
+    estado.materiasEsperadas = [];
+    estado.inputs = {};
+    estado.diagnostico = null;
+    renderInicial("Revisando evidencias de esta selección...");
     var boton = document.getElementById("btnRevisar");
     boton.disabled = true;
     boton.textContent = "Revisando...";
@@ -952,6 +957,69 @@ Funciones:
     }
   }
 
+  async function guardarRevision() {
+    if (!estado.generacion || !estado.generacion.registro || !estado.generacion.registro.id) {
+      alert("Primero genera o recupera una ficha.");
+      return;
+    }
+    var token = estado.revisionToken;
+    var boton = document.getElementById("btnGuardarRevision");
+    var registro = estado.generacion.registro;
+    boton.disabled = true;
+    try {
+      await Fichas.guardarRevision({
+        generacionId: registro.id,
+        carreraId: estado.carrera.id,
+        nivelNumero: estado.nivelNumero,
+        periodo: estado.periodo,
+        html: document.getElementById("preview").innerHTML
+      });
+      if (token !== estado.revisionToken) return;
+      alert("Revisión guardada en Firebase para esta carrera, nivel, período y versión.");
+    } catch (error) {
+      if (token === estado.revisionToken) alert(error && error.message ? error.message : "No se pudo guardar la revisión.");
+    } finally {
+      if (token === estado.revisionToken) boton.disabled = false;
+    }
+  }
+
+  async function recuperarRevision() {
+    if (!estado.carrera || !estado.nivelNumero || !estado.periodo || !estado.materiasEstado.length) {
+      alert("Selecciona carrera, nivel y período y pulsa Revisar antes de recuperar.");
+      return;
+    }
+    var token = estado.revisionToken;
+    var boton = document.getElementById("btnRecuperarRevision");
+    boton.disabled = true;
+    try {
+      var historial = await Fichas.obtenerHistorial(estado.carrera.id, estado.nivelNumero, estado.periodo);
+      var encontrado = null;
+      var revision = null;
+      for (var i = 0; i < historial.length; i += 1) {
+        var item = historial[i];
+        revision = await Fichas.obtenerRevision(item.id);
+        if (token !== estado.revisionToken) return;
+        if (revision && revision.html &&
+            revision.carreraId === estado.carrera.id &&
+            revision.nivelNumero === estado.nivelNumero &&
+            revision.periodo === estado.periodo) { encontrado = item; break; }
+      }
+      if (!encontrado) throw new Error("No existe una revisión guardada para esta selección.");
+      estado.generacion = { registro: encontrado, contexto: encontrado.contexto || null };
+      document.getElementById("preview").innerHTML = revision.html;
+      ["btnWord", "btnPDF", "btnGuardarRevision"].forEach(function (id) {
+        document.getElementById(id).disabled = false;
+      });
+      cambiarTab("vista");
+      document.getElementById("analisisEstado").textContent =
+        "Revisión recuperada · versión " + encontrado.version + ". Verifica vigencia y contenido antes de exportar.";
+    } catch (error) {
+      if (token === estado.revisionToken) alert(error && error.message ? error.message : "No se pudo recuperar la revisión.");
+    } finally {
+      if (token === estado.revisionToken) boton.disabled = false;
+    }
+  }
+
   function listaHtml(lista) {
     lista = arr(lista).filter(function (x) { return !!texto(x); });
     return lista.length ? '<ul>' + lista.map(function (x) { return '<li>' + escapar(x) + '</li>'; }).join("") + '</ul>' : '<p>Sin información registrada.</p>';
@@ -1152,6 +1220,8 @@ Funciones:
     document.getElementById("btnGenerar").addEventListener("click", generarFicha);
     document.getElementById("btnWord").addEventListener("click", descargarWord);
     document.getElementById("btnPDF").addEventListener("click", descargarPDF);
+    document.getElementById("btnGuardarRevision").addEventListener("click", guardarRevision);
+    document.getElementById("btnRecuperarRevision").addEventListener("click", recuperarRevision);
   }
 
   async function iniciar() {
