@@ -982,7 +982,7 @@ Funciones:
         carreraId: estado.carrera.id,
         nivelNumero: estado.nivelNumero,
         periodo: estado.periodo,
-        html: document.getElementById("preview").innerHTML
+        html: htmlFichaSeguro(document.getElementById("preview").innerHTML)
       });
       if (token !== estado.revisionToken) return;
       alert("Revisión guardada en Firebase para esta carrera, nivel, período y versión.");
@@ -1016,7 +1016,7 @@ Funciones:
       }
       if (!encontrado) throw new Error("No existe una revisión guardada para esta selección.");
       estado.generacion = { registro: encontrado, contexto: encontrado.contexto || null };
-      document.getElementById("preview").innerHTML = revision.html;
+      document.getElementById("preview").innerHTML = htmlFichaSeguro(revision.html);
       ["btnWord", "btnPDF", "btnGuardarRevision"].forEach(function (id) {
         document.getElementById(id).disabled = false;
       });
@@ -1153,6 +1153,29 @@ Funciones:
     return html;
   }
 
+  function htmlFichaSeguro(html) {
+    var plantilla = document.createElement("template");
+    plantilla.innerHTML = String(html || "");
+    var permitidos = /^(h1|h2|h3|h4|p|strong|b|em|i|u|small|span|table|thead|tbody|tr|td|th|ul|ol|li|br|div|section|article)$/i;
+    plantilla.content.querySelectorAll("*").forEach(function (elemento) {
+      var tag = elemento.tagName.toLowerCase();
+      if (["script", "style", "iframe", "object", "embed", "form", "input", "button", "svg", "img", "link", "meta"].indexOf(tag) !== -1) {
+        elemento.remove();
+        return;
+      }
+      if (!permitidos.test(tag)) {
+        elemento.replaceWith(document.createTextNode(elemento.textContent || ""));
+        return;
+      }
+      Array.from(elemento.attributes).forEach(function (atributo) {
+        if ((tag === "td" || tag === "th") && /^(colspan|rowspan)$/.test(atributo.name) &&
+            /^[1-9]$/.test(atributo.value)) return;
+        elemento.removeAttribute(atributo.name);
+      });
+    });
+    return plantilla.innerHTML;
+  }
+
   function limpiarNombreArchivo(valor) {
     return texto(valor).normalize("NFC").replace(/[<>:\"/\\|?*\x00-\x1F]/g, " ").replace(/\s+/g, " ").trim().slice(0, 160) || "Ficha";
   }
@@ -1172,7 +1195,7 @@ Funciones:
       alert("Primero genera una ficha y comprueba que el exportador Word esté disponible.");
       return;
     }
-    var contenido = document.getElementById("preview").innerHTML;
+    var contenido = htmlFichaSeguro(document.getElementById("preview").innerHTML);
     if (!contenido || contenido.indexOf("Genera la ficha") !== -1) return;
     var boton = document.getElementById("btnWord");
     boton.disabled = true;
@@ -1194,7 +1217,7 @@ Funciones:
   }
 
   async function descargarPDF() {
-    var contenido = document.getElementById("preview").innerHTML;
+    var contenido = htmlFichaSeguro(document.getElementById("preview").innerHTML);
     if (!contenido || contenido.indexOf("Genera la ficha") !== -1) return;
     var html = documentoHtmlCompleto(contenido);
     if (window.CurriculoElectron && typeof window.CurriculoElectron.guardarPDFEnDescargas === "function") {
