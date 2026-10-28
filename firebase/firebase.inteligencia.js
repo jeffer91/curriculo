@@ -350,9 +350,12 @@ Funciones:
       contenido: true,
       evaluacion: true,
       horas: true,
-      orden: true
+      orden: true,
+      campos: true
     };
-    var adicionales = {};
+    // Las actividades leídas desde Firestore ya incluyen "campos".
+    // No se debe encapsular de nuevo como { campos: { campos: ... } }.
+    var adicionales = sanitizarCampos(item.campos);
     Object.keys(item).sort().forEach(function (clave) {
       if (conocidos[clave] || CLAVES_VOLATILES[clave]) return;
       var valor = limpiarProfundo(item[clave]);
