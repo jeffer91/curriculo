@@ -31,6 +31,7 @@
       return { completo: problemas.length === 0, problemas: problemas };
     }
     if (!texto(r.documentoNombre) && !texto(r.extractoFuente)) problemas.push("Falta documento o texto fuente.");
+    if (!texto(r.periodoInforme)) problemas.push("Falta período del informe.");
     if (!r.analisisIA || texto(r.analisisIA.resumen).length < 20) problemas.push("Falta análisis verificable del informe.");
     var hoy = texto(fechaReferencia) || new Date().toISOString().slice(0, 10);
     if (texto(r.vigenciaDesde) && r.vigenciaDesde > hoy) problemas.push("El informe aún no está vigente.");
