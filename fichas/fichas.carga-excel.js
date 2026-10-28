@@ -82,6 +82,19 @@
   async function actualizarDetalle() {
     var pedido = ++solicitud;
     var registro = registroSeleccionado();
+    var confirmacionPanel = $("materiaExcelConfirmacionPanel");
+    var confirmacion = $("materiaExcelConfirmacion");
+    if (confirmacionPanel) confirmacionPanel.style.display = "none";
+    if (confirmacion) confirmacion.value = "";
+    if (registro) {
+      var normalizar = window.CurriculoFirebase.Inteligencia.normalizarTexto;
+      if (normalizar(registro.nombreMostrar || registro.nombre) !== normalizar(activo.esperada.nombreOficial)) {
+        confirmacionPanel.style.display = "grid";
+        $("materiaExcelConfirmacionAyuda").textContent =
+          "El registro «" + (registro.nombreMostrar || registro.nombre) + "» tiene otro nombre. " +
+          "Para impedir una vinculación accidental, escribe exactamente: " + activo.esperada.nombreOficial;
+      }
+    }
     if (!registro) {
       pintarPrevios(null);
       ponerEstado("Nueva materia: selecciona sus tres Excel.");
@@ -107,7 +120,8 @@
     var esperada = item.esperada;
     activo = {
       carrera: ctx.carrera, nivelNumero: ctx.nivelNumero, periodo: ctx.periodo,
-      token: ctx.token, esperada: esperada, actual: item.actual || null
+      token: ctx.token, esperada: esperada, actual: item.actual || null,
+      candidatosCargados: false, errorVinculo: false
     };
     detalles = {};
     candidatos = [];
@@ -128,10 +142,20 @@
       var usados = (ctx.materiasEstado || []).filter(function (m) {
         return m.esperada !== esperada && m.actual;
       }).map(function (m) { return m.actual.id; });
-      candidatos = materias.filter(function (m) {
+      var oficiales = window.CurriculoMallasOficiales &&
+        window.CurriculoMallasOficiales.obtenerPorCarrera(ctx.carrera);
+      var norm = window.CurriculoFirebase.Inteligencia.normalizarTexto;
+      var nombresDeOtras = oficiales ? oficiales.materias.filter(function (m) {
         return Number(m.nivelNumero) === Number(ctx.nivelNumero) &&
-          (usados.indexOf(m.id) === -1 || (item.actual && m.id === item.actual.id));
+          norm(m.nombreOficial) !== norm(esperada.nombreOficial);
+      }).map(function (m) { return norm(m.nombreOficial); }) : [];
+      candidatos = materias.filter(function (m) {
+        var nombre = norm(m.nombreInstitucional || m.nombreCorregido || m.nombreMostrar || m.nombre);
+        return Number(m.nivelNumero) === Number(ctx.nivelNumero) &&
+          (usados.indexOf(m.id) === -1 || (item.actual && m.id === item.actual.id)) &&
+          nombresDeOtras.indexOf(nombre) === -1;
       });
+      activo.candidatosCargados = true;
       var select = $("materiaExcelVincular");
       select.innerHTML = "";
       var nuevo = document.createElement("option");
@@ -184,12 +208,29 @@
       ponerEstado("La selección cambió. Pulsa Revisar y vuelve a seleccionar la materia.", true);
       return;
     }
-    if (activo.errorVinculo) {
-      ponerEstado("No se guardará una materia nueva mientras su registro vinculado no esté resuelto.", true);
+    if (activo.errorVinculo || !activo.candidatosCargados) {
+      ponerEstado("No se puede guardar hasta confirmar los registros existentes de este nivel.", true);
       return;
     }
     var ctx = activo;
     var selected = registroSeleccionado();
+    var confirmacionVinculo = null;
+    if (selected) {
+      var normalizar = window.CurriculoFirebase.Inteligencia.normalizarTexto;
+      var nombreElegido = texto(selected.nombreMostrar || selected.nombre);
+      if (normalizar(nombreElegido) !== normalizar(ctx.esperada.nombreOficial)) {
+        var escrito = texto($("materiaExcelConfirmacion").value);
+        if (escrito !== texto(ctx.esperada.nombreOficial)) {
+          ponerEstado("Para vincular un registro con otro nombre, escribe exactamente el nombre oficial de la materia.", true);
+          return;
+        }
+        confirmacionVinculo = {
+          materiaFirebaseId: selected.id,
+          nombreExistente: nombreElegido,
+          nombreOficial: texto(ctx.esperada.nombreOficial)
+        };
+      }
+    }
     var detail = selected && detalles[selected.id];
     if (selected && !detail) { ponerEstado("Todavía no se pudo consultar el registro existente.", true); return; }
     var archivos = [];
@@ -248,7 +289,8 @@
       ponerEstado("PEA validados. Guardando únicamente " + ctx.esperada.nombreOficial + "...");
       if (!contextoVigente()) throw new Error("Cambió la selección antes de guardar.");
       var resultado = await window.CurriculoFirebase.importarMateriaDesdeFichas(paquete, {
-        materiaFirebaseId: selected && selected.id || ""
+        materiaFirebaseId: selected && selected.id || "",
+        confirmacionVinculo: confirmacionVinculo
       });
       guardado = true;
       ponerEstado("Materia " + resultado.tipo + " en Firebase. Versión " + resultado.version + ".", false, true);
