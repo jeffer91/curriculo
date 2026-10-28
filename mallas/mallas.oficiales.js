@@ -310,6 +310,42 @@ Catálogo curricular suministrado para codificación.
         "Unidad de integración curricular"
       ]
     }
+  },
+  "gastronomia": {
+    "carrera": "Gastronomía",
+    "fuente": "Malla oficial facilitada para su codificación",
+    "version": null,
+    "vigenciaInicio": null,
+    "vigenciaFin": null,
+    "niveles": {
+      "1": [
+        "Fundamentos de Gastronomía",
+        "Elaboración de menús",
+        "Office Essentials",
+        "Procesos, higiene e inocuidad alimentaria",
+        "Química general de los alimentos"
+      ],
+      "2": [
+        "Costos y Presupuestos Gastronómicos",
+        "Cocina Ecuatoriana",
+        "Técnicas de Carnicería y Chacutería",
+        "Panadería",
+        "Riesgos y Seguridad en la Industria Culinaria"
+      ],
+      "3": [
+        "Cocina Internacional I (Europea)",
+        "Pastelería y chocolatería",
+        "Conservación y Técnicas de Almacenaje",
+        "Enología, Bebidas y Maridaje",
+        "Administración y Marketing Digital de Establecimientos Gastronómicos"
+      ],
+      "4": [
+        "Cocina de Autor y Tendencias Creativas",
+        "Cocina Internacional II (Asiática y Americana)",
+        "Diseño, Equipamiento y Software gastronómico",
+        "Organización de Eventos y Catering"
+      ]
+    }
   }
 };
 
