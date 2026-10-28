@@ -168,7 +168,7 @@ assert.strictEqual(inicial.materias[20].tipo, "integracion_curricular");
 assert.strictEqual(inicial.materias[6].nombreOficial, "Las TIC’s en la Educación Inicial");
 assert.strictEqual(new Set(inicial.materias.map(m => m.nivelNumero + "|" + m.nombreOficial)).size, 21);
 assert.strictEqual(catalogo.obtenerPorCarrera("Educacion Inicial").materias.length, 21);
-assert.strictEqual(catalogo.listarCarreras().length, 7);
+assert.strictEqual(catalogo.listarCarreras().length, 8);
 const enfermeria = catalogo.obtenerPorCarrera({ nombreInstitucional: "Enfermería" });
 assert.ok(enfermeria);
 assert.strictEqual(enfermeria.malla.carreraNombre, "Enfermería");
@@ -203,7 +203,43 @@ assert.deepStrictEqual(Array.from(enfermeria.materias.map(m => m.nombreOficial))
 assert.strictEqual(enfermeria.materias[19].tipo, "integracion_curricular");
 assert.strictEqual(catalogo.obtenerPorCarrera("Enfermeria").materias.length, 20);
 assert.strictEqual(new Set(enfermeria.materias.map(m => m.nivelNumero + "|" + m.nombreOficial)).size, 20);
-assert.strictEqual(catalogo.obtenerPorCarrera("Estética Integral"), null);
+const estetica = catalogo.obtenerPorCarrera({ nombreInstitucional: "Estética Integral" });
+assert.ok(estetica);
+assert.strictEqual(estetica.malla.carreraNombre, "Estética Integral");
+assert.strictEqual(estetica.malla.version, null);
+assert.strictEqual(estetica.malla.vigenciaInicio, null);
+assert.strictEqual(estetica.malla.vigenciaFin, null);
+assert.strictEqual(estetica.materias.length, 21);
+assert.deepStrictEqual(Array.from([1, 2, 3, 4], n => estetica.materias.filter(m => m.nivelNumero === n).length), [5, 5, 5, 6]);
+const esperadasEstetica = [
+  "Comunicación oral y escrita",
+  "Tratamiento y manejo de desechos",
+  "Terapias alternativas",
+  "Química cosmética",
+  "Cuidado de la piel",
+  "Administración en estéticas integrales",
+  "Masajes y terapia corporal",
+  "Aparatología en estética integral",
+  "Valoración estética",
+  "Cosmiatría",
+  "Contabilidad básica y tributación",
+  "Terapias faciales",
+  "Manicure y pedicure",
+  "Tricología y peluquería",
+  "Dermocosmética",
+  "Gestión de centros de estética integral",
+  "Terapias estéticas integrales",
+  "Terapeútica en estética",
+  "Asesoría de imagen",
+  "Visagismo y maquillaje profesional",
+  "Unidad de integración curricular"
+];
+assert.deepStrictEqual(Array.from(estetica.materias.map(m => m.nombreOficial)), esperadasEstetica);
+assert.strictEqual(estetica.materias[20].tipo, "integracion_curricular");
+assert.strictEqual(estetica.materias[17].nombreOficial, "Terapeútica en estética");
+assert.strictEqual(catalogo.obtenerPorCarrera("Estetica Integral").materias.length, 21);
+assert.strictEqual(new Set(estetica.materias.map(m => m.nivelNumero + "|" + m.nombreOficial)).size, 21);
+assert.strictEqual(catalogo.obtenerPorCarrera("Gastronomía"), null);
 
 
 
@@ -226,4 +262,4 @@ assert.ok(fichasJs.includes("Mallas.obtenerMallaVigenteParaCarrera(carrera)"));
 assert.ok(fichasHtml.includes("../mallas/mallas.oficiales.js"));
 assert.ok(fichasHtml.indexOf("../mallas/mallas.oficiales.js") < fichasHtml.indexOf("./fichas.js"));
 
-console.log("Mallas codificadas verificadas: siete carreras y 144 asignaturas.");
+console.log("Mallas codificadas verificadas: ocho carreras y 165 asignaturas.");
