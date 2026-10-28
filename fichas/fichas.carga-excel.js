@@ -219,7 +219,7 @@
         advertencias: []
       };
       var NS = window.SubirCCC || {};
-      if (!NS.Excel || !NS.Validador || !window.XLSX) {
+      if (!NS.Excel || !NS.Validador) {
         throw new Error("No se cargó el lector o el validador de Excel.");
       }
       paquete = await NS.Excel.enriquecerPaqueteConExcel(paquete);
