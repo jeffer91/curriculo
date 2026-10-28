@@ -168,7 +168,42 @@ assert.strictEqual(inicial.materias[20].tipo, "integracion_curricular");
 assert.strictEqual(inicial.materias[6].nombreOficial, "Las TIC’s en la Educación Inicial");
 assert.strictEqual(new Set(inicial.materias.map(m => m.nivelNumero + "|" + m.nombreOficial)).size, 21);
 assert.strictEqual(catalogo.obtenerPorCarrera("Educacion Inicial").materias.length, 21);
-assert.strictEqual(catalogo.listarCarreras().length, 6);
+assert.strictEqual(catalogo.listarCarreras().length, 7);
+const enfermeria = catalogo.obtenerPorCarrera({ nombreInstitucional: "Enfermería" });
+assert.ok(enfermeria);
+assert.strictEqual(enfermeria.malla.carreraNombre, "Enfermería");
+assert.strictEqual(enfermeria.malla.version, null);
+assert.strictEqual(enfermeria.malla.vigenciaInicio, null);
+assert.strictEqual(enfermeria.malla.vigenciaFin, null);
+assert.strictEqual(enfermeria.materias.length, 20);
+assert.deepStrictEqual(Array.from([1, 2, 3, 4], n => enfermeria.materias.filter(m => m.nivelNumero === n).length), [5, 5, 5, 5]);
+const esperadasEnfermeria = [
+  "Bioquímica",
+  "Morfofisiología I",
+  "Enfermería Técnica",
+  "Promoción de la Salud y Salud Intercultural",
+  "Redacción y Ofimática Aplicada a la Salud",
+  "Salud Sexual y Salud Reproductiva",
+  "Morfofisiología II",
+  "Nutrición y Dietética",
+  "Farmacología Básica",
+  "Enfermería en el Cuidado de la Persona con Discapacidad y Adultos Mayores",
+  "Enfermería en el Cuidado Esencial y Obstétrico",
+  "Microbiología y Parasitología",
+  "Farmacología Aplicada",
+  "Instrumentación Quirúrgica",
+  "Enfermería en el Cuidado del Paciente Quirúrgico y Pos Quirúrgico",
+  "Enfermería en Salud Mental",
+  "Enfermería Crítica y Clínica",
+  "Ética, Deontología Profesional y Derechos del Paciente",
+  "Epidemiología e Investigación en Salud",
+  "Unidad de Integración Curricular"
+];
+assert.deepStrictEqual(Array.from(enfermeria.materias.map(m => m.nombreOficial)), esperadasEnfermeria);
+assert.strictEqual(enfermeria.materias[19].tipo, "integracion_curricular");
+assert.strictEqual(catalogo.obtenerPorCarrera("Enfermeria").materias.length, 20);
+assert.strictEqual(new Set(enfermeria.materias.map(m => m.nivelNumero + "|" + m.nombreOficial)).size, 20);
+assert.strictEqual(catalogo.obtenerPorCarrera("Estética Integral"), null);
 
 
 
@@ -191,4 +226,4 @@ assert.ok(fichasJs.includes("Mallas.obtenerMallaVigenteParaCarrera(carrera)"));
 assert.ok(fichasHtml.includes("../mallas/mallas.oficiales.js"));
 assert.ok(fichasHtml.indexOf("../mallas/mallas.oficiales.js") < fichasHtml.indexOf("./fichas.js"));
 
-console.log("Mallas codificadas verificadas: seis carreras y 124 asignaturas.");
+console.log("Mallas codificadas verificadas: siete carreras y 144 asignaturas.");
