@@ -20,6 +20,8 @@ Funciones:
   var Fichas = FB && FB.Fichas;
   var IA = window.CurriculoIA;
   var Validacion = window.CurriculoFichasValidacion;
+  // Clave técnica de compatibilidad: no se solicita ni se muestra un período.
+  var PERIODO_INTERNO = "general";
 
   var TIPOS_INPUT = [
     { id: "graduados", nombre: "Seguimiento a graduados y egresados" },
@@ -44,7 +46,7 @@ Funciones:
     carrera: null,
     malla: null,
     nivelNumero: 0,
-    periodo: "",
+    periodo: PERIODO_INTERNO,
     materiasEsperadas: [],
     materiasEstado: [],
     inputs: {},
@@ -168,7 +170,7 @@ Funciones:
 
   function invalidarRevision() {
     estado.revisionToken += 1;
-    estado.periodo = "";
+    estado.periodo = PERIODO_INTERNO;
     estado.materiasEstado = [];
     estado.materiasEsperadas = [];
     estado.inputs = {};
@@ -262,11 +264,11 @@ Funciones:
   async function revisarFicha() {
     estado.carrera = carreraSeleccionada();
     estado.nivelNumero = numero(valorCampo("nivelSelect"), 0);
-    estado.periodo = valorCampo("periodoInput");
+    estado.periodo = PERIODO_INTERNO;
     var token = ++estado.revisionToken;
     limpiarVistaPrevia();
-    if (!estado.carrera || estado.nivelNumero < 1 || !estado.periodo) {
-      alert("Selecciona carrera, nivel y período.");
+    if (!estado.carrera || estado.nivelNumero < 1) {
+      alert("Selecciona una carrera y un nivel.");
       return;
     }
     estado.materiasEstado = [];
@@ -290,7 +292,7 @@ Funciones:
         Fichas.obtenerTendencias(estado.carrera.id, estado.nivelNumero, estado.periodo),
         IA.disponible()
       ]);
-      if (token !== estado.revisionToken || estado.periodo !== valorCampo("periodoInput") ||
+      if (token !== estado.revisionToken ||
           estado.nivelNumero !== numero(valorCampo("nivelSelect"), 0) ||
           estado.carrera.id !== valorCampo("carreraSelect")) return;
       var materiasFirebase = resultados[0];
@@ -346,7 +348,7 @@ Funciones:
 
   async function guardarDatosGenerales() {
     if (!estado.carrera || estado.nivelNumero < 1 || !estado.periodo) {
-      alert("Primero revisa una carrera, nivel y período.");
+      alert("Primero revisa una carrera y un nivel.");
       return;
     }
     var datos = obtenerContextoFormulario();
@@ -999,8 +1001,8 @@ Funciones:
   }
 
   async function recuperarRevision() {
-    if (!estado.carrera || !estado.nivelNumero || !estado.periodo || !estado.materiasEstado.length) {
-      alert("Selecciona carrera, nivel y período y pulsa Revisar antes de recuperar.");
+    if (!estado.carrera || !estado.nivelNumero || !estado.materiasEstado.length) {
+      alert("Selecciona una carrera y un nivel y pulsa Revisar antes de recuperar.");
       return;
     }
     var token = estado.revisionToken;
@@ -1119,7 +1121,6 @@ Funciones:
     html += '<h2>1. Datos de identificación</h2><table><tbody>' +
       '<tr><th>Carrera</th><td>' + escapar(c.carreraNombre) + '</td></tr>' +
       '<tr><th>Nivel analizado</th><td>' + escapar(c.nivelNombre) + '</td></tr>' +
-      '<tr><th>Período</th><td>' + escapar(c.periodo) + '</td></tr>' +
       '<tr><th>Código</th><td>' + escapar(c.codigoDocumento) + '</td></tr>' +
       '<tr><th>Coordinador</th><td>' + escapar(c.coordinador) + '</td></tr>' +
       '<tr><th>Docentes</th><td>' + escapar(c.docentes).replace(/\n/g, '<br>') + '</td></tr>' +
@@ -1186,7 +1187,7 @@ Funciones:
   }
 
   function nombreBaseFicha() {
-    return limpiarNombreArchivo("Ficha - " + (estado.carrera ? (estado.carrera.nombreInstitucional || estado.carrera.nombre) : "Carrera") + " - " + nombreNivel(estado.nivelNumero) + " - " + estado.periodo);
+    return limpiarNombreArchivo("Ficha - " + (estado.carrera ? (estado.carrera.nombreInstitucional || estado.carrera.nombre) : "Carrera") + " - " + nombreNivel(estado.nivelNumero));
   }
 
   function documentoHtmlCompleto(contenido) {
@@ -1246,7 +1247,6 @@ Funciones:
   function conectarEventos() {
     document.getElementById("carreraSelect").addEventListener("change", cargarNiveles);
     document.getElementById("nivelSelect").addEventListener("change", function () { invalidarRevision(); estado.nivelNumero = numero(valorCampo("nivelSelect"), 0); });
-    document.getElementById("periodoInput").addEventListener("change", invalidarRevision);
     document.getElementById("btnRevisar").addEventListener("click", revisarFicha);
     document.getElementById("btnGuardarDatos").addEventListener("click", guardarDatosGenerales);
     CAMPOS_DATOS.concat(["cargoElaborador"]).forEach(function (id) {
