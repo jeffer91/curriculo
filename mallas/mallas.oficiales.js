@@ -384,6 +384,44 @@ Catálogo curricular suministrado para codificación.
         "Unidad de Integración Curricular"
       ]
     }
+  },
+  "marketingdigitalycomercioelectronico": {
+    "carrera": "Marketing Digital y Comercio Electrónico",
+    "fuente": "Malla oficial facilitada para su codificación",
+    "version": null,
+    "vigenciaInicio": null,
+    "vigenciaFin": null,
+    "niveles": {
+      "1": [
+        "Marketing Instruccional",
+        "Competencias Digitales",
+        "Métodos Cuantitativos para la Toma de Decisiones",
+        "Redacción de Contenidos",
+        "Gestión de la Innovación",
+        "Análisis e Investigación de Mercados"
+      ],
+      "2": [
+        "Diseño Gráfico Digital",
+        "Manejo de Marca – Branding",
+        "Comportamiento del Consumidor",
+        "Redes Sociales y Community Management"
+      ],
+      "3": [
+        "Diseño y Programación Web",
+        "Técnicas Audiovisuales",
+        "Gestión de Importaciones y Exportaciones",
+        "Gerencia de Ventas",
+        "Entrepreneurship"
+      ],
+      "4": [
+        "Optimización del Motor de Búsqueda (SEO)",
+        "Anuncios y Analítica en Google",
+        "Comercio Digital (E-commerce)",
+        "Métricas de Marketing",
+        "Bases de Datos e Inteligencia de Negocios",
+        "Unidad de Integración Curricular"
+      ]
+    }
   }
 };
 
