@@ -120,7 +120,8 @@ Funciones:
       cargarCSSUnaVez(rutaDesdeRaiz("subir/subir.malla.css?v=20260804-1"));
       await cargarScript(rutaDesdeRaiz("firebase/firebase.mallas.js?v=20260804-1"));
       await cargarScript(rutaDesdeRaiz("mallas/mallas.comparador.js?v=20260804-1"));
-      await cargarScript(rutaDesdeRaiz("firebase/firebase.mallas-integracion.js?v=20260818-1"));
+      await cargarScript(rutaDesdeRaiz("mallas/mallas.oficiales.js?v=20261027-18"));
+      await cargarScript(rutaDesdeRaiz("firebase/firebase.mallas-integracion.js?v=20261027-2"));
       await cargarScript(rutaDesdeRaiz("subir/subir.malla-ui.js?v=20260804-1"));
     } catch (error) {
       window.__curriculoMallasSubirCargando = false;
