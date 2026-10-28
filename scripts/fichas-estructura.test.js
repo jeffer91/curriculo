@@ -24,7 +24,10 @@ const fichasJs = fs.readFileSync(path.join(root, "fichas/fichas.js"), "utf8");
 
 assert.ok(fichasHtml.includes('id="carreraSelect"'));
 assert.ok(fichasHtml.includes('id="nivelSelect"'));
-assert.ok(fichasHtml.includes('id="periodoInput"'));
+assert.ok(!fichasHtml.includes('id="periodoInput"'));
+assert.ok(!fichasHtml.includes('id="periodoSelect"'));
+assert.ok(!fichasHtml.includes('id="btnNuevoPeriodo"'));
+assert.ok(!fichasHtml.includes("fichas.periodos.js"));
 assert.ok(fichasHtml.includes('id="btnGenerar"'));
 assert.ok(configHtml.includes("ia.motor.js"));
 assert.ok(menu.includes('id: "fichas"'));
