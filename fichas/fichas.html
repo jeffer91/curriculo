@@ -16,7 +16,7 @@ Funciones:
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fichas | Curriculo</title>
   <link rel="stylesheet" href="../menu-superior/menu-superior.css?v=20260804-1" />
-  <link rel="stylesheet" href="./fichas.css?v=20260807-1" />
+  <link rel="stylesheet" href="./fichas.css?v=20261028-1" />
   <link rel="stylesheet" href="./fichas.periodos.css?v=20260824-1" />
 </head>
 <body>
@@ -162,6 +162,44 @@ Funciones:
     </section>
   </main>
 
+  <div class="modal-backdrop" id="materiaExcelModal" aria-hidden="true">
+    <section class="modal excel-modal" role="dialog" aria-modal="true" aria-labelledby="materiaExcelTitulo">
+      <div class="modal-head">
+        <div><h3 id="materiaExcelTitulo">Cargar PEA de la materia</h3>
+          <p class="muted" id="materiaExcelContexto"></p></div>
+        <button class="btn btn-light" id="btnCerrarMateriaExcel" type="button">Cerrar</button>
+      </div>
+      <div class="modal-body">
+        <div class="analysis-box">Los archivos se incorporarán únicamente a esta materia. No se retirarán otras asignaturas. Se conservarán los PEA que no reemplaces.</div>
+        <div class="field">
+          <label for="materiaExcelVincular">Registro existente en Firebase</label>
+          <select id="materiaExcelVincular"><option value="">Nueva asignatura</option></select>
+          <small class="muted" id="materiaExcelAyudaVinculo">Selecciona un registro existente solo cuando corresponda a la misma materia.</small>
+        </div>
+        <div class="excel-slot">
+          <label for="materiaExcelBase">PEA Base</label>
+          <input id="materiaExcelBase" type="file" accept=".xlsx,.xls,.xlsm,.csv" />
+          <small id="materiaExcelBaseEstado" class="muted">Selecciona el Excel correspondiente.</small>
+        </div>
+        <div class="excel-slot">
+          <label for="materiaExcelUnidades">PEA Unidades</label>
+          <input id="materiaExcelUnidades" type="file" accept=".xlsx,.xls,.xlsm,.csv" />
+          <small id="materiaExcelUnidadesEstado" class="muted">Selecciona el Excel correspondiente.</small>
+        </div>
+        <div class="excel-slot">
+          <label for="materiaExcelActividades">PEA Actividades</label>
+          <input id="materiaExcelActividades" type="file" accept=".xlsx,.xls,.xlsm,.csv" />
+          <small id="materiaExcelActividadesEstado" class="muted">Selecciona el Excel correspondiente.</small>
+        </div>
+        <div class="analysis-box" id="materiaExcelEstado" role="status" aria-live="polite">Carga los tres Excel, o reemplaza los que necesites si la materia ya tiene PEA guardados.</div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-light" id="btnCancelarMateriaExcel" type="button">Cancelar</button>
+        <button class="btn btn-primary" id="btnGuardarMateriaExcel" type="button">Validar y guardar en Firebase</button>
+      </div>
+    </section>
+  </div>
+
   <div class="modal-backdrop" id="inputModal" aria-hidden="true">
     <section class="modal">
       <div class="modal-head"><h3 id="modalTitulo">Input institucional</h3><button class="btn btn-light" id="btnCerrarModal" type="button">Cerrar</button></div>
@@ -192,7 +230,7 @@ Funciones:
   <script src="../libs/jszip.min.js?v=20260713-7"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="../firebase/firebase.inteligencia.js?v=20260728-1"></script>
-  <script src="../firebase/firebase.curriculo.js?v=20260728-1"></script>
+  <script src="../firebase/firebase.curriculo.js?v=20261028-1"></script>
   <script src="../firebase/firebase.mallas.js?v=20260804-1"></script>
   <script src="../firebase/firebase.fichas.js?v=20261027-2"></script>
   <script src="../firebase/firebase.fichas-periodos.js?v=20260824-1"></script>
@@ -201,6 +239,12 @@ Funciones:
   <script src="../mallas/mallas.oficiales.js?v=20261027-19"></script>
   <script src="./fichas.validacion.js?v=20261027-2"></script>
   <script src="./fichas.docx.js?v=20261027-1"></script>
-  <script src="./fichas.js?v=20261027-5"></script>
+  <script src="../libs/xlsx.min.js?v=20260713-7"></script>
+  <script src="../subir/subir.normalizador.js?v=20260713-7"></script>
+  <script src="../subir/subir.excel.js?v=20260728-1"></script>
+  <script src="../subir/subir.excel-inteligente.js?v=20260806-1"></script>
+  <script src="../subir/subir.validador.js?v=20260727-2"></script>
+  <script src="./fichas.carga-excel.js?v=20261028-1"></script>
+  <script src="./fichas.js?v=20261028-1"></script>
 </body>
 </html>
