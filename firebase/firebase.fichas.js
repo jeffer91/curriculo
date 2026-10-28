@@ -23,6 +23,7 @@ Funciones:
     CONTEXTOS: "ficha_contextos",
     TENDENCIAS: "ficha_tendencias",
     GENERACIONES: "ficha_generaciones",
+    REVISIONES: "ficha_revisiones",
     VERSIONES: "materia_versiones"
   });
   var estado = { appSDK: null, firestoreSDK: null, app: null, db: null, promesa: null };
@@ -154,13 +155,15 @@ Funciones:
     var carreraId = texto(datos.carreraId);
     var nivelNumero = numero(datos.nivelNumero, 0);
     var tipo = texto(datos.tipo);
-    if (!carreraId || nivelNumero < 1 || !tipo) throw new Error("Carrera, nivel y tipo de input son obligatorios.");
+    var periodoFicha = texto(datos.periodoFicha);
+    if (!carreraId || nivelNumero < 1 || !tipo || !periodoFicha) throw new Error("Carrera, nivel, período de ficha y tipo de input son obligatorios.");
     var id = ["input", slug(carreraId), "n" + pad(nivelNumero, 2), slug(tipo), Date.now().toString(36)].join("_").slice(0, 800);
     var registro = Object.assign({}, datos, {
       id: id,
       carreraId: carreraId,
       nivelNumero: nivelNumero,
       tipo: tipo,
+      periodoFicha: periodoFicha,
       creadoEn: F().serverTimestamp(),
       actualizadoEn: F().serverTimestamp()
     });
@@ -177,8 +180,9 @@ Funciones:
     });
   }
 
-  async function obtenerInputsActuales(carreraId, nivelNumero) {
+  async function obtenerInputsActuales(carreraId, nivelNumero, periodoFicha) {
     var items = await obtenerInputs(carreraId, nivelNumero);
+    if (texto(periodoFicha)) items = items.filter(function (item) { return texto(item.periodoFicha) === texto(periodoFicha); });
     var mapa = {};
     items.forEach(function (item) {
       if (!mapa[item.tipo]) mapa[item.tipo] = item;
@@ -254,6 +258,36 @@ Funciones:
     return items.sort(function (a, b) { return numero(b.version, 0) - numero(a.version, 0); });
   }
 
+
+  async function guardarRevision(datos) {
+    await abrirSDK();
+    datos = datos || {};
+    var idGeneracion = texto(datos.generacionId);
+    var html = String(datos.html || "");
+    if (!idGeneracion || !texto(datos.carreraId) || !texto(datos.periodo) || numero(datos.nivelNumero, 0) < 1) {
+      throw new Error("La revisión debe vincularse a una ficha generada y a su período.");
+    }
+    if (!html || html.length > 500000) {
+      throw new Error("La revisión está vacía o supera el máximo de 500000 caracteres. Exporta el PDF o Word como respaldo.");
+    }
+    var registro = {
+      generacionId: idGeneracion,
+      carreraId: texto(datos.carreraId),
+      nivelNumero: numero(datos.nivelNumero, 0),
+      periodo: texto(datos.periodo),
+      html: html,
+      actualizadoEn: F().serverTimestamp()
+    };
+    await F().setDoc(doc(COLECCIONES.REVISIONES, idGeneracion), registro, { merge: true });
+    return { ok: true, generacionId: idGeneracion };
+  }
+
+  async function obtenerRevision(generacionId) {
+    await abrirSDK();
+    if (!texto(generacionId)) return null;
+    return plano(await F().getDoc(doc(COLECCIONES.REVISIONES, generacionId)));
+  }
+
   async function obtenerCambioDetalladoMateria(materiaId) {
     if (typeof NS.obtenerCambiosMateria !== "function" || typeof NS.obtenerDetalleMateria !== "function") {
       throw new Error("Firebase Curriculo no tiene disponibles las consultas de materias y cambios.");
@@ -296,6 +330,8 @@ Funciones:
     obtenerTendencias: obtenerTendencias,
     guardarGeneracion: guardarGeneracion,
     obtenerHistorial: obtenerHistorial,
+    guardarRevision: guardarRevision,
+    obtenerRevision: obtenerRevision,
     obtenerCambioDetalladoMateria: obtenerCambioDetalladoMateria
   };
 })(window);
