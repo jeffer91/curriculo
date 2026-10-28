@@ -1167,21 +1167,30 @@ Funciones:
       '</style></head><body>' + contenido + '</body></html>';
   }
 
-  function descargarWord() {
+  async function descargarWord() {
+    if (!estado.generacion || !window.CurriculoFichasDOCX) {
+      alert("Primero genera una ficha y comprueba que el exportador Word esté disponible.");
+      return;
+    }
     var contenido = document.getElementById("preview").innerHTML;
     if (!contenido || contenido.indexOf("Genera la ficha") !== -1) return;
-    var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="ProgId" content="Word.Document"><style>' +
-      'body{font-family:Arial,sans-serif;font-size:10.5pt;line-height:1.4}h1{text-align:center;font-size:16pt}h2{font-size:13pt}h3{font-size:11.5pt}table{width:100%;border-collapse:collapse}th,td{border:1px solid #777;padding:5pt;vertical-align:top}' +
-      '</style></head><body>' + contenido + '</body></html>';
-    var blob = new Blob(["\ufeff", html], { type: "application/msword" });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement("a");
-    a.href = url;
-    a.download = nombreBaseFicha() + ".doc";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+    var boton = document.getElementById("btnWord");
+    boton.disabled = true;
+    try {
+      var blob = await window.CurriculoFichasDOCX.crear(contenido);
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = nombreBaseFicha() + ".docx";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+    } catch (error) {
+      alert(error && error.message ? error.message : "No se pudo generar DOCX.");
+    } finally {
+      boton.disabled = false;
+    }
   }
 
   async function descargarPDF() {
