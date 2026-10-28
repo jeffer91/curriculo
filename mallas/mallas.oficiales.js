@@ -496,6 +496,41 @@ Catálogo curricular suministrado para codificación.
         "Entrepreneurship"
       ]
     }
+  },
+  "procesamientodealimentos": {
+    "carrera": "Procesamiento de Alimentos",
+    "fuente": "Malla oficial facilitada para su codificación",
+    "version": null,
+    "vigenciaInicio": null,
+    "vigenciaFin": null,
+    "niveles": {
+      "1": [
+        "Matemática aplicada a los procesos",
+        "Química general",
+        "Introducción al procesamiento de alimentos",
+        "Dietética y nutrición",
+        "Procesamiento de frutas y vegetales"
+      ],
+      "2": [
+        "Bioquímica alimentaria",
+        "Microbiología y parasitología de alimentos",
+        "Procesamiento de cereales",
+        "Procesos, higiene e inocuidad alimentaria",
+        "Métodos de conservación de alimentos"
+      ],
+      "3": [
+        "Procesamiento de productos del mar y cárnicos",
+        "Procesamiento de confites",
+        "Procesamiento de lácteos",
+        "Procesamiento de bebidas",
+        "Sistemas integrados de calidad"
+      ],
+      "4": [
+        "Metodología de la investigación",
+        "Importación y exportación de alimentos",
+        "Cadena de almacenamiento y refrigeración"
+      ]
+    }
   }
 };
 
