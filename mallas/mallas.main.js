@@ -13,10 +13,12 @@ Funciones:
 
   var Firebase = window.CurriculoFirebase;
   var Parser = window.MallasParser;
+  var Catalogo = window.CurriculoMallasOficiales;
   var estado = {
     carrera: null,
     mallaId: "",
     mallaVersion: 0,
+    catalogoOficial: false,
     carreras: [],
     mallas: [],
     materias: [],
@@ -70,7 +72,10 @@ Funciones:
       "btnAplicarCorreccionCarrera"
     ].forEach(function (id) {
       var el = $(id);
-      if (el) el.disabled = estado.guardando;
+      if (el) el.disabled = estado.guardando || (estado.catalogoOficial && [
+        "btnGuardarMalla", "btnAgregarMateria", "btnOrdenarMaterias", "btnProcesarTexto",
+        "btnProcesarExcel", "btnProcesarDocumento"
+      ].indexOf(id) !== -1);
     });
     if ($("inputCarrera")) $("inputCarrera").disabled = estado.guardando;
     if ($("inputNombreCarrera")) $("inputNombreCarrera").disabled = estado.guardando || !estado.carrera;
@@ -326,6 +331,9 @@ Funciones:
       }).join("");
       return '<section class="ml-level"><div class="ml-level-head"><h3>' + escapar(nombreNivel(nivel)) + '</h3><span>' + items.length + (items.length === 1 ? " materia" : " materias") + '</span></div><div class="ml-matter-list">' + filas + '</div></section>';
     }).join("");
+    if (estado.catalogoOficial) {
+      contenedor.querySelectorAll("input,button").forEach(function (el) { el.disabled = true; });
+    }
     actualizarResumen();
   }
 
@@ -336,11 +344,11 @@ Funciones:
     }).length;
     if ($("resumenTotalMaterias")) $("resumenTotalMaterias").textContent = total + (total === 1 ? " materia" : " materias");
     if ($("resumenOrigen")) {
-      $("resumenOrigen").textContent = estado.mallaVersion > 0 ? (nuevas ? nuevas + " nuevas" : "Malla vigente") : "Desde Firebase";
+      $("resumenOrigen").textContent = estado.catalogoOficial ? "Catálogo oficial en código" : (estado.mallaVersion > 0 ? (nuevas ? nuevas + " nuevas" : "Malla vigente") : "Desde Firebase");
     }
     if ($("mlResumenCarrera")) $("mlResumenCarrera").hidden = !estado.carrera;
     if ($("textoVersionActual")) {
-      $("textoVersionActual").textContent = estado.mallaVersion > 0
+      $("textoVersionActual").textContent = estado.catalogoOficial ? "Estructura oficial en código" : estado.mallaVersion > 0
         ? "Versión " + estado.mallaVersion + " vigente"
         : "La versión se asignará al guardar";
     }
@@ -369,6 +377,7 @@ Funciones:
     if (estado.cargandoCarrera || estado.guardando) return;
     var carrera = estado.carreras.find(function (item) { return texto(item.id) === texto(carreraId); }) || null;
     estado.carrera = carrera;
+    estado.catalogoOficial = false;
 
     if (!carrera) {
       limpiarConfiguracion();
@@ -397,7 +406,32 @@ Funciones:
       var detalle = resultados[0];
       var materiasFirebase = resultados[1];
 
-      if (detalle) {
+      var oficial = Catalogo && Catalogo.obtenerPorCarrera(carrera);
+      if (oficial) {
+        estado.catalogoOficial = true;
+        limpiarConfiguracion();
+        estado.materias = oficial.materias.map(convertirMateriaMalla);
+        estado.materias.forEach(function (materia) {
+          var candidatas = materiasFirebase.filter(function (actual) {
+            return numero(actual.nivelNumero, 0) === numero(materia.nivelNumero, 0) &&
+              normalizar(actual.nombreOficial) === normalizar(materia.nombreOficial);
+          });
+          if (candidatas.length === 1) materia.materiaFirebaseId = candidatas[0].materiaFirebaseId;
+          materia.origen = "codigo_oficial";
+        });
+        var vinculadas = estado.materias.filter(function (m) { return !!m.materiaFirebaseId; }).length;
+        var extras = materiasFirebase.filter(function (m) {
+          return !estado.materias.some(function (o) {
+            return numero(o.nivelNumero, 0) === numero(m.nivelNumero, 0) &&
+              normalizar(o.nombreOficial) === normalizar(m.nombreOficial);
+          });
+        }).length;
+        pintarEstado(vinculadas === estado.materias.length && !extras ? "ok" : "warn",
+          "Malla oficial en código · solo lectura",
+          estado.materias.length + " asignaturas · " + vinculadas + " vinculadas con Firebase · " +
+            (estado.materias.length - vinculadas) + " sin coincidencia · " + extras +
+            " adicionales en Firebase. La malla codificada no se modifica desde esta pantalla.");
+      } else if (detalle) {
         aplicarDetalleMalla(detalle);
         var mezcla = fusionarMaterias(detalle.materias.map(convertirMateriaMalla), materiasFirebase, "firebase_nueva");
         estado.materias = mezcla.materias;
@@ -421,6 +455,7 @@ Funciones:
       }
 
       pintarMaterias();
+      setOcupado(false);
     } catch (error) {
       estado.materias = [];
       pintarMaterias();
@@ -534,6 +569,10 @@ Funciones:
 
   async function guardarMalla() {
     if (estado.guardando) return;
+    if (estado.carrera && Catalogo && Catalogo.obtenerPorCarrera(estado.carrera)) {
+      pintarEstado("warn", "Malla oficial protegida", "Las mallas oficiales se actualizan en el catálogo del código. Firebase conserva los PEA y el historial.");
+      return;
+    }
     if (!estado.carrera) {
       pintarEstado("warn", "Selecciona una carrera", "No hay una carrera seleccionada.");
       return;
@@ -709,6 +748,7 @@ Funciones:
         nombre: detalle.malla.carreraNombre
       };
       estado.carrera = carrera;
+      estado.catalogoOficial = !!(Catalogo && Catalogo.obtenerPorCarrera(carrera));
       $("inputCarrera").value = carrera.id;
       aplicarDetalleMalla(detalle);
       var materiasFirebase = await obtenerMateriasFirebase(carrera);
@@ -717,6 +757,7 @@ Funciones:
       $("inputNombreCarrera").disabled = false;
       pintarMaterias();
       cerrarModal("modalHistorial");
+      if (estado.catalogoOficial) pintarEstado("warn", "Histórico Firebase", "Vista histórica consultiva. La ficha utiliza la malla oficial codificada.");
       pintarEstado(
         detalle.malla.vigente === true ? "ok" : "neutral",
         detalle.malla.vigente === true ? "Versión vigente cargada" : "Versión histórica cargada",
