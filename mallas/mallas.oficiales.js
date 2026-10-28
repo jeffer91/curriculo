@@ -422,6 +422,44 @@ Catálogo curricular suministrado para codificación.
         "Unidad de Integración Curricular"
       ]
     }
+  },
+  "mecanicaautomotriz": {
+    "carrera": "Mecánica Automotriz",
+    "fuente": "Malla oficial facilitada para su codificación",
+    "version": null,
+    "vigenciaInicio": null,
+    "vigenciaFin": null,
+    "niveles": {
+      "1": [
+        "Física automotriz",
+        "Ofimática",
+        "Comunicación oral y escrita",
+        "Metrología",
+        "Cálculo diferencial e integral"
+      ],
+      "2": [
+        "Ciencia de materiales",
+        "Neumática e hidráulica",
+        "Electrónica análoga y digital",
+        "Sistemas CAD – CAM",
+        "Metodología de la investigación",
+        "Mecánica de motos I"
+      ],
+      "3": [
+        "Logística y mantenimiento de repuestos",
+        "Estructura y acabados automotrices",
+        "Mecánica de motores a gasolina y diesel",
+        "Electricidad automotriz",
+        "Climatización y aire acondicionado"
+      ],
+      "4": [
+        "Vehículos eléctricos e híbridos",
+        "Mantenimiento mecánico automotriz",
+        "Computadoras automotrices",
+        "Entrepreneurship",
+        "Mecánica de motos II"
+      ]
+    }
   }
 };
 
