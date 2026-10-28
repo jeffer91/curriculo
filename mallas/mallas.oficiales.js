@@ -197,6 +197,44 @@ Catálogo curricular suministrado para codificación.
         "Unidad de integración curricular"
       ]
     }
+  },
+  "educacioninicial": {
+    "carrera": "Educación Inicial",
+    "fuente": "Malla oficial facilitada para su codificación",
+    "version": null,
+    "vigenciaInicio": null,
+    "vigenciaFin": null,
+    "niveles": {
+      "1": [
+        "Competencias Digitales para la Educación Inicial",
+        "Didáctica Aplicada",
+        "Psicomotricidad y Expresión Corporal",
+        "Bases Biológicas del Desarrollo",
+        "Pedagogía Infantil",
+        "Estrategias Metodológicas para el Aprendizaje en Educación Inicial"
+      ],
+      "2": [
+        "Las TIC’s en la Educación Inicial",
+        "Expresión Plástica y Artística",
+        "Psicología Infantil I",
+        "Pedagogía Infantil II",
+        "Planificación y Diseño Curricular",
+        "Estimulación Temprana I"
+      ],
+      "3": [
+        "Psicología Infantil II",
+        "Pedagogía para Infantes con Discapacidad",
+        "Iniciación a las Operaciones Concretas",
+        "Estimulación Temprana II"
+      ],
+      "4": [
+        "Gerencia Educativa",
+        "Evaluación Institucional de Logros en Nivel Inicial y Primero de Básica",
+        "Dificultades en el Aprendizaje",
+        "Iniciación a la Prelectura y Preescritura",
+        "Unidad de Integración Curricular"
+      ]
+    }
   }
 };
 
