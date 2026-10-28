@@ -531,6 +531,44 @@ Catálogo curricular suministrado para codificación.
         "Cadena de almacenamiento y refrigeración"
       ]
     }
+  },
+  "redesytelecomunicaciones": {
+    "carrera": "Redes y Telecomunicaciones",
+    "fuente": "Malla oficial facilitada para su codificación",
+    "version": null,
+    "vigenciaInicio": null,
+    "vigenciaFin": null,
+    "niveles": {
+      "1": [
+        "Office Essentials",
+        "Matemáticas de Redes",
+        "Fundamentos de Redes (CCNA1)",
+        "Programación de Sistemas Telemáticos",
+        "Sistemas Operativos"
+      ],
+      "2": [
+        "Redes LAN y WAN (CCNA2)",
+        "Mantenimiento y Ensamblaje de Computadoras",
+        "Sistemas de Cableado Estructurado",
+        "Plataforma de Servidores",
+        "Fundamentos de Electricidad y Electrónica"
+      ],
+      "3": [
+        "Automatización de Redes (CCNA3)",
+        "Firewall y Proxy",
+        "Transmisión de Datos",
+        "Bases de Datos",
+        "Telefonía IP"
+      ],
+      "4": [
+        "Gestión y Auditoría de Infraestructura Tecnológica",
+        "Administración de Redes",
+        "Sistemas de Automatización IOT",
+        "Seguridad de Redes",
+        "Redes Inalámbricas",
+        "Unidad de Integración Curricular"
+      ]
+    }
   }
 };
 
