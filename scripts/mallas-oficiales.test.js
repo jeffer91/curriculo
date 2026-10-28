@@ -168,7 +168,7 @@ assert.strictEqual(inicial.materias[20].tipo, "integracion_curricular");
 assert.strictEqual(inicial.materias[6].nombreOficial, "Las TIC’s en la Educación Inicial");
 assert.strictEqual(new Set(inicial.materias.map(m => m.nivelNumero + "|" + m.nombreOficial)).size, 21);
 assert.strictEqual(catalogo.obtenerPorCarrera("Educacion Inicial").materias.length, 21);
-assert.strictEqual(catalogo.listarCarreras().length, 13);
+assert.strictEqual(catalogo.listarCarreras().length, 14);
 const enfermeria = catalogo.obtenerPorCarrera({ nombreInstitucional: "Enfermería" });
 assert.ok(enfermeria);
 assert.strictEqual(enfermeria.malla.carreraNombre, "Enfermería");
@@ -328,6 +328,16 @@ assert.strictEqual(motos.materias[12].nombreOficial, "Mecánica de Motores a Gas
 assert.strictEqual(motos.materias[18].nombreOficial, "Entrepreneurship");
 assert.strictEqual(motos.materias.some(m => m.tipo === "integracion_curricular"), false);
 assert.strictEqual(catalogo.obtenerPorCarrera("Mecanica de Motos").materias.length, 19);
+const alimentos = catalogo.obtenerPorCarrera("Procesamiento de Alimentos");
+assert.ok(alimentos);
+assert.strictEqual(alimentos.materias.length, 18);
+assert.deepStrictEqual(Array.from([1, 2, 3, 4], n => alimentos.materias.filter(m => m.nivelNumero === n).length), [5, 5, 5, 3]);
+assert.strictEqual(alimentos.materias[0].nombreOficial, "Matemática aplicada a los procesos");
+assert.strictEqual(alimentos.materias[10].nombreOficial, "Procesamiento de productos del mar y cárnicos");
+assert.strictEqual(alimentos.materias[17].nombreOficial, "Cadena de almacenamiento y refrigeración");
+assert.strictEqual(alimentos.materias.some(m => m.tipo === "integracion_curricular"), false);
+assert.strictEqual(catalogo.obtenerPorCarrera("Procesamiento de Alimentos").materias.length, 18);
+assert.strictEqual(new Set(alimentos.materias.map(m => m.nivelNumero + "|" + m.nombreOficial)).size, 18);
 assert.strictEqual(new Set(motos.materias.map(m => m.nivelNumero + "|" + m.nombreOficial)).size, 19);
 assert.strictEqual(new Set(automotriz.materias.map(m => m.nivelNumero + "|" + m.nombreOficial)).size, 21);
 
@@ -352,4 +362,4 @@ assert.ok(fichasJs.includes("Mallas.obtenerMallaVigenteParaCarrera(carrera)"));
 assert.ok(fichasHtml.includes("../mallas/mallas.oficiales.js"));
 assert.ok(fichasHtml.indexOf("../mallas/mallas.oficiales.js") < fichasHtml.indexOf("./fichas.js"));
 
-console.log("Mallas codificadas verificadas: trece carreras y 266 asignaturas.");
+console.log("Mallas codificadas verificadas: catorce carreras y 284 asignaturas.");
