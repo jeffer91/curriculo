@@ -168,7 +168,7 @@ assert.strictEqual(inicial.materias[20].tipo, "integracion_curricular");
 assert.strictEqual(inicial.materias[6].nombreOficial, "Las TIC’s en la Educación Inicial");
 assert.strictEqual(new Set(inicial.materias.map(m => m.nivelNumero + "|" + m.nombreOficial)).size, 21);
 assert.strictEqual(catalogo.obtenerPorCarrera("Educacion Inicial").materias.length, 21);
-assert.strictEqual(catalogo.listarCarreras().length, 10);
+assert.strictEqual(catalogo.listarCarreras().length, 11);
 const enfermeria = catalogo.obtenerPorCarrera({ nombreInstitucional: "Enfermería" });
 assert.ok(enfermeria);
 assert.strictEqual(enfermeria.malla.carreraNombre, "Enfermería");
@@ -308,7 +308,7 @@ assert.deepStrictEqual(Array.from(talento.materias.map(m => m.nombreOficial)), e
 assert.strictEqual(talento.materias[20].tipo, "integracion_curricular");
 assert.strictEqual(catalogo.obtenerPorCarrera("Gestion del Talento Humano").materias.length, 21);
 assert.strictEqual(new Set(talento.materias.map(m => m.nivelNumero + "|" + m.nombreOficial)).size, 21);
-assert.strictEqual(catalogo.obtenerPorCarrera("Marketing Digital y Comercio Electrónico"), null);
+assert.strictEqual(catalogo.obtenerPorCarrera("Marketing Digital y Comercio Electrónico").materias.length, 21);
 
 
 
@@ -331,4 +331,4 @@ assert.ok(fichasJs.includes("Mallas.obtenerMallaVigenteParaCarrera(carrera)"));
 assert.ok(fichasHtml.includes("../mallas/mallas.oficiales.js"));
 assert.ok(fichasHtml.indexOf("../mallas/mallas.oficiales.js") < fichasHtml.indexOf("./fichas.js"));
 
-console.log("Mallas codificadas verificadas: diez carreras y 205 asignaturas.");
+console.log("Mallas codificadas verificadas: once carreras y 226 asignaturas.");
