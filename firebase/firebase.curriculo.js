@@ -718,24 +718,107 @@ Funciones:
       }
     }
     if (anterior) {
+      var nombreOficial = texto(materiaOrigen.nombre);
+      var nombreExistente = texto(anterior.nombreInstitucional || anterior.nombreCorregido || anterior.nombre);
+      var normalOficial = I.normalizarTexto(nombreOficial);
+      var normalExistente = I.normalizarTexto(nombreExistente);
+      var institucionalAnterior = texto(anterior.nombreInstitucional);
+      if (institucionalAnterior && I.normalizarTexto(institucionalAnterior) !== normalOficial) {
+        throw new Error("Esta materia ya está vinculada a otra asignatura oficial: " + institucionalAnterior);
+      }
+      // Nunca admitir que una materia claramente perteneciente a otra asignatura
+      // oficial se relacione a un nombre distinto, ni siquiera por error humano.
+      var catalogo = window.CurriculoMallasOficiales &&
+        window.CurriculoMallasOficiales.obtenerPorCarrera(carrera.nombre);
+      if (catalogo && I.normalizarTexto(anterior.nombre) !== normalOficial &&
+          catalogo.materias.some(function (m) {
+            return numero(m.nivelNumero, 0) === numero(nivel.numero, 0) &&
+              I.normalizarTexto(m.nombreOficial) === I.normalizarTexto(anterior.nombre);
+          })) {
+        throw new Error("El registro seleccionado pertenece a otra materia de la malla oficial: " + anterior.nombre);
+      }
+      if (normalExistente !== normalOficial) {
+        var confirmacion = opciones.confirmacionVinculo || {};
+        if (texto(seleccionado) !== texto(anterior.id) ||
+            confirmacion.materiaFirebaseId !== anterior.id ||
+            I.normalizarTexto(confirmacion.nombreExistente) !== normalExistente ||
+            I.normalizarTexto(confirmacion.nombreOficial) !== normalOficial) {
+          throw new Error("Para vincular nombres diferentes debes confirmarlo expresamente desde Fichas.");
+        }
+      }
+
       var idDestino = anterior.id;
-      item.materia.id = idDestino;
-      item.peaBase.materiaId = idDestino;
-      item.actividades.materiaId = idDestino;
-      item.unidades.forEach(function (unidad) {
-        unidad.materiaId = idDestino;
-        unidad.id = idDestino + "__u" + pad(unidad.unidadNumero, 3);
-      });
-      // En reemplazos parciales, conservar metadata de los PEA no cargados otra vez.
-      var nuevosTipos = arr(paquete.archivos).filter(function (a) {
+      var tiposNuevos = arr(paquete.archivos).filter(function (a) {
         return a.origenArchivo === "nuevo";
       }).map(function (a) { return texto(a.tipo); });
-      [["base", "pea_base"], ["unidades", "pea_unidades"], ["actividades", "pea_actividades"]].forEach(function (pair) {
-        if (nuevosTipos.indexOf(pair[1]) === -1 && anterior.archivos && anterior.archivos[pair[0]]) {
-          item.materia.archivos[pair[0]] = anterior.archivos[pair[0]];
+      var archivosNuevos = item.materia.archivos || {};
+      var archivosPrevios = Object.assign({}, anterior.archivos || {});
+      var secciones = [
+        ["pea_base", "base"],
+        ["pea_unidades", "unidades"],
+        ["pea_actividades", "actividades"]
+      ];
+      secciones.forEach(function (par) {
+        if (tiposNuevos.indexOf(par[0]) >= 0) {
+          archivosPrevios[par[1]] = archivosNuevos[par[1]];
         }
       });
-      item.materia.nombreInstitucional = texto(materiaOrigen.nombre);
+      // Utilizar los documentos almacenados SIN volver a interpretarlos como
+      // filas Excel: evita pérdida de campos y hashes/versiones ficticias.
+      if (tiposNuevos.indexOf("pea_base") === -1) {
+        item.peaBase = estadoCarrera.basePorMateria[idDestino];
+        if (!item.peaBase) throw new Error("No existe PEA Base guardado. Carga su Excel.");
+      }
+      if (tiposNuevos.indexOf("pea_unidades") === -1) {
+        item.unidades = estadoCarrera.unidadesPorMateria[idDestino];
+        if (!item.unidades || !item.unidades.length) {
+          throw new Error("No existen unidades guardadas. Carga su Excel.");
+        }
+      }
+      if (tiposNuevos.indexOf("pea_actividades") === -1) {
+        item.actividades = estadoCarrera.actividadesPorMateria[idDestino];
+        if (!item.actividades || !arr(item.actividades.actividades).length) {
+          throw new Error("No existen actividades guardadas. Carga su Excel.");
+        }
+      }
+      // Respetar el ID, la carrera histórica, el código y el nombre original.
+      // Solo se incorpora el alias institucional oficial y los PEA reemplazados.
+      var originalMateria = item.materia;
+      item.materia = Object.assign({}, anterior, {
+        id: idDestino,
+        nombreInstitucional: nombreOficial,
+        estadoValidacion: originalMateria.estadoValidacion,
+        activo: true,
+        pea: originalMateria.pea,
+        archivos: archivosPrevios,
+        totalArchivosEsperados: 3,
+        totalArchivosEncontrados: 3
+      });
+      var metadatos = ["materiaId", "carreraId", "carreraNombre", "codigoMateria",
+        "nombreMateria", "nivelNumero", "nivelNombre"];
+      var valores = [idDestino, anterior.carreraId, anterior.carreraNombre,
+        anterior.codigo, anterior.nombre, anterior.nivelNumero, anterior.nivelNombre];
+      function preservarReferencia(doc) {
+        if (!doc) return;
+        metadatos.forEach(function (campo, i) { doc[campo] = valores[i]; });
+      }
+      if (tiposNuevos.indexOf("pea_base") >= 0) preservarReferencia(item.peaBase);
+      if (tiposNuevos.indexOf("pea_actividades") >= 0) preservarReferencia(item.actividades);
+      if (tiposNuevos.indexOf("pea_unidades") >= 0) {
+        item.unidades.forEach(function (unidad) {
+          preservarReferencia(unidad);
+          unidad.id = idDestino + "__u" + pad(unidad.unidadNumero, 3);
+        });
+      }
+      // Reconstruir el snapshot DESPUÉS de recuperar los documentos sin cambios.
+      item.snapshot = I.crearSnapshot(item.materia, item.peaBase, item.unidades, item.actividades);
+      item.materia.hashContenido = I.hashContenido(item.snapshot);
+      item.materia.hashSecciones = {
+        materia: I.hashContenido(item.snapshot.materia),
+        peaBase: I.hashContenido(item.snapshot.peaBase),
+        unidades: I.hashContenido(item.snapshot.unidades),
+        actividades: I.hashContenido(item.snapshot.actividades)
+      };
     } else {
       item.materia.nombreInstitucional = texto(materiaOrigen.nombre);
     }
