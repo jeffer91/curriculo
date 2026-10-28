@@ -80,4 +80,40 @@ new Function("window", catalogue)(cat.window);
 const carreras = cat.window.CurriculoMallasOficiales.listarCarreras();
 assert.strictEqual(carreras.length, 18);
 assert.strictEqual(carreras.reduce((sum, carrera) => sum + carrera.totalMaterias, 0), 363);
+assert.strictEqual(cat.window.CurriculoMallasOficiales.obtenerPorCarrera("Educación Inicial Online").materias.length, 21);
+assert.strictEqual(cat.window.CurriculoMallasOficiales.obtenerPorCarrera("Ventas en línea").materias.length, 20);
+assert.strictEqual(cat.window.CurriculoMallasOficiales.obtenerPorCarrera("Mecánica Automotriz Presencial").materias.length, 21);
+const menu = read("menu-superior/menu-superior.js");
+assert.ok(menu.includes("mallas.oficiales.js"));
+assert.ok(menu.indexOf('await cargarScript(rutaDesdeRaiz("mallas.oficiales.js') <
+  menu.indexOf('await cargarScript(rutaDesdeRaiz("firebase/firebase.mallas-integracion.js'));
+const uploadAdapter = read("firebase/firebase.mallas-integracion.js");
+assert.ok(uploadAdapter.includes("window.CurriculoMallasOficiales.obtenerPorCarrera(carrera)"));
+assert.ok(ficha.includes("htmlFichaSeguro"));
+assert.ok(ficha.includes("fechaFin < fechas.fechaInicio"));
+
+const fakeZipFiles = {};
+class FakeJSZip {
+  constructor(prefix = "") { this.prefix = prefix; }
+  file(name, text) { fakeZipFiles[this.prefix + name] = text; return this; }
+  folder(name) { return new FakeJSZip(this.prefix + name + "/"); }
+  generateAsync() { return Promise.resolve(fakeZipFiles); }
+}
+const heading = { tagName: "H1", nodeType: 1, childNodes: [{ nodeType: 3, nodeValue: "Ficha curricular de prueba" }] };
+const paragraph = { tagName: "P", nodeType: 1, childNodes: [{ nodeType: 3, nodeValue: "Informe de validación." }] };
+const docxWin = { JSZip: FakeJSZip, document: { createElement() { return { children: [heading, paragraph], set innerHTML(value) { this.value = value; } }; } } };
+new Function("window", docx)(docxWin);
+docxWin.CurriculoFichasDOCX.crear("<h1>Ficha curricular de prueba</h1>")
+  .then(function (files) {
+    assert.ok(files["[Content_Types].xml"]);
+    assert.ok(files["_rels/.rels"]);
+    assert.ok(files["word/document.xml"].includes("Ficha curricular de prueba"));
+    assert.ok(files["word/styles.xml"]);
+    assert.ok(files["word/_rels/document.xml.rels"]);
+    console.log("DOCX: partes y texto del documento verificados.");
+  }).catch(function (error) {
+    console.error(error);
+    process.exitCode = 1;
+  });
+
 console.log("Fichas integridad: período, evidencia, IA, DOCX y 18 mallas verificadas.");
