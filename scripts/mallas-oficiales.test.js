@@ -168,7 +168,7 @@ assert.strictEqual(inicial.materias[20].tipo, "integracion_curricular");
 assert.strictEqual(inicial.materias[6].nombreOficial, "Las TIC’s en la Educación Inicial");
 assert.strictEqual(new Set(inicial.materias.map(m => m.nivelNumero + "|" + m.nombreOficial)).size, 21);
 assert.strictEqual(catalogo.obtenerPorCarrera("Educacion Inicial").materias.length, 21);
-assert.strictEqual(catalogo.listarCarreras().length, 16);
+assert.strictEqual(catalogo.listarCarreras().length, 17);
 const enfermeria = catalogo.obtenerPorCarrera({ nombreInstitucional: "Enfermería" });
 assert.ok(enfermeria);
 assert.strictEqual(enfermeria.malla.carreraNombre, "Enfermería");
@@ -378,6 +378,38 @@ const esperadasRehabilitacion = [
 assert.deepStrictEqual(Array.from(rehabilitacion.materias.map(m => m.nombreOficial)), esperadasRehabilitacion);
 assert.strictEqual(rehabilitacion.materias.some(m => m.tipo === "integracion_curricular"), false);
 assert.strictEqual(catalogo.obtenerPorCarrera("Rehabilitacion Fisica").materias.length, 19);
+const seguridad = catalogo.obtenerPorCarrera("Seguridad y Prevención de Riesgos Laborales");
+assert.ok(seguridad);
+assert.strictEqual(seguridad.malla.carreraNombre, "Seguridad y Prevención de Riesgos Laborales");
+assert.strictEqual(seguridad.malla.version, null);
+assert.strictEqual(seguridad.materias.length, 19);
+assert.deepStrictEqual(Array.from([1, 2, 3, 4], n => seguridad.materias.filter(m => m.nivelNumero === n).length), [5, 5, 5, 4]);
+const esperadasSeguridad = [
+  "Fundamentos y técnicas de gestión de riesgo",
+  "Office esencial",
+  "Higiene industrial",
+  "Comunicación oral y escrita",
+  "Marco legal de seguridad y salud ocupacional",
+  "Sistemas integrados de Gestión",
+  "Estadísticas y probabilidades",
+  "Metodología de la investigación",
+  "Gestión por procesos",
+  "Normativa Internacional en Seguridad y Salud Ocupacional",
+  "Fisiología y anatomía ocupacional",
+  "Electricidad, magnetismo y radiación",
+  "Control de emergencias",
+  "Ergonomía aplicada",
+  "Auditoría e inspecciones",
+  "Salud ocupacional en industria",
+  "Gestión del talento humano",
+  "Clima y condiciones psicolaborales",
+  "Planes de emergencia y simulacros"
+];
+assert.deepStrictEqual(Array.from(seguridad.materias.map(m => m.nombreOficial)), esperadasSeguridad);
+assert.strictEqual(seguridad.materias[1].nombreOficial, "Office esencial");
+assert.strictEqual(seguridad.materias.some(m => m.tipo === "integracion_curricular"), false);
+assert.strictEqual(catalogo.obtenerPorCarrera("Seguridad y Prevencion de Riesgos Laborales").materias.length, 19);
+assert.strictEqual(new Set(seguridad.materias.map(m => m.nivelNumero + "|" + m.nombreOficial)).size, 19);
 assert.strictEqual(new Set(rehabilitacion.materias.map(m => m.nivelNumero + "|" + m.nombreOficial)).size, 19);
 assert.strictEqual(new Set(redes.materias.map(m => m.nivelNumero + "|" + m.nombreOficial)).size, 21);
 assert.strictEqual(new Set(alimentos.materias.map(m => m.nivelNumero + "|" + m.nombreOficial)).size, 18);
@@ -405,4 +437,4 @@ assert.ok(fichasJs.includes("Mallas.obtenerMallaVigenteParaCarrera(carrera)"));
 assert.ok(fichasHtml.includes("../mallas/mallas.oficiales.js"));
 assert.ok(fichasHtml.indexOf("../mallas/mallas.oficiales.js") < fichasHtml.indexOf("./fichas.js"));
 
-console.log("Mallas codificadas verificadas: dieciséis carreras y 324 asignaturas.");
+console.log("Mallas codificadas verificadas: diecisiete carreras y 343 asignaturas.");
