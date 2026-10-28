@@ -20,6 +20,7 @@ Funciones:
   var Fichas = FB && FB.Fichas;
   var IA = window.CurriculoIA;
   var Validacion = window.CurriculoFichasValidacion;
+  var CargaExcel = window.CurriculoFichasCargaExcel;
 
   var TIPOS_INPUT = [
     { id: "graduados", nombre: "Seguimiento a graduados y egresados" },
@@ -185,6 +186,7 @@ Funciones:
     });
     var modal = document.getElementById("inputModal");
     if (modal) { modal.classList.remove("open"); modal.setAttribute("aria-hidden", "true"); }
+    if (CargaExcel) CargaExcel.cerrar();
     limpiarVistaPrevia();
     renderInicial("Selecciona los datos y pulsa Revisar para actualizar las evidencias.");
   }
@@ -437,14 +439,26 @@ Funciones:
     var completas = estado.materiasEstado.filter(function (x) { return x.completa; }).length;
     var origenCodigo = estado.malla && estado.malla.malla && estado.malla.malla.origen === "codigo_oficial";
     resumen.textContent = completas + "/" + estado.materiasEstado.length + " completas" + (origenCodigo ? " · malla oficial en código" : "");
-    listaEl.innerHTML = estado.materiasEstado.map(function (item) {
+    listaEl.innerHTML = estado.materiasEstado.map(function (item, index) {
       var nombre = item.esperada.nombreOficial;
       var subtitulo = item.actual
         ? ("Firebase: " + (item.actual.nombreMostrar || item.actual.nombre) + " · " + texto(item.actual.estadoValidacion || "sin estado"))
         : "No encontrada en Firebase";
-      return '<div class="subject"><div><strong>' + escapar(nombre) + '</strong><small>' + escapar(subtitulo) + '</small></div>' +
-        (item.estado === "completa" ? '<span class="state ok">Completa</span>' : item.estado === "faltante" ? '<span class="state error">Faltante</span>' : '<span class="state error">PEA incompleto</span>') + '</div>';
+      var badge = item.estado === "completa" ? '<span class="state ok">Completa</span>' :
+        item.estado === "faltante" ? '<span class="state error">Faltante</span>' :
+          '<span class="state error">PEA incompleto</span>';
+      return '<div class="subject"><div class="subject-main"><strong>' + escapar(nombre) +
+        '</strong><small>' + escapar(subtitulo) + '</small></div>' +
+        '<div class="subject-actions">' + badge +
+        '<button class="btn btn-light" type="button" data-cargar-materia="' + index + '">' +
+          (item.completa ? 'Actualizar PEA' : 'Cargar Excel') + '</button></div></div>';
     }).join("");
+    listaEl.querySelectorAll("[data-cargar-materia]").forEach(function (boton) {
+      boton.addEventListener("click", function () {
+        var index = Number(boton.getAttribute("data-cargar-materia"));
+        if (CargaExcel && estado.materiasEstado[index]) CargaExcel.abrir(estado.materiasEstado[index]);
+      });
+    });
   }
 
   function renderInputs() {
@@ -1272,10 +1286,22 @@ Funciones:
   }
 
   async function iniciar() {
-    if (!FB || !Mallas || !Fichas || !IA || !Validacion) {
+    if (!FB || !Mallas || !Fichas || !IA || !Validacion || !CargaExcel || !FB.importarMateriaDesdeFichas) {
       alert("No se pudieron cargar los módulos necesarios para Fichas.");
       return;
     }
+    CargaExcel.instalar({
+      getContexto: function () {
+        return {
+          carrera: estado.carrera, nivelNumero: estado.nivelNumero, periodo: estado.periodo,
+          token: estado.revisionToken, materiasEstado: estado.materiasEstado
+        };
+      },
+      onGuardado: async function () {
+        await revisarFicha();
+        cambiarTab("materias");
+      }
+    });
     conectarTabs();
     conectarEventos();
     renderInicial();
