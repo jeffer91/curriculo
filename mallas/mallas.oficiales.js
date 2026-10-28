@@ -700,12 +700,16 @@ Catálogo curricular suministrado para codificación.
     var nombres = typeof carrera === "string" ? [carrera] : [
       carrera && carrera.nombreInstitucional,
       carrera && carrera.nombreCorregido,
+      carrera && carrera.nombreMostrar,
       carrera && carrera.nombre,
-      carrera && carrera.carreraNombre
+      carrera && carrera.carreraNombre,
+      carrera && carrera.carrera
     ];
     for (var i = 0; i < nombres.length; i += 1) {
       var clave = normalizar(nombres[i]).replace(/\s+/g, "");
       if (Object.prototype.hasOwnProperty.call(CATALOGO, clave)) return CATALOGO[clave];
+      var modalidad = clave.replace(/(?:online|enlinea|virtual|presencial)$/, "");
+      if (modalidad !== clave && Object.prototype.hasOwnProperty.call(CATALOGO, modalidad)) return CATALOGO[modalidad];
     }
     return null;
   }
