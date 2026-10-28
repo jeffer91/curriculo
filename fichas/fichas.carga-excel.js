@@ -219,13 +219,22 @@
       if (lectura.length) throw new Error("No se pudieron leer: " +
         lectura.map(function (a) { return a.nombreArchivo + " (" + texto(a.errorExcel) + ")"; }).join("; "));
       paquete = NS.Validador.validarPaquete(paquete);
-      if (paquete.evaluacionesMaterias.length !== 1 ||
-          paquete.evaluacionesMaterias[0].estado !== "completo") {
+      var evaluacion = paquete.evaluacionesMaterias && paquete.evaluacionesMaterias[0];
+      if (!evaluacion || Number(evaluacion.totalArchivosValidos || 0) !== 3 ||
+          ["completo", "revision"].indexOf(evaluacion.estado) === -1 ||
+          paquete.resumenValidacion && paquete.resumenValidacion.bloqueaImportacion) {
         var mensajes = (paquete.validacionesSubida || []).map(function (v) { return texto(v.mensaje); }).filter(Boolean);
         throw new Error("Los PEA requieren correcciones: " + (mensajes.slice(0, 5).join(" · ") ||
           "Revisa encabezados, datos y contenido de los tres archivos."));
       }
-      ponerEstado("Los tres PEA son válidos. Guardando únicamente " + ctx.esperada.nombreOficial + "...");
+      if (evaluacion.estado === "revision") {
+        var observaciones = (paquete.validacionesSubida || []).map(function (v) {
+          return texto(v.mensaje);
+        }).filter(Boolean).slice(0, 4).join("\n");
+        if (!window.confirm("Los tres PEA tienen contenido válido, pero hay observaciones:\n" +
+            observaciones + "\n\n¿Guardar la materia como pendiente de revisión?")) return;
+      }
+      ponerEstado("PEA validados. Guardando únicamente " + ctx.esperada.nombreOficial + "...");
       if (!contextoVigente()) throw new Error("Cambió la selección antes de guardar.");
       var resultado = await window.CurriculoFirebase.importarMateriaDesdeFichas(paquete, {
         materiaFirebaseId: selected && selected.id || ""
