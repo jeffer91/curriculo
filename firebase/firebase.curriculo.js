@@ -643,6 +643,131 @@ Funciones:
     }
   }
 
+
+  // Importación puntual de PEA. No itera por otras materias ni marca retiradas.
+  // El ID de destino se valida contra la carrera y el nivel existentes.
+  async function importarMateriaDesdeFichas(paquete, opciones) {
+    opciones = opciones || {};
+    await inicializar();
+    if (!paquete || arr(paquete.carreras).length !== 1 || arr(paquete.niveles).length !== 1 ||
+        arr(paquete.materias).length !== 1 || arr(paquete.archivos).length !== 3) {
+      throw new Error("La importación individual necesita una carrera, un nivel, una materia y tres PEA.");
+    }
+    if (!paquete.evaluacionesMaterias || paquete.evaluacionesMaterias.length !== 1 ||
+        paquete.evaluacionesMaterias[0].estado !== "completo" ||
+        paquete.resumenValidacion && paquete.resumenValidacion.bloqueaImportacion) {
+      throw new Error("Corrige primero los tres PEA: deben estar leídos y validados como completos.");
+    }
+    var carrera = arr(paquete.carreras)[0];
+    var nivel = arr(paquete.niveles)[0];
+    var materiaOrigen = arr(paquete.materias)[0];
+    var canonica = await obtenerCarreraCanonica(carrera.id);
+    if (texto(canonica.id) !== texto(carrera.id)) {
+      throw new Error("La carrera seleccionada cambió de identificador. Recarga Fichas antes de importar.");
+    }
+    if (numero(nivel.numero, 0) < 1 || numero(nivel.numero, 0) > 12 ||
+        texto(materiaOrigen.carreraId) !== texto(carrera.id) ||
+        texto(materiaOrigen.nivelId) !== texto(nivel.id)) {
+      throw new Error("Los PEA no corresponden a la carrera y nivel seleccionados.");
+    }
+    var I = inteligencia();
+    var cargaId = crearCargaId();
+    var preparado = I.prepararPaquete(paquete, cargaId);
+    if (preparado.materias.length !== 1) throw new Error("No fue posible preparar la materia seleccionada.");
+    var item = preparado.materias[0];
+    var estadoCarrera = await cargarEstadoCarrera(carrera.id);
+    var seleccionado = texto(opciones.materiaFirebaseId);
+    var anterior = seleccionado ? estadoCarrera.materiasPorId[seleccionado] : null;
+    if (seleccionado && !anterior) {
+      throw new Error("La vinculación seleccionada no existe en esta carrera. Vuelve a revisar.");
+    }
+    if (anterior && (numero(anterior.nivelNumero, 0) !== numero(nivel.numero, 0) || anterior.activo === false)) {
+      throw new Error("El registro vinculado pertenece a otro nivel o está retirado.");
+    }
+    if (!anterior) {
+      var clave = I.normalizarTexto(item.materia.nombre);
+      var similares = estadoCarrera.materias.filter(function (m) {
+        return m.activo !== false && numero(m.nivelNumero, 0) === numero(nivel.numero, 0) &&
+          I.normalizarTexto(m.nombreInstitucional || m.nombreCorregido || m.nombre) === clave;
+      });
+      if (similares.length > 1) throw new Error("Hay varias materias con el mismo nombre en Firebase. Vincula el registro correcto.");
+      if (similares.length === 1) anterior = similares[0];
+    }
+    // Nunca crear un segundo documento si el identificador calculado está ocupado.
+    if (!anterior && estadoCarrera.materiasPorId[item.materia.id]) {
+      anterior = estadoCarrera.materiasPorId[item.materia.id];
+      if (numero(anterior.nivelNumero, 0) !== numero(nivel.numero, 0) || anterior.activo === false) {
+        throw new Error("El identificador de materia está ocupado por otro registro.");
+      }
+    }
+    if (anterior) {
+      var idDestino = anterior.id;
+      item.materia.id = idDestino;
+      item.peaBase.materiaId = idDestino;
+      item.actividades.materiaId = idDestino;
+      item.unidades.forEach(function (unidad) {
+        unidad.materiaId = idDestino;
+        unidad.id = idDestino + "__u" + pad(unidad.unidadNumero, 3);
+      });
+      // En reemplazos parciales, conservar metadata de los PEA no cargados otra vez.
+      var nuevosTipos = arr(paquete.archivos).filter(function (a) {
+        return a.origenArchivo === "nuevo";
+      }).map(function (a) { return texto(a.tipo); });
+      [["base", "pea_base"], ["unidades", "pea_unidades"], ["actividades", "pea_actividades"]].forEach(function (pair) {
+        if (nuevosTipos.indexOf(pair[1]) === -1 && anterior.archivos && anterior.archivos[pair[0]]) {
+          item.materia.archivos[pair[0]] = anterior.archivos[pair[0]];
+        }
+      });
+      item.materia.nombreInstitucional = texto(materiaOrigen.nombre);
+    } else {
+      item.materia.nombreInstitucional = texto(materiaOrigen.nombre);
+    }
+    var operaciones, diff, versionNueva, tipo;
+    if (anterior) {
+      var modificacion = operacionesMateriaModificada(item, anterior, estadoCarrera, cargaId);
+      operaciones = modificacion.operaciones;
+      diff = modificacion.diff;
+      versionNueva = modificacion.versionNueva;
+      tipo = operaciones.length ? "actualizada" : "sin_cambios";
+    } else {
+      operaciones = operacionesNuevaMateria(item, cargaId);
+      versionNueva = 1;
+      tipo = "creada";
+    }
+    var cargaRef = referencia(COLECCIONES.CARGAS, cargaId);
+    await sdk().setDoc(cargaRef, {
+      nombreZip: "", origen: "fichas_excel_individual",
+      carreraId: carrera.id, materiaId: item.materia.id,
+      nivelNumero: numero(nivel.numero, 0), estado: "procesando",
+      iniciadoEn: sdk().serverTimestamp()
+    });
+    try {
+      // La ficha individual no retira materias ni escribe otras carreras.
+      var resultado = await ejecutarOperaciones(operaciones, opciones.onProgress);
+      if (!anterior) {
+        var carreraSnap = await sdk().getDoc(referencia(COLECCIONES.CARRERAS, carrera.id));
+        if (!carreraSnap.exists()) {
+          await sdk().setDoc(referencia(COLECCIONES.CARRERAS, carrera.id), datosConMarcas({
+            id: carrera.id, nombre: carrera.nombre, estado: "activo", origen: "fichas_excel_individual"
+          }, cargaId, true), { merge: true });
+        }
+      }
+      await sdk().updateDoc(cargaRef, {
+        estado: "completado", resultado: tipo, versionNueva: versionNueva,
+        operacionesFirestore: resultado.operaciones,
+        finalizadoEn: sdk().serverTimestamp()
+      });
+      return { ok: true, tipo: tipo, materiaId: item.materia.id,
+        version: versionNueva, operaciones: resultado.operaciones, cargaId: cargaId };
+    } catch (error) {
+      try { await sdk().updateDoc(cargaRef, {
+        estado: "error", error: texto(error && error.message || error),
+        finalizadoEn: sdk().serverTimestamp()
+      }); } catch (ignorado) { console.warn("[Fichas] No se pudo registrar el fallo:", ignorado); }
+      throw error;
+    }
+  }
+
   async function obtenerCarreraCanonica(carreraId) {
     await inicializar();
     carreraId = texto(carreraId);
@@ -1072,6 +1197,7 @@ Funciones:
   NS.ready = inicializar;
   NS.probarConexion = probarConexion;
   NS.importarPaquete = importarPaquete;
+  NS.importarMateriaDesdeFichas = importarMateriaDesdeFichas;
   NS.obtenerCarreras = obtenerCarreras;
   NS.nombreOficialCarrera = nombreOficialCarrera;
   NS.normalizarCarrera = normalizarCarrera;
