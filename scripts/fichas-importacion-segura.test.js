@@ -204,6 +204,56 @@ async function run() {
   assert.strictEqual(table("materias")[alias.id].nombreInstitucional, "Office Essentials");
   assert.strictEqual(table("materias")[alias.id].versionActual, 1,
     "Vincular el alias sin modificar un PEA no debe alterar la versión");
+  // Leer tres archivos XLSX reales generados en memoria, sin lectores simulados.
+  const XLSX = require("xlsx");
+  win.XLSX = XLSX;
+  win.__XLSXReady = Promise.resolve(XLSX);
+  vm.runInContext(read("subir/subir.excel.js"), context);
+  vm.runInContext(read("subir/subir.excel-inteligente.js"), context);
+  function fileExcel(tipo, rows) {
+    const book = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(book, XLSX.utils.aoa_to_sheet(rows), "Hoja1");
+    return {
+      id: "xls_" + tipo, materiaId: "temporal", carreraId: cid, nivelId: lid,
+      tipo, esExcel: true, extension: "xlsx", nombreArchivo: tipo + ".xlsx",
+      contenidoBinario: new Uint8Array(XLSX.write(book, { bookType: "xlsx", type: "buffer" })),
+      confianza: 100, origenArchivo: "nuevo"
+    };
+  }
+  const realFiles = [
+    fileExcel("pea_base", [
+      ["codigoComponente","ordenComponente","descripcionComponente"],
+      [1,1,"Descripción de Office Essentials"],
+      [2,1,"Objetivo de Office Essentials"],
+      [3,1,"Introducción a la ofimática"]
+    ]),
+    fileExcel("pea_unidades", [
+      ["codigoComponente","ordenComponente","descripcionComponente"],
+      [3,1,"1.1 Herramientas Office"],
+      [3,1,"1.1.1 Uso de procesadores de texto"],
+      [3,2,"2.1 Hojas de cálculo"]
+    ]),
+    fileExcel("pea_actividades", [
+      ["nivel","mecanismo","tema","descripcion"],
+      [1,"Taller Practico 1","Documentos","Crear un documento en Office"],
+      [1,"Actividad Autonoma 1","Hojas de cálculo","Preparar una tabla"]
+    ])
+  ];
+  const realPackage = await win.SubirCCC.Excel.enriquecerPaqueteConExcel({
+    carga: { nombreZip: "" },
+    carreras: [{ id: cid, nombre: "Redes y Telecomunicaciones", confianza: 100 }],
+    niveles: [{ id: lid, carreraId: cid, numero: 1, nombre: "Primer nivel", confianza: 100 }],
+    materias: [{ id: "temporal", carreraId: cid, nivelId: lid, nombre: "Office Essentials" }],
+    archivos: realFiles,
+    advertencias: []
+  });
+  const realValidation = win.SubirCCC.Validador.validarPaquete(realPackage);
+  assert.strictEqual(realValidation.evaluacionesMaterias[0].totalArchivosValidos, 3,
+    "Los tres libros XLSX reales deben tener datos curriculares reconocidos.");
+  const realPrepared = I.prepararPaquete(realValidation, "carga_real_prueba").materias[0];
+  assert.strictEqual(realPrepared.actividades.actividades.length, 2);
+  assert.ok(realPrepared.unidades.length >= 2);
+  console.log("XLSX reales: PEA Base, Unidades y Actividades leídos y validados.");
   console.log("Fichas: reemplazo parcial íntegro, no-op sin versiones y vínculos seguros verificados.");
 }
 run().catch(error => { console.error(error); process.exitCode = 1; });
