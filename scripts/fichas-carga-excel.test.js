@@ -8,7 +8,8 @@ const fichas = read("fichas/fichas.js");
 const backend = read("firebase/firebase.curriculo.js");
 const excel = read("fichas/fichas.carga-excel.js");
 ["materiaExcelModal","materiaExcelBase","materiaExcelUnidades",
-"materiaExcelActividades","materiaExcelVincular","btnGuardarMateriaExcel"].forEach(id => {
+"materiaExcelActividades","materiaExcelVincular","btnGuardarMateriaExcel",
+"materiaExcelConfirmacionPanel","materiaExcelConfirmacion","materiaExcelConfirmacionAyuda"].forEach(id => {
   assert.ok(html.includes('id="' + id + '"'), "Missing UI " + id);
 });
 assert.ok(html.indexOf("subir.excel.js") < html.indexOf("fichas.carga-excel.js"));
@@ -32,7 +33,7 @@ function fakeDOM() {
       const callbacks = {};
       all[id] = {
         value: "", files: [], disabled: false, textContent: "",
-        innerHTML: "", children: [], callbacks,
+        innerHTML: "", children: [], callbacks, style: {},
         classList: { add() {}, remove() {}, toggle() {} },
         addEventListener(type, fn) { callbacks[type] = fn; },
         setAttribute() {}, appendChild(child) { this.children.push(child); }
@@ -54,6 +55,8 @@ async function pruebaIndividual() {
   const win = {
     XLSX: {},
     CurriculoFirebase: {
+      Inteligencia: { normalizarTexto: x => String(x || "").normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "").toLowerCase().trim() },
       obtenerMateriasPorCarrera: async () => [],
       importarMateriaDesdeFichas: async (pkg, options) => {
         assert.strictEqual(pkg.materias.length, 1);
