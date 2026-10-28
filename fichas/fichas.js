@@ -19,6 +19,7 @@ Funciones:
   var MallasOficiales = window.CurriculoMallasOficiales;
   var Fichas = FB && FB.Fichas;
   var IA = window.CurriculoIA;
+  var Validacion = window.CurriculoFichasValidacion;
 
   var TIPOS_INPUT = [
     { id: "graduados", nombre: "Seguimiento a graduados y egresados" },
@@ -57,7 +58,8 @@ Funciones:
     modalHash: "",
     detallesMaterias: [],
     cambiosMaterias: [],
-    generacion: null
+    generacion: null,
+    revisionToken: 0
   };
 
   function texto(valor) {
@@ -152,8 +154,35 @@ Funciones:
     return Mallas.obtenerMallaVigenteParaCarrera(carrera);
   }
 
+  function limpiarVistaPrevia() {
+    estado.generacion = null;
+    estado.detallesMaterias = [];
+    estado.cambiosMaterias = [];
+    var preview = document.getElementById("preview");
+    if (preview) preview.innerHTML = '<div class="empty">Genera o recupera una ficha para editar el contenido.</div>';
+    ["btnWord", "btnPDF", "btnGuardarRevision"].forEach(function (id) {
+      var boton = document.getElementById(id);
+      if (boton) boton.disabled = true;
+    });
+  }
+
+  function invalidarRevision() {
+    estado.revisionToken += 1;
+    estado.materiasEstado = [];
+    estado.materiasEsperadas = [];
+    estado.inputs = {};
+    estado.contexto = null;
+    estado.tendencias = [];
+    estado.diagnostico = null;
+    estado.iaDisponible = false;
+    limpiarVistaPrevia();
+    renderInicial("Selecciona los datos y pulsa Revisar para actualizar las evidencias.");
+  }
+
   async function cargarNiveles() {
     var select = document.getElementById("nivelSelect");
+    invalidarRevision();
+    var token = estado.revisionToken;
     select.disabled = true;
     select.innerHTML = '<option value="">Cargando...</option>';
     estado.carrera = carreraSeleccionada();
@@ -166,7 +195,9 @@ Funciones:
       return;
     }
     try {
-      estado.malla = await obtenerMallaParaFicha(estado.carrera);
+      var cargada = await obtenerMallaParaFicha(estado.carrera);
+      if (token !== estado.revisionToken) return;
+      estado.malla = cargada;
       if (!estado.malla || !estado.malla.materias || !estado.malla.materias.length) {
         select.innerHTML = '<option value="">Sin malla vigente</option>';
         renderInicial("La carrera no tiene una malla vigente registrada.");
@@ -184,6 +215,7 @@ Funciones:
       select.disabled = false;
       renderInicial();
     } catch (error) {
+      if (token !== estado.revisionToken) return;
       select.innerHTML = '<option value="">Error al cargar malla</option>';
       renderInicial(error && error.message ? error.message : "No se pudo cargar la malla.");
     }
@@ -208,11 +240,7 @@ Funciones:
       var exacta = materiasFirebase.find(function (m) { return m.id === idFirebase; });
       if (exacta) return exacta;
     }
-    var clave = normalizar(esperada.nombreOficial);
-    var candidatas = materiasFirebase.filter(function (m) {
-      return numero(m.nivelNumero, 0) === numero(esperada.nivelNumero, 0) && normalizar(m.nombreMostrar || m.nombre) === clave;
-    });
-    return candidatas.length === 1 ? candidatas[0] : null;
+    return Validacion.buscarMateria(esperada, materiasFirebase);
   }
 
   function esMateriaCompleta(materia) {
@@ -225,6 +253,8 @@ Funciones:
     estado.carrera = carreraSeleccionada();
     estado.nivelNumero = numero(valorCampo("nivelSelect"), 0);
     estado.periodo = valorCampo("periodoInput");
+    var token = ++estado.revisionToken;
+    limpiarVistaPrevia();
     if (!estado.carrera || estado.nivelNumero < 1 || !estado.periodo) {
       alert("Selecciona carrera, nivel y período.");
       return;
@@ -240,11 +270,14 @@ Funciones:
       });
       var resultados = await Promise.all([
         FB.obtenerMateriasPorCarrera(estado.carrera.id, { soloCompletas: false, incluirRetiradas: false }),
-        Fichas.obtenerInputsActuales(estado.carrera.id, estado.nivelNumero),
+        Fichas.obtenerInputsActuales(estado.carrera.id, estado.nivelNumero, estado.periodo),
         Fichas.obtenerContexto(estado.carrera.id, estado.nivelNumero, estado.periodo),
         Fichas.obtenerTendencias(estado.carrera.id, estado.nivelNumero, estado.periodo),
         IA.disponible()
       ]);
+      if (token !== estado.revisionToken || estado.periodo !== valorCampo("periodoInput") ||
+          estado.nivelNumero !== numero(valorCampo("nivelSelect"), 0) ||
+          estado.carrera.id !== valorCampo("carreraSelect")) return;
       var materiasFirebase = resultados[0];
       estado.inputs = resultados[1] || {};
       estado.contexto = resultados[2] || null;
@@ -262,6 +295,7 @@ Funciones:
       cargarContextoFormulario();
       renderTodo();
     } catch (error) {
+      if (token !== estado.revisionToken) return;
       alert(error && error.message ? error.message : "No se pudo revisar la ficha.");
     } finally {
       boton.disabled = false;
@@ -301,8 +335,12 @@ Funciones:
       return;
     }
     var datos = obtenerContextoFormulario();
+    var token = estado.revisionToken;
     try {
-      estado.contexto = await Fichas.guardarContexto(datos);
+      var guardado = await Fichas.guardarContexto(datos);
+      if (token !== estado.revisionToken) return;
+      estado.contexto = guardado;
+      limpiarVistaPrevia();
       renderTodo();
       document.getElementById("btnGuardarDatos").textContent = "Guardado";
       setTimeout(function () { document.getElementById("btnGuardarDatos").textContent = "Guardar"; }, 1200);
@@ -312,13 +350,7 @@ Funciones:
   }
 
   function inputCompleto(registro) {
-    if (!registro) return false;
-    if (registro.noAplica === true) return !!texto(registro.justificacionNoAplica);
-    return !!(
-      texto(registro.documentoNombre) ||
-      texto(registro.codigoInforme) ||
-      (registro.analisisIA && (texto(registro.analisisIA.resumen) || arr(registro.analisisIA.hallazgos).length))
-    );
+    return Validacion.validarInput(registro).completo;
   }
 
   function datosCompletos() {
@@ -341,7 +373,7 @@ Funciones:
     });
     if (!estado.materiasEsperadas.length) faltantes.push("No hay materias registradas en la malla para este nivel.");
     TIPOS_INPUT.forEach(function (tipo) {
-      if (!inputCompleto(estado.inputs[tipo.id])) faltantes.push("Falta input: " + tipo.nombre + ".");
+      if (!inputCompleto(estado.inputs[tipo.id])) faltantes.push("Input " + tipo.nombre + ": " + Validacion.validarInput(estado.inputs[tipo.id]).problemas.join(" "));
     });
     if (!datosOk) {
       CAMPOS_DATOS.forEach(function (campo) {
@@ -356,7 +388,7 @@ Funciones:
         }
       });
     }
-    if (!iaOk) faltantes.push("No hay una IA activa y lista en Configuración.");
+    if (!iaOk) faltantes.push("No hay una IA configurada con clave y modelo; verifica su conexión.");
 
     return {
       materiasOk: materiasOk,
@@ -621,7 +653,8 @@ Funciones:
   }
 
   async function guardarInputActual() {
-    if (!estado.carrera || estado.nivelNumero < 1) return;
+    if (!estado.carrera || estado.nivelNumero < 1 || !estado.periodo) return;
+    var token = estado.revisionToken;
     var noAplica = document.getElementById("inputNoAplica").checked;
     var justificacion = valorCampo("inputJustificacion");
     if (noAplica && !justificacion) {
@@ -640,6 +673,7 @@ Funciones:
       nivelNumero: estado.nivelNumero,
       nivelNombre: nombreNivel(estado.nivelNumero),
       tipo: estado.modalTipo,
+      periodoFicha: estado.periodo,
       documentoNombre: archivo ? archivo.name : texto(previo.documentoNombre),
       documentoTipo: archivo ? archivo.type : texto(previo.documentoTipo),
       documentoBytes: archivo ? archivo.size : numero(previo.documentoBytes, 0),
@@ -655,7 +689,10 @@ Funciones:
     };
     try {
       await Fichas.guardarInput(registro);
-      estado.inputs = await Fichas.obtenerInputsActuales(estado.carrera.id, estado.nivelNumero);
+      if (token !== estado.revisionToken) return;
+      estado.inputs = await Fichas.obtenerInputsActuales(estado.carrera.id, estado.nivelNumero, estado.periodo);
+      if (token !== estado.revisionToken) return;
+      limpiarVistaPrevia();
       cerrarModalInput();
       renderTodo();
     } catch (error) {
@@ -788,7 +825,7 @@ Funciones:
     return salida;
   }
 
-  async function cargarDetallesYcambios() {
+  async function cargarDetallesYcambios(token) {
     estado.detallesMaterias = [];
     estado.cambiosMaterias = [];
     for (var i = 0; i < estado.materiasEstado.length; i += 1) {
@@ -798,6 +835,7 @@ Funciones:
         FB.obtenerDetalleMateria(item.actual.id),
         Fichas.obtenerCambioDetalladoMateria(item.actual.id).catch(function () { return null; })
       ]);
+      if (token !== estado.revisionToken) throw new Error("La selección cambió. Revisa nuevamente la ficha.");
       estado.detallesMaterias.push(resultados[0]);
       estado.cambiosMaterias.push(resultados[1]);
     }
@@ -832,13 +870,14 @@ Funciones:
       alert("Completa los faltantes antes de generar la ficha.");
       return;
     }
+    var token = estado.revisionToken;
     var boton = document.getElementById("btnGenerar");
     var estadoTexto = document.getElementById("analisisEstado");
     boton.disabled = true;
     boton.textContent = "Generando...";
     try {
       estadoTexto.textContent = "Recopilando PEA y versiones...";
-      await cargarDetallesYcambios();
+      await cargarDetallesYcambios(token);
       var contexto = obtenerContextoFormulario();
       var materiasIA = estado.detallesMaterias.map(resumenMateriaParaIA);
       var prompt = [
@@ -850,6 +889,8 @@ Funciones:
         "4. Si detectas una oportunidad o brecha, escribe 'requiere revisión humana' en lugar de cambiar el PEA.",
         "5. Una materia sin cambios debe permanecer incluida y puede justificarse como pertinente.",
         "6. Conserva nombres de materias y cifras exactamente.",
+        "7. Entrega exactamente una correlación por cada materia, usando su materiaId proporcionado y el mismo nombre.",
+        "8. Incluye objetivo, análisis de inputs aplicables, conclusiones y recomendaciones no vacías.",
         "Devuelve SOLO JSON válido con esta estructura:",
         '{"objetivo":"","inputs":{"graduados":"","titulacion":"","vinculacion":"","practicas":""},"correlaciones":[{"materiaId":"","materia":"","analisis":"","estadoCurricular":"Mantener"}],"conclusiones":[],"recomendaciones":[]}',
         "DATOS GENERALES:", JSON.stringify(contexto),
@@ -866,7 +907,10 @@ Funciones:
       });
       if (!respuesta.ok) throw new Error(respuesta.mensaje + (respuesta.intentos && respuesta.intentos.length ? " · " + respuesta.intentos.map(function (x) { return x.proveedor + ": " + x.error; }).join(" | ") : ""));
       var analisis = parseJSONIA(respuesta.texto);
+      if (token !== estado.revisionToken) throw new Error("La selección cambió. Revisa nuevamente la ficha.");
       if (!analisis) throw new Error("La IA respondió, pero no devolvió el JSON esperado.");
+      var erroresAnalisis = Validacion.validarGeneracion(analisis, materiasIA, estado.inputs);
+      if (erroresAnalisis.length) throw new Error("La IA entregó una ficha incompleta: " + erroresAnalisis.slice(0, 5).join(" "));
       estado.generacion = {
         contexto: contexto,
         analisis: analisis,
@@ -894,9 +938,12 @@ Funciones:
         proveedorIA: respuesta.proveedor,
         modeloIA: respuesta.modelo
       });
+      if (token !== estado.revisionToken) return;
       estado.generacion.registro = registro;
+      document.getElementById("btnGuardarRevision").disabled = false;
       estadoTexto.textContent = "Ficha generada · versión de información " + registro.version + ".";
     } catch (error) {
+      if (token !== estado.revisionToken) return;
       estadoTexto.textContent = "No se pudo generar.";
       alert(error && error.message ? error.message : "No se pudo generar la ficha.");
     } finally {
@@ -1083,7 +1130,8 @@ Funciones:
 
   function conectarEventos() {
     document.getElementById("carreraSelect").addEventListener("change", cargarNiveles);
-    document.getElementById("nivelSelect").addEventListener("change", function () { estado.nivelNumero = numero(valorCampo("nivelSelect"), 0); });
+    document.getElementById("nivelSelect").addEventListener("change", function () { invalidarRevision(); estado.nivelNumero = numero(valorCampo("nivelSelect"), 0); });
+    document.getElementById("periodoInput").addEventListener("change", invalidarRevision);
     document.getElementById("btnRevisar").addEventListener("click", revisarFicha);
     document.getElementById("btnGuardarDatos").addEventListener("click", guardarDatosGenerales);
     CAMPOS_DATOS.concat(["cargoElaborador"]).forEach(function (id) {
@@ -1107,7 +1155,7 @@ Funciones:
   }
 
   async function iniciar() {
-    if (!FB || !Mallas || !Fichas || !IA) {
+    if (!FB || !Mallas || !Fichas || !IA || !Validacion) {
       alert("No se pudieron cargar los módulos necesarios para Fichas.");
       return;
     }
