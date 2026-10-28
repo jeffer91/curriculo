@@ -77,16 +77,18 @@ Funciones:
     var input = $("periodoInput");
     if (!input) return;
 
+    var valorAnterior = input.value;
     if (!periodo) {
       input.value = "";
       delete input.dataset.periodoId;
-      return;
+      delete input.dataset.periodoNombre;
+    } else {
+      input.value = texto(periodo.periodo || periodo.nombre);
+      input.dataset.periodoId = texto(periodo.id || periodo.periodoId);
+      input.dataset.periodoNombre = texto(periodo.nombre);
+      try { window.localStorage.setItem(STORAGE_KEY, texto(periodo.id || periodo.periodoId)); } catch (error) {}
     }
-
-    input.value = texto(periodo.periodo || periodo.nombre);
-    input.dataset.periodoId = texto(periodo.id || periodo.periodoId);
-    input.dataset.periodoNombre = texto(periodo.nombre);
-    try { window.localStorage.setItem(STORAGE_KEY, texto(periodo.id || periodo.periodoId)); } catch (error) {}
+    if (valorAnterior !== input.value) input.dispatchEvent(new Event("change"));
   }
 
   function completarMeses() {
