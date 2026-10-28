@@ -175,6 +175,12 @@ Funciones:
           <label for="materiaExcelVincular">Registro existente en Firebase</label>
           <select id="materiaExcelVincular"><option value="">Nueva asignatura</option></select>
           <small class="muted" id="materiaExcelAyudaVinculo">Selecciona un registro existente solo cuando corresponda a la misma materia.</small>
+          <div id="materiaExcelConfirmacionPanel" style="display:none">
+            <label for="materiaExcelConfirmacion">Confirmación obligatoria para nombres diferentes</label>
+            <small class="muted" id="materiaExcelConfirmacionAyuda"></small>
+            <input id="materiaExcelConfirmacion" type="text" autocomplete="off" spellcheck="false"
+              placeholder="Escribe el nombre oficial exacto de la asignatura" />
+          </div>
         </div>
         <div class="excel-slot">
           <label for="materiaExcelBase">PEA Base</label>
@@ -244,7 +250,7 @@ Funciones:
   <script src="../subir/subir.excel.js?v=20260728-1"></script>
   <script src="../subir/subir.excel-inteligente.js?v=20260806-1"></script>
   <script src="../subir/subir.validador.js?v=20260727-2"></script>
-  <script src="./fichas.carga-excel.js?v=20261028-3"></script>
+  <script src="./fichas.carga-excel.js?v=20261028-4"></script>
   <script src="./fichas.js?v=20261028-1"></script>
 </body>
 </html>
