@@ -26,3 +26,17 @@ Funciones:
 .file-box{border:1px dashed #aab8ca;border-radius:12px;padding:12px;background:#f8fbff}.file-meta{font-size:12px;color:var(--muted);margin-top:6px}.analysis-box{background:#f8fbff;border:1px solid #d7e7f8;border-radius:12px;padding:12px;font-size:13px;line-height:1.45}
 @media(max-width:980px){.dashboard{grid-template-columns:1fr}.side{grid-template-columns:repeat(2,minmax(0,1fr))}.selector{grid-template-columns:1fr 1fr}.selector .btn{align-self:end}.inputs-grid{grid-template-columns:1fr}}
 @media(max-width:650px){.fichas-app{width:min(100% - 20px,1280px);padding-top:22px}.head{align-items:flex-start;flex-direction:column}.selector,.side,.form-grid{grid-template-columns:1fr}.span-2{grid-column:auto}.status-line{width:100%;margin-left:0}.preview{padding:16px;overflow:auto}}
+
+/* Carga individual de PEA desde Fichas */
+.subject{align-items:center}
+.subject-main{min-width:0}
+.subject-actions{display:flex;align-items:center;justify-content:flex-end;gap:9px;flex-wrap:wrap}
+.subject-actions .btn{padding:8px 10px;font-size:12px}
+.excel-modal .modal-head .muted{font-size:12px;margin:6px 0 0}
+.excel-slot{border:1px solid var(--border);border-radius:12px;padding:12px;display:grid;gap:8px}
+.excel-slot>label{font-weight:800;font-size:14px}
+.excel-slot input{font:inherit;width:100%;max-width:100%}
+.excel-slot small{font-size:12px}
+#materiaExcelEstado.is-error{border-color:#f3b6ad;background:#fff5f3;color:#9f2416}
+#materiaExcelEstado.is-ok{border-color:#9ddfca;background:#effbf7;color:#065a42}
+@media(max-width:650px){.subject{grid-template-columns:1fr}.subject-actions{justify-content:flex-start}}
