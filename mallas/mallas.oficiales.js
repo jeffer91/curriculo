@@ -605,6 +605,42 @@ Catálogo curricular suministrado para codificación.
         "Ergonomía y Seguridad Laboral en Entornos de Salud"
       ]
     }
+  },
+  "seguridadyprevencionderiesgoslaborales": {
+    "carrera": "Seguridad y Prevención de Riesgos Laborales",
+    "fuente": "Malla oficial facilitada para su codificación",
+    "version": null,
+    "vigenciaInicio": null,
+    "vigenciaFin": null,
+    "niveles": {
+      "1": [
+        "Fundamentos y técnicas de gestión de riesgo",
+        "Office esencial",
+        "Higiene industrial",
+        "Comunicación oral y escrita",
+        "Marco legal de seguridad y salud ocupacional"
+      ],
+      "2": [
+        "Sistemas integrados de Gestión",
+        "Estadísticas y probabilidades",
+        "Metodología de la investigación",
+        "Gestión por procesos",
+        "Normativa Internacional en Seguridad y Salud Ocupacional"
+      ],
+      "3": [
+        "Fisiología y anatomía ocupacional",
+        "Electricidad, magnetismo y radiación",
+        "Control de emergencias",
+        "Ergonomía aplicada",
+        "Auditoría e inspecciones"
+      ],
+      "4": [
+        "Salud ocupacional en industria",
+        "Gestión del talento humano",
+        "Clima y condiciones psicolaborales",
+        "Planes de emergencia y simulacros"
+      ]
+    }
   }
 };
 
