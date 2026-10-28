@@ -346,6 +346,44 @@ Catálogo curricular suministrado para codificación.
         "Organización de Eventos y Catering"
       ]
     }
+  },
+  "gestiondeltalentohumano": {
+    "carrera": "Gestión del Talento Humano",
+    "fuente": "Malla oficial facilitada para su codificación",
+    "version": null,
+    "vigenciaInicio": null,
+    "vigenciaFin": null,
+    "niveles": {
+      "1": [
+        "Administración de la Compensación en Talento Humano",
+        "Computación Aplicada",
+        "Comunicación Oral y Escrita",
+        "Fundamentos de Gestión de Talento Humano",
+        "Legislación Laboral y Seguridad Social"
+      ],
+      "2": [
+        "Reclutamiento y Selección de Personal",
+        "Comportamiento Organizacional",
+        "Capacitación y Desarrollo de Personal",
+        "Gestión de Desempeño",
+        "Seguridad y Salud Ocupacional"
+      ],
+      "3": [
+        "Remuneración y Compensación",
+        "Gestión y Desarrollo de Competencias",
+        "Valoración de Cargos",
+        "Gestión Presupuestaria y de Talento Humano",
+        "Desarrollo Organizacional"
+      ],
+      "4": [
+        "Estadística Aplicada",
+        "Análisis de Gestión de Riesgos",
+        "Entrepreneurship",
+        "Liderazgo y Gestión de Conflictos",
+        "Gestión de Nómina y Prestaciones Sociales",
+        "Unidad de Integración Curricular"
+      ]
+    }
   }
 };
 
