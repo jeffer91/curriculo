@@ -159,6 +159,44 @@ Catálogo curricular suministrado para codificación.
         "Entrepreneurship"
       ]
     }
+  },
+  "educacionbasica": {
+    "carrera": "Educación Básica",
+    "fuente": "Malla oficial facilitada para su codificación",
+    "version": null,
+    "vigenciaInicio": null,
+    "vigenciaFin": null,
+    "niveles": {
+      "1": [
+        "Office Essentials",
+        "La familia y el entorno educativo",
+        "Aprendizaje y enseñanza de la comunicación humana",
+        "Sistemas educativos del aprendizaje humano",
+        "Psicología de los ciclos de la vida y aprendizaje humano"
+      ],
+      "2": [
+        "Pedagogía, andragogía y corrientes",
+        "Didáctica general",
+        "Diseño, gestión y evaluación curricular",
+        "Neurociencia educativa",
+        "Teoría del aprendizaje"
+      ],
+      "3": [
+        "Aprendizaje y enseñanza de la lengua y literatura",
+        "Aprendizaje y enseñanza del sistema de relaciones y funciones numérico estadístico y probabilidades",
+        "Aprendizaje y enseñanza de las ciencias naturales",
+        "Aprendizaje y enseñanza inclusiva",
+        "Aprendizaje y enseñanza de la cultura física, estética y expresión corporal"
+      ],
+      "4": [
+        "Planificación, modelos y procesos de investigación educativa",
+        "Gestión de recursos, estrategias y ambientes",
+        "Tics en educación y gamificación",
+        "Metodología de investigación educativa",
+        "Deontología docente",
+        "Unidad de integración curricular"
+      ]
+    }
   }
 };
 
