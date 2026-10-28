@@ -78,8 +78,8 @@ Funciones:
       ].indexOf(id) !== -1);
     });
     if ($("inputCarrera")) $("inputCarrera").disabled = estado.guardando;
-    if ($("inputNombreCarrera")) $("inputNombreCarrera").disabled = estado.guardando || !estado.carrera;
-    if ($("btnCorregirCarrera")) $("btnCorregirCarrera").disabled = estado.guardando || !estado.carrera;
+    if ($("inputNombreCarrera")) $("inputNombreCarrera").disabled = estado.guardando || estado.catalogoOficial || !estado.carrera;
+    if ($("btnCorregirCarrera")) $("btnCorregirCarrera").disabled = estado.guardando || estado.catalogoOficial || !estado.carrera;
   }
 
   function nombreNivel(nivel) {
