@@ -182,7 +182,7 @@
     var detail = selected && detalles[selected.id];
     if (selected && !detail) { ponerEstado("Todavía no se pudo consultar el registro existente.", true); return; }
     var archivos = [];
-    var nuevos = 0;
+    var guardado = false;
     fijarOcupado(true);
     try {
       ponerEstado("Leyendo los tres PEA...");
@@ -190,12 +190,10 @@
         var t = T[i], file = $(t.id).files[0] || null;
         var anterior = file ? null : datosPrevios(t.tipo, detail);
         if (!file && !anterior) throw new Error("Falta " + t.label + ". Selecciona el Excel correspondiente.");
-        if (file) nuevos++;
         archivos.push(await prepararArchivo(t, file, anterior, {
           materiaId: "materia_fichas_1", carrera: ctx.carrera, nivelId: "nivel_fichas_" + ctx.nivelNumero
         }));
       }
-      var estadoActual = opciones.getContexto();
       if (!contextoVigente()) throw new Error("Cambió la selección durante la lectura. Vuelve a Revisar.");
       var nivelId = "nivel_fichas_" + ctx.carrera.id + "_" + ctx.nivelNumero;
       archivos.forEach(function (a) { a.nivelId = nivelId; });
@@ -232,14 +230,16 @@
       var resultado = await window.CurriculoFirebase.importarMateriaDesdeFichas(paquete, {
         materiaFirebaseId: selected && selected.id || ""
       });
+      guardado = true;
       ponerEstado("Materia " + resultado.tipo + " en Firebase. Versión " + resultado.version + ".", false, true);
       // Refrescar para que Fichas confirme el estado realmente almacenado.
       if (contextoVigente() && opciones.onGuardado) await opciones.onGuardado(resultado);
-      cerrar();
     } catch (error) {
-      ponerEstado(texto(error && error.message || error), true);
+      ponerEstado((guardado ? "Guardada, pero falló el refresco: " : "") +
+        texto(error && error.message || error), true);
     } finally {
       fijarOcupado(false);
+      if (guardado) cerrar();
     }
   }
   function instalar(config) {
