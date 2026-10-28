@@ -168,7 +168,7 @@ assert.strictEqual(inicial.materias[20].tipo, "integracion_curricular");
 assert.strictEqual(inicial.materias[6].nombreOficial, "Las TIC’s en la Educación Inicial");
 assert.strictEqual(new Set(inicial.materias.map(m => m.nivelNumero + "|" + m.nombreOficial)).size, 21);
 assert.strictEqual(catalogo.obtenerPorCarrera("Educacion Inicial").materias.length, 21);
-assert.strictEqual(catalogo.listarCarreras().length, 15);
+assert.strictEqual(catalogo.listarCarreras().length, 16);
 const enfermeria = catalogo.obtenerPorCarrera({ nombreInstitucional: "Enfermería" });
 assert.ok(enfermeria);
 assert.strictEqual(enfermeria.malla.carreraNombre, "Enfermería");
@@ -348,6 +348,37 @@ assert.strictEqual(redes.materias[17].nombreOficial, "Sistemas de Automatizació
 assert.strictEqual(redes.materias[20].nombreOficial, "Unidad de Integración Curricular");
 assert.strictEqual(redes.materias[20].tipo, "integracion_curricular");
 assert.strictEqual(catalogo.obtenerPorCarrera("Redes y Telecomunicaciones").materias.length, 21);
+const rehabilitacion = catalogo.obtenerPorCarrera("Rehabilitación Física");
+assert.ok(rehabilitacion);
+assert.strictEqual(rehabilitacion.malla.carreraNombre, "Rehabilitación Física");
+assert.strictEqual(rehabilitacion.malla.version, null);
+assert.strictEqual(rehabilitacion.materias.length, 19);
+assert.deepStrictEqual(Array.from([1, 2, 3, 4], n => rehabilitacion.materias.filter(m => m.nivelNumero === n).length), [5, 5, 5, 4]);
+const esperadasRehabilitacion = [
+  "Comunicación Oral y Escrita",
+  "Morfofisiología I",
+  "Fisiología del Movimiento",
+  "Fundamentos de Rehabilitación Física",
+  "Office essentials",
+  "Técnicas de Masoterapia",
+  "Morfofisiología II",
+  "Biomecánica y Evaluación Funcional",
+  "Farmacología aplicada a la Rehabilitación Física",
+  "Semiotecnia en la Rehabilitación Física",
+  "Kinesioterapia",
+  "Rehabilitación Musculoesquelética",
+  "Rehabilitación Cardiorrespiratoria",
+  "Neurorehabilitación",
+  "Rehabilitación Geriátrica",
+  "Rehabilitación Deportiva",
+  "Rehabilitación Uroginecológica",
+  "Atención Integral al Paciente Crónico o con Discapacidad",
+  "Ergonomía y Seguridad Laboral en Entornos de Salud"
+];
+assert.deepStrictEqual(Array.from(rehabilitacion.materias.map(m => m.nombreOficial)), esperadasRehabilitacion);
+assert.strictEqual(rehabilitacion.materias.some(m => m.tipo === "integracion_curricular"), false);
+assert.strictEqual(catalogo.obtenerPorCarrera("Rehabilitacion Fisica").materias.length, 19);
+assert.strictEqual(new Set(rehabilitacion.materias.map(m => m.nivelNumero + "|" + m.nombreOficial)).size, 19);
 assert.strictEqual(new Set(redes.materias.map(m => m.nivelNumero + "|" + m.nombreOficial)).size, 21);
 assert.strictEqual(new Set(alimentos.materias.map(m => m.nivelNumero + "|" + m.nombreOficial)).size, 18);
 assert.strictEqual(new Set(motos.materias.map(m => m.nivelNumero + "|" + m.nombreOficial)).size, 19);
@@ -374,4 +405,4 @@ assert.ok(fichasJs.includes("Mallas.obtenerMallaVigenteParaCarrera(carrera)"));
 assert.ok(fichasHtml.includes("../mallas/mallas.oficiales.js"));
 assert.ok(fichasHtml.indexOf("../mallas/mallas.oficiales.js") < fichasHtml.indexOf("./fichas.js"));
 
-console.log("Mallas codificadas verificadas: quince carreras y 305 asignaturas.");
+console.log("Mallas codificadas verificadas: dieciséis carreras y 324 asignaturas.");
