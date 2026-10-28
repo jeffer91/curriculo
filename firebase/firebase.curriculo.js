@@ -653,10 +653,12 @@ Funciones:
         arr(paquete.materias).length !== 1 || arr(paquete.archivos).length !== 3) {
       throw new Error("La importación individual necesita una carrera, un nivel, una materia y tres PEA.");
     }
-    if (!paquete.evaluacionesMaterias || paquete.evaluacionesMaterias.length !== 1 ||
-        paquete.evaluacionesMaterias[0].estado !== "completo" ||
+    var evaluacion = paquete.evaluacionesMaterias && paquete.evaluacionesMaterias[0];
+    if (!evaluacion || paquete.evaluacionesMaterias.length !== 1 ||
+        ["completo", "revision"].indexOf(evaluacion.estado) === -1 ||
+        Number(evaluacion.totalArchivosValidos || 0) !== 3 ||
         paquete.resumenValidacion && paquete.resumenValidacion.bloqueaImportacion) {
-      throw new Error("Corrige primero los tres PEA: deben estar leídos y validados como completos.");
+      throw new Error("Los tres PEA deben estar leídos y tener contenido curricular válido antes de guardar.");
     }
     var carrera = arr(paquete.carreras)[0];
     var nivel = arr(paquete.niveles)[0];
