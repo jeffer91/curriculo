@@ -318,8 +318,19 @@ Memoria persistente de decisiones de malla
 
   var obtenerMallaOriginal = Mallas.obtenerMallaVigenteParaCarrera.bind(Mallas);
   Mallas.obtenerMallaVigenteParaCarrera = async function (carrera) {
-    var detalle = await obtenerMallaOriginal(carrera);
+    var codificada = window.CurriculoMallasOficiales &&
+      window.CurriculoMallasOficiales.obtenerPorCarrera(carrera);
+    var detalle = codificada || await obtenerMallaOriginal(carrera);
     if (!detalle) return detalle;
+    if (codificada) {
+      detalle.materias = codificada.materias.map(function (m) {
+        return Object.assign({}, m, {
+          id: codificada.malla.id + "__n" + m.nivelNumero + "_p" + m.orden,
+          mallaId: codificada.malla.id,
+          mallaVersion: 0
+        });
+      });
+    }
 
     var carreraId = texto(
       carrera && (carrera.id || carrera.carreraId) ||
