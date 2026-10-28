@@ -72,7 +72,7 @@ async function pruebaIndividual() {
         return pkg;
       }},
       Validador: { validarPaquete: pkg => Object.assign(pkg, {
-        evaluacionesMaterias: [{ estado: "completo" }],
+        evaluacionesMaterias: [{ estado: "completo", totalArchivosValidos: 3 }],
         resumenValidacion: { bloqueaImportacion: false }
       })}
     }
