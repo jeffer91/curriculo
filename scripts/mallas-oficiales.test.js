@@ -132,8 +132,44 @@ assert.deepStrictEqual(Array.from(educacion.materias.map(m => m.nombreOficial)),
 assert.strictEqual(educacion.materias[20].tipo, "integracion_curricular");
 assert.strictEqual(catalogo.obtenerPorCarrera("Educacion Basica").materias.length, 21);
 assert.strictEqual(new Set(educacion.materias.map(m => m.nivelNumero + "|" + m.nombreOficial)).size, 21);
-assert.strictEqual(catalogo.obtenerPorCarrera("Educación Inicial"), null);
-assert.strictEqual(catalogo.listarCarreras().length, 5);
+const inicial = catalogo.obtenerPorCarrera({ nombreInstitucional: "Educación Inicial" });
+assert.ok(inicial);
+assert.strictEqual(inicial.malla.carreraNombre, "Educación Inicial");
+assert.strictEqual(inicial.malla.version, null);
+assert.strictEqual(inicial.malla.vigenciaInicio, null);
+assert.strictEqual(inicial.malla.vigenciaFin, null);
+assert.strictEqual(inicial.materias.length, 21);
+assert.deepStrictEqual(Array.from([1, 2, 3, 4], n => inicial.materias.filter(m => m.nivelNumero === n).length), [6, 6, 4, 5]);
+const esperadasInicial = [
+  "Competencias Digitales para la Educación Inicial",
+  "Didáctica Aplicada",
+  "Psicomotricidad y Expresión Corporal",
+  "Bases Biológicas del Desarrollo",
+  "Pedagogía Infantil",
+  "Estrategias Metodológicas para el Aprendizaje en Educación Inicial",
+  "Las TIC’s en la Educación Inicial",
+  "Expresión Plástica y Artística",
+  "Psicología Infantil I",
+  "Pedagogía Infantil II",
+  "Planificación y Diseño Curricular",
+  "Estimulación Temprana I",
+  "Psicología Infantil II",
+  "Pedagogía para Infantes con Discapacidad",
+  "Iniciación a las Operaciones Concretas",
+  "Estimulación Temprana II",
+  "Gerencia Educativa",
+  "Evaluación Institucional de Logros en Nivel Inicial y Primero de Básica",
+  "Dificultades en el Aprendizaje",
+  "Iniciación a la Prelectura y Preescritura",
+  "Unidad de Integración Curricular"
+];
+assert.deepStrictEqual(Array.from(inicial.materias.map(m => m.nombreOficial)), esperadasInicial);
+assert.strictEqual(inicial.materias[20].tipo, "integracion_curricular");
+assert.strictEqual(inicial.materias[6].nombreOficial, "Las TIC’s en la Educación Inicial");
+assert.strictEqual(new Set(inicial.materias.map(m => m.nivelNumero + "|" + m.nombreOficial)).size, 21);
+assert.strictEqual(catalogo.obtenerPorCarrera("Educacion Inicial").materias.length, 21);
+assert.strictEqual(catalogo.listarCarreras().length, 6);
+
 
 
 assert.strictEqual(catalogo.obtenerPorCarrera("ADMINISTRACIÓN").materias.length, 21);
@@ -155,4 +191,4 @@ assert.ok(fichasJs.includes("Mallas.obtenerMallaVigenteParaCarrera(carrera)"));
 assert.ok(fichasHtml.includes("../mallas/mallas.oficiales.js"));
 assert.ok(fichasHtml.indexOf("../mallas/mallas.oficiales.js") < fichasHtml.indexOf("./fichas.js"));
 
-console.log("Mallas codificadas verificadas: cinco carreras y 103 asignaturas.");
+console.log("Mallas codificadas verificadas: seis carreras y 124 asignaturas.");
