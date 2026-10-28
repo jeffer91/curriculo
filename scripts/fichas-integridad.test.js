@@ -27,7 +27,7 @@ assert.strictEqual(V.validarInput(informe, "2026-10-27").completo, true);
 assert.strictEqual(V.validarInput({ ...informe, vigenciaHasta: "2026-10-26" }, "2026-10-27").completo, false);
 assert.strictEqual(V.validarInput({ ...informe, vigenciaDesde: "2026-10-28" }, "2026-10-27").completo, false);
 assert.strictEqual(V.validarInput({ ...informe, analisisIA: null }, "2026-10-27").completo, false);
-assert.strictEqual(V.validarInput({ ...informe, periodoInforme: "" }, "2026-10-27").completo, true);
+assert.strictEqual(V.validarInput({ ...informe, periodoInforme: "" }, "2026-10-27").completo, false);
 assert.strictEqual(V.validarInput({ noAplica: true, justificacionNoAplica: "n/a" }).completo, false);
 assert.strictEqual(V.validarInput({ noAplica: true, justificacionNoAplica: "No existen graduados para el período de estudio." }).completo, true);
 
@@ -67,23 +67,12 @@ assert.ok(ficha.includes("invalidarRevision()"));
 assert.ok(ficha.includes("token !== estado.revisionToken"));
 assert.ok(ficha.includes("Validacion.validarGeneracion"));
 assert.ok(ficha.includes("periodoFicha: estado.periodo"));
-assert.ok(ficha.includes('var PERIODO_INTERNO = "general"'));
-assert.ok(!ficha.includes('valorCampo("periodoInput")'));
-assert.ok(!ficha.includes('getElementById("periodoInput")'));
-assert.ok(!html.includes('id="periodoInput"'));
-assert.ok(!html.includes('id="periodoSelect"'));
-assert.ok(!html.includes('id="btnNuevoPeriodo"'));
-assert.ok(!html.includes("fichas.periodos.js"));
-assert.ok(!html.includes("firebase.fichas-periodos.js"));
-assert.ok(!ficha.includes("<tr><th>Período</th>"));
 assert.ok(ficha.includes("Fichas.guardarRevision"));
 assert.ok(ficha.includes("Fichas.obtenerRevision"));
 assert.ok(ficha.includes('nombreBaseFicha() + ".docx"'));
 assert.ok(fb.includes("periodoFicha"));
-assert.ok(fb.includes('slug(texto(periodo) || "general")'));
-assert.ok(fb.includes('texto(datos.periodoFicha) || "general"'));
 assert.ok(fb.includes("COLECCIONES.REVISIONES"));
-assert.ok(!html.includes("periodoNuevoPanel"));
+assert.ok(periodos.includes('input.dispatchEvent(new Event("change"))'));
 assert.ok(html.includes('id="btnGuardarRevision"') && html.includes('id="btnRecuperarRevision"'));
 
 const cat = { window: {} };
@@ -127,4 +116,4 @@ docxWin.CurriculoFichasDOCX.crear("<h1>Ficha curricular de prueba</h1>")
     process.exitCode = 1;
   });
 
-console.log("Fichas integridad: sin período obligatorio, evidencia, IA, DOCX y 18 mallas verificadas.");
+console.log("Fichas integridad: período, evidencia, IA, DOCX y 18 mallas verificadas.");
