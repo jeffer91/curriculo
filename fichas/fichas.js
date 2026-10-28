@@ -168,6 +168,7 @@ Funciones:
 
   function invalidarRevision() {
     estado.revisionToken += 1;
+    estado.periodo = "";
     estado.materiasEstado = [];
     estado.materiasEsperadas = [];
     estado.inputs = {};
@@ -175,6 +176,15 @@ Funciones:
     estado.tendencias = [];
     estado.diagnostico = null;
     estado.iaDisponible = false;
+    estado.modalArchivo = null;
+    estado.modalAnalisis = null;
+    estado.modalTipo = "";
+    ["codigoDocumento", "coordinador", "docentes", "fechaInicio", "fechaFin",
+      "elaboradoPor", "revisadoPor", "aprobadoPor", "cargoElaborador"].forEach(function (id) {
+      setCampo(id, "");
+    });
+    var modal = document.getElementById("inputModal");
+    if (modal) { modal.classList.remove("open"); modal.setAttribute("aria-hidden", "true"); }
     limpiarVistaPrevia();
     renderInicial("Selecciona los datos y pulsa Revisar para actualizar las evidencias.");
   }
